@@ -47,12 +47,12 @@ contract("AtomicLoan", accounts => {
   const lenderSignature = '3045022100deeb1f13b5927b5e32d877f3c42a4b028e2e0ce5010fdb4e7f7b5e2921c1dcd2022068631cb285e8c1be9f061d2968a18c3163b780656f30a049effee640e80d9bff'
   const borrowerSignature = '3045022100ee80e164622c64507d243bd949217d666d8b16486e153ac6a1f8e04c351b71a502203691bef46236ca2b4f5e60a82a853a33d6712d6a1e7bf9a65e575aeb7328db8c'
 
-  let currentTime, withdrawExpiration, loanExpiration, biddingExpiration, seizureExpiration
+  let currentTime, approveExpiration, loanExpiration, biddingExpiration, seizureExpiration
 
   beforeEach(async function () {
     currentTime = await time.latest();
 
-    withdrawExpiration = parseInt(currentTime) + withdrawIncrement;
+    approveExpiration = parseInt(currentTime) + withdrawIncrement;
     loanExpiration = parseInt(currentTime) + loanIncrement;
     acceptExpiration = loanExpiration + acceptIncrement;
     biddingExpiration = loanExpiration + biddingIncrement;
@@ -64,7 +64,7 @@ contract("AtomicLoan", accounts => {
       secretHashB1,
       secretHashB2,
       secretHashB3,
-      withdrawExpiration,
+      approveExpiration,
       loanExpiration,
       acceptExpiration,
       biddingExpiration,
@@ -123,7 +123,7 @@ contract("AtomicLoan", accounts => {
   })
 
   describe('approve', function() {
-    it('should succeed if msg.sender is lender, is funded, before withdrawExpiration and hash of secret is secretHashB1', async function() {
+    it('should succeed if msg.sender is lender, is funded, before approveExpiration and hash of secret is secretHashB1', async function() {
       await this.atomicLoan.fund({ from: lender });
       await this.atomicLoan.approve(secretB1, { from: lender });
       assert.equal((await this.atomicLoan.approved.call()), true);
@@ -148,7 +148,7 @@ contract("AtomicLoan", accounts => {
       assert.fail('Expected exception not received');
     })
 
-    it('should fail if current time is greater than withdrawExpiration', async function() {
+    it('should fail if current time is greater than approveExpiration', async function() {
       await time.increase(withdrawIncrement + 1);
       await this.atomicLoan.fund({ from: lender });
       try {
@@ -161,7 +161,7 @@ contract("AtomicLoan", accounts => {
   })
 
   describe('accept_or_cancel', function() {
-    it('should succeed canceling if correct secretB2, timestamp greater than withdrawExpiration and less than paybackAcceptanceExpiration and bidding is false', async function() {
+    it('should succeed canceling if correct secretB2, timestamp greater than approveExpiration and less than paybackAcceptanceExpiration and bidding is false', async function() {
       await this.atomicLoan.fund({ from: lender });
       (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
       await time.increase(withdrawIncrement + 1);
@@ -169,7 +169,7 @@ contract("AtomicLoan", accounts => {
       (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
     })
 
-    it('should succeed accepting repayment if correct secretB2, timestamp greater than withdrawExpiration and less than paybackAcceptanceExpiration and bidding is false', async function() {
+    it('should succeed accepting repayment if correct secretB2, timestamp greater than approveExpiration and less than paybackAcceptanceExpiration and bidding is false', async function() {
       (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
       await this.atomicLoan.fund({ from: lender });
       (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
@@ -188,7 +188,7 @@ contract("AtomicLoan", accounts => {
       await shouldFail.reverting(this.atomicLoan.accept_or_cancel(secretB1, { from: lender }))
     })
 
-    it('should fail if current time is less than withdrawExpiration', async function() {
+    it('should fail if current time is less than approveExpiration', async function() {
       await this.atomicLoan.fund({ from: lender }); 
       await shouldFail.reverting(this.atomicLoan.accept_or_cancel(secretB2, { from: lender }))
     })
