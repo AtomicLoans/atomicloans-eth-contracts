@@ -22,7 +22,7 @@ contract AtomicLoan {
     bytes32 public secretB3;
     bytes32 public secretC;
     
-    uint256 withdrawExpiration;
+    uint256 approveExpiration;
     uint256 loanExpiration;
     uint256 acceptExpiration;
     uint256 biddingExpiration;
@@ -47,8 +47,6 @@ contract AtomicLoan {
     string public borrowerSignature;
     string public lenderSignature;
     
-    bool borrowerLiquidatedCollateralWithdrawn = false;
-    bool lenderLiquidatedCollateralWidthdrawn = false;
     bool liquidatedCollateralWidthdrawn = false;
 
     string aCoinAddress;
@@ -61,7 +59,7 @@ contract AtomicLoan {
         bytes32 _secretHashB1,
         bytes32 _secretHashB2,
         bytes32 _secretHashB3,
-        uint256 _withdrawExpiration,
+        uint256 _approveExpiration,
         uint256 _loanExpiration,
         uint256 _acceptExpiration,
         uint256 _biddingExpiration,
@@ -78,7 +76,7 @@ contract AtomicLoan {
         secretHashB1 = _secretHashB1;
         secretHashB2 = _secretHashB2;
         secretHashB3 = _secretHashB3;
-        withdrawExpiration = _withdrawExpiration;
+        approveExpiration = _approveExpiration;
         loanExpiration = _loanExpiration;
         acceptExpiration = _acceptExpiration;
         biddingExpiration = _biddingExpiration;
@@ -101,7 +99,7 @@ contract AtomicLoan {
     function approve (bytes32 _secretB1) public {
         require(funded == true);
         require(sha256(abi.encodePacked(_secretB1)) == secretHashB1);
-        require(now <= withdrawExpiration);
+        require(now <= approveExpiration);
         approved = true;
     }
     
@@ -116,7 +114,7 @@ contract AtomicLoan {
 
     function accept_or_cancel (bytes32 _secretB2) public {
         require(sha256(abi.encodePacked(_secretB2)) == secretHashB2);
-        require(now > withdrawExpiration);
+        require(now > approveExpiration);
         require(now <= acceptExpiration);
         require(bidding == false);
         token.transfer(lender, token.balanceOf(address(this)));
