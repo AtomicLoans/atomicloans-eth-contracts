@@ -60,14 +60,12 @@ contract AutoAtomicLoan {
     StandardToken public token;
 
     constructor (
-        bytes32[] memory _borrowerHashes,
-        bytes32[] memory _lenderHashes,
-        bytes32[] memory _lenderAutoHashes,
-        uint256 _approveExpiration,
-        uint256 _loanExpiration,
-        uint256 _acceptExpiration,
-        uint256 _biddingExpiration,
+        bytes32[2] _borrowerHashes,
+        bytes32[3] _lenderHashes,
+        bytes32[3] _lenderAutoHashes,
+        uint256[4] _expirations,
         address _borrower,
+        address _lender,
         address _lenderAuto,
         uint256 _principal,
         uint256 _interest,
@@ -84,12 +82,12 @@ contract AutoAtomicLoan {
         secretHashAutoB1 = _lenderAutoHashes[0];
         secretHashAutoB2 = _lenderAutoHashes[1];
         secretHashAutoB3 = _lenderAutoHashes[2];
-        approveExpiration = _approveExpiration;
-        loanExpiration = _loanExpiration;
-        acceptExpiration = _acceptExpiration;
-        biddingExpiration = _biddingExpiration;
+        approveExpiration = _expirations[0];
+        loanExpiration = _expirations[1];
+        acceptExpiration = _expirations[2];
+        biddingExpiration = _expirations[3];
         borrower = _borrower;
-        lender = msg.sender;
+        lender = _lender;
         lenderAuto = _lenderAuto;
         principal = _principal;
         interest = _interest;

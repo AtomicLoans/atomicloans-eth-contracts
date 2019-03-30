@@ -59,16 +59,11 @@ contract("AtomicLoan", accounts => {
 
     this.token = await ExampleCoin.new();
     this.atomicLoan = await AtomicLoan.new(
-      secretHashA1,
-      secretHashA2,
-      secretHashB1,
-      secretHashB2,
-      secretHashB3,
-      approveExpiration,
-      loanExpiration,
-      acceptExpiration,
-      biddingExpiration,
+      [secretHashA1, secretHashA2],
+      [secretHashB1, secretHashB2, secretHashB3],
+      [approveExpiration, loanExpiration, acceptExpiration, biddingExpiration],
       borrower,
+      lender,
       `1000000000000000000`,
       `10000000000000000`,
       `5000000000000000`,

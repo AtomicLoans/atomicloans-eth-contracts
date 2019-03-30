@@ -54,16 +54,11 @@ contract AtomicLoan {
     StandardToken public token;
 
     constructor (
-        bytes32 _secretHashA1,
-        bytes32 _secretHashA2,
-        bytes32 _secretHashB1,
-        bytes32 _secretHashB2,
-        bytes32 _secretHashB3,
-        uint256 _approveExpiration,
-        uint256 _loanExpiration,
-        uint256 _acceptExpiration,
-        uint256 _biddingExpiration,
+        bytes32[2] _secretHashesA,
+        bytes32[3] _secretHashesB,
+        uint256[4] _expirations,
         address _borrower,
+        address _lender,
         uint256 _principal,
         uint256 _interest,
         uint256 _liquidationFee,
@@ -71,17 +66,17 @@ contract AtomicLoan {
         uint256 _biddingRefund,
         address _tokenAddress
     ) public {
-        secretHashA1 = _secretHashA1;
-        secretHashA2 = _secretHashA2;
-        secretHashB1 = _secretHashB1;
-        secretHashB2 = _secretHashB2;
-        secretHashB3 = _secretHashB3;
-        approveExpiration = _approveExpiration;
-        loanExpiration = _loanExpiration;
-        acceptExpiration = _acceptExpiration;
-        biddingExpiration = _biddingExpiration;
+        secretHashA1 = _secretHashesA[0];
+        secretHashA2 = _secretHashesA[1];
+        secretHashB1 = _secretHashesB[0];
+        secretHashB2 = _secretHashesB[1];
+        secretHashB3 = _secretHashesB[2];
+        approveExpiration = _expirations[0];
+        loanExpiration = _expirations[1];
+        acceptExpiration = _expirations[2];
+        biddingExpiration = _expirations[3];
         borrower = _borrower;
-        lender = msg.sender;
+        lender = _lender;
         principal = _principal;
         interest = _interest;
         liquidationFee = _liquidationFee;
