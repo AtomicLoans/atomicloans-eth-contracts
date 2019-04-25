@@ -6,5 +6,5 @@ node_js:
 before_script:
   - npm install -g truffle ganache-cli
 script:
-  - CI=false ganache-cli
+  - CI=false ganache-cli &
   - CI=false truffle test
