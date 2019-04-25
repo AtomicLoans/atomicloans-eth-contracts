@@ -1,7 +1,6 @@
 {
-  "name": "atomic-loans-ethereum-contracts",
+  "name": "atomicloans-solidity",
   "version": "0.1.0",
-  "private": true,
   "dependencies": {
     "bignumber.js": "^8.1.1",
     "openzeppelin-solidity": "^2.2.0",
