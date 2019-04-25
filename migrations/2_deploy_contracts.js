@@ -1,4 +1,4 @@
-var ExampleCoin = artifacts.require("./ExampleCoin.sol");
+var ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 
 module.exports = function(deployer) {
   deployer.deploy(ExampleCoin);
