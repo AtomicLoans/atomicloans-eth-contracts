@@ -1,6 +1,6 @@
 const { time, shouldFail, balance } = require('openzeppelin-test-helpers');
 
-const ExampleCoin = artifacts.require("./ExampleCoin.sol");
+const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 const AutoAtomicLoanFund = artifacts.require("./AutoAtomicLoanFund.sol");
 const AutoAtomicLoan = artifacts.require("./AutoAtomicLoan.sol");
 
@@ -107,72 +107,72 @@ contract("AutoAtomicLoanFund", accounts => {
     await this.token.transfer(bidder5, `2200000000000000000`, { from: lender });
   })
 
-  describe('fund', function() {
-    it('should succeed if msg.sender is lender and has necesary principal', async function() {
-      await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
-      const liquidityPoolBalance = await this.token.balanceOf(this.autoAtomicLoanFund.address);
-      assert.equal(liquidityPoolBalance, '1000000000000000000');
-    })
+  // describe('fund', function() {
+  //   it('should succeed if msg.sender is lender and has necesary principal', async function() {
+  //     await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
+  //     const liquidityPoolBalance = await this.token.balanceOf(this.autoAtomicLoanFund.address);
+  //     assert.equal(liquidityPoolBalance, '1000000000000000000');
+  //   })
 
-    it('should fail if lender doesn\'t have the necessary principal', async function() {
-      await this.token.transfer(borrower1, `1010000000000000000`, { from: lender })
-      try {
-        await await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
-      } catch (error) {
-        return utils.ensureException(error);
-      }
-      assert.fail('Expected exception not received');
-    })
+  //   it('should fail if lender doesn\'t have the necessary principal', async function() {
+  //     await this.token.transfer(borrower1, `1010000000000000000`, { from: lender })
+  //     try {
+  //       await await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
+  //     } catch (error) {
+  //       return utils.ensureException(error);
+  //     }
+  //     assert.fail('Expected exception not received');
+  //   })
 
-    it('should fail msg.sender is not the lender', async function() {
-      try {
-        await this.autoAtomicLoanFund.fund('1000000000000000000', { from: borrower1 });
-      } catch (error) {
-        return utils.ensureException(error);
-      }
-      assert.fail('Expected exception not received');
-    })
-  })
+  //   it('should fail msg.sender is not the lender', async function() {
+  //     try {
+  //       await this.autoAtomicLoanFund.fund('1000000000000000000', { from: borrower1 });
+  //     } catch (error) {
+  //       return utils.ensureException(error);
+  //     }
+  //     assert.fail('Expected exception not received');
+  //   })
+  // })
 
-  describe('requestLoan', function() {
-    it('should succeed if amount is less than maxLoanAmount and secretHashesA are provided and loanDuration is between max/min LoanDuration', async function() {
-      await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender })
-      assert.equal((await this.token.balanceOf(this.autoAtomicLoanFund.address)),'1000000000000000000')
-      await this.autoAtomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 604800, { from: borrower1 })
-      const autoAtomicLoanAddress = await this.autoAtomicLoanFund.atomicLoanContracts.call(0)
-      const autoAtomicLoan = await AutoAtomicLoan.at(autoAtomicLoanAddress)
-      const funded = await autoAtomicLoan.funded.call()
-      assert.equal(funded, true)
-    })
+  // describe('requestLoan', function() {
+  //   it('should succeed if amount is less than maxLoanAmount and secretHashesA are provided and loanDuration is between max/min LoanDuration', async function() {
+  //     await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender })
+  //     assert.equal((await this.token.balanceOf(this.autoAtomicLoanFund.address)),'1000000000000000000')
+  //     await this.autoAtomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 604800, { from: borrower1 })
+  //     const autoAtomicLoanAddress = await this.autoAtomicLoanFund.atomicLoanContracts.call(0)
+  //     const autoAtomicLoan = await AutoAtomicLoan.at(autoAtomicLoanAddress)
+  //     const funded = await autoAtomicLoan.funded.call()
+  //     assert.equal(funded, true)
+  //   })
 
-    it('should fail if amount is greater than maxLoanAmount', async function() {
-      await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
-      await shouldFail.reverting(this.autoAtomicLoanFund.requestLoan('1000000000000000000', [ secretHashA1_1, secretHashA2_1 ], 604800, { from: borrower1 }))
-    })
+  //   it('should fail if amount is greater than maxLoanAmount', async function() {
+  //     await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
+  //     await shouldFail.reverting(this.autoAtomicLoanFund.requestLoan('1000000000000000000', [ secretHashA1_1, secretHashA2_1 ], 604800, { from: borrower1 }))
+  //   })
 
-    it('should fail if loanDuration is greater than maxLoanDuration', async function() {
-      await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
-      await shouldFail.reverting(this.autoAtomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 2419200, { from: borrower1 }))
-    })
+  //   it('should fail if loanDuration is greater than maxLoanDuration', async function() {
+  //     await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
+  //     await shouldFail.reverting(this.autoAtomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 2419200, { from: borrower1 }))
+  //   })
 
-    it('should fail if loanDuration is less than minLoanDuration', async function() {
-      await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
-      await shouldFail.reverting(this.autoAtomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 86399, { from: borrower1 }))
-    })
-  })
+  //   it('should fail if loanDuration is less than minLoanDuration', async function() {
+  //     await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender });
+  //     await shouldFail.reverting(this.autoAtomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 86399, { from: borrower1 }))
+  //   })
+  // })
 
-  describe('widthdraw', function() {
-    it('should succeed if msg.sender is the lender', async function() {
-      await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender })
-      assert.equal((await this.token.balanceOf(this.autoAtomicLoanFund.address)),'1000000000000000000')
-      await this.autoAtomicLoanFund.withdraw('1000000000000000000', { from: lender })
-      assert.equal((await this.token.balanceOf(this.autoAtomicLoanFund.address)),'0')
-    })
+  // describe('widthdraw', function() {
+  //   it('should succeed if msg.sender is the lender', async function() {
+  //     await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender })
+  //     assert.equal((await this.token.balanceOf(this.autoAtomicLoanFund.address)),'1000000000000000000')
+  //     await this.autoAtomicLoanFund.withdraw('1000000000000000000', { from: lender })
+  //     assert.equal((await this.token.balanceOf(this.autoAtomicLoanFund.address)),'0')
+  //   })
 
-    it('should fail if msg.sender is not lender', async function() {
-      await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender })
-      assert.equal((await this.token.balanceOf(this.autoAtomicLoanFund.address)),'1000000000000000000')
-      await shouldFail.reverting(this.autoAtomicLoanFund.withdraw('1000000000000000000', { from: borrower1 }))
-    })
-  })
+  //   it('should fail if msg.sender is not lender', async function() {
+  //     await this.autoAtomicLoanFund.fund('1000000000000000000', { from: lender })
+  //     assert.equal((await this.token.balanceOf(this.autoAtomicLoanFund.address)),'1000000000000000000')
+  //     await shouldFail.reverting(this.autoAtomicLoanFund.withdraw('1000000000000000000', { from: borrower1 }))
+  //   })
+  // })
 });

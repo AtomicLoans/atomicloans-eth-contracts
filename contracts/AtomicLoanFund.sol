@@ -1,28 +1,34 @@
-import 'openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 import './AtomicLoan.sol';
 
-pragma solidity ^0.4.25;
+pragma solidity ^0.5.2;
 
 contract AtomicLoanFund {
     using SafeMath for uint256;
 
-    uint256 public secretHashCounter = 0;
     bytes32[] public secretHashes;
     uint256 public maxLoanAmount;
 
     address[] public atomicLoanContracts;
 
-    uint256 minLoanDuration;
-    uint256 maxLoanDuration;
+    uint256 public counter = 0;
 
-    uint256 interestRate;
-    uint256 liquidationFeeRate;
+    uint256 public minLoanDuration;
+    uint256 public maxLoanDuration;
 
-    StandardToken public token;
+    uint256 public interestRate;
+    uint256 public liquidationFeeRate;
 
-    address lender;
+    ERC20 public token;
+
+    address payable public lender;
+
+    bytes32 public aCoinPubKeyPrefix;
+    bytes32 public aCoinPubKeySuffix;
+
+    uint256 public collateralizationRatio;
 
     constructor (
         bytes32[] memory _secretHashes,
@@ -31,7 +37,10 @@ contract AtomicLoanFund {
         uint256 _maxLoanDuration,
         uint256 _interestRate, // Hourly interest to ten decimal places (i.e. 0.000799086758% would be inputed as 7990868)
         uint256 _liquidationFeeRate,
-        address _tokenAddress
+        address _tokenAddress,
+        bytes32 _aCoinPubKeyPrefix,
+        bytes32 _aCoinPubKeySuffix,
+        uint256 _collateralizationRatio // Min collateralization ratio to 6 decimal places
     ) public {
         secretHashes = _secretHashes;
         maxLoanAmount = _maxLoanAmount;
@@ -39,18 +48,18 @@ contract AtomicLoanFund {
         maxLoanDuration = _maxLoanDuration;
         interestRate = _interestRate;
         liquidationFeeRate = _liquidationFeeRate;
-        token = StandardToken(_tokenAddress);
+        token = ERC20(_tokenAddress);
         lender = msg.sender;
-    }
-
-    function fund (uint256 _amount) public {
-        token.transferFrom(msg.sender, address(this), _amount);
+        aCoinPubKeyPrefix = _aCoinPubKeyPrefix;
+        aCoinPubKeySuffix = _aCoinPubKeySuffix;
+        collateralizationRatio = _collateralizationRatio;
     }
 
     function requestLoan (
         uint256 _amount,
-        bytes32[2] _secretHashesA,
-        uint256 _loanDuration
+        bytes32[2] memory _secretHashesA,
+        uint256 _loanDuration,
+        bytes32[2] memory _aCoinPubKey
     ) public returns (address) {
         require(_amount <= maxLoanAmount);
         require(_loanDuration <= maxLoanDuration);
@@ -61,26 +70,27 @@ contract AtomicLoanFund {
 
         AtomicLoan atomicLoan = new AtomicLoan(
             _secretHashesA,
-            [secretHashes[secretHashCounter], secretHashes[secretHashCounter + 1], secretHashes[secretHashCounter + 2]],
-            [ now + 21600, now + _loanDuration, now + _loanDuration + 259200, now + _loanDuration + 1209600],
+            [secretHashes[counter * 2], secretHashes[(counter * 2) + 1]],
+            [ now + 21600, now + _loanDuration, now + _loanDuration + 259200, now + (_loanDuration * 2)],
             msg.sender,
             lender,
             _amount,
-            loanInterest, // Loan Interest
+            loanInterest,
             loanLiquidationFee,
-            86400,
-            86400,
-            token
+            42300,
+            42300,
+            address(token),
+            _aCoinPubKey
         );
         
         atomicLoanContracts.push(address(atomicLoan));
-        token.approve(atomicLoan, _amount.add(loanInterest).add(loanLiquidationFee));
+        token.approve(address(atomicLoan), _amount.add(loanInterest).add(loanLiquidationFee));
         atomicLoan.fund();
-        secretHashCounter = secretHashCounter.add(3);
+        counter = counter.add(1);
         return address(atomicLoan);
     }
 
-    function withdraw (uint _amount) public {
+    function withdraw (uint256 _amount) public {
         require(msg.sender == lender);
         token.transfer(lender, _amount);
     }

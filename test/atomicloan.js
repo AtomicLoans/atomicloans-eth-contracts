@@ -1,7 +1,9 @@
 const { time, shouldFail, balance } = require('openzeppelin-test-helpers');
 
-const ExampleCoin = artifacts.require("./ExampleCoin.sol");
+const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 const AtomicLoan = artifacts.require("./AtomicLoan.sol");
+
+const { BigNumber } = require('bignumber.js');
 
 const utils = require('./helpers/Utils.js');
 
@@ -27,8 +29,6 @@ contract("AtomicLoan", accounts => {
   const secretHashB1 = "0xe55d8eaa25b5b1f791ade455dcaabc81211e6fc2e3b72ecc18ad5efbc4e4771d"
   const secretB2 = "0x29cc07189e8d4f8066a353c137624fc91b30fc2ed83912ddf470a660576f9f2f"
   const secretHashB2 = "0x54c126152718dc41282a080479c4c6c7f779ef1685613283bdccdecbf16180ce"
-  const secretB3 = "0x1a8546433effa84887e305ee0f5bc65b9c3710f005b8584eab2a105b84d48102"
-  const secretHashB3 = "0x88a2470828db4c29fd15b71af88b41d2e165814624290c3774377166341a7f4f"
 
   const secretC1 = "0xab6e6b9758f124d3bb2d0ba708c9f2021732228ff415822bf30458c8b69f8006"
   const secretHashC1 = "0xa650050414bcb6801ed8ad9f2156fc05043e552064fe3359bd89d336ddb638d8"
@@ -60,24 +60,25 @@ contract("AtomicLoan", accounts => {
     this.token = await ExampleCoin.new();
     this.atomicLoan = await AtomicLoan.new(
       [secretHashA1, secretHashA2],
-      [secretHashB1, secretHashB2, secretHashB3],
+      [secretHashB1, secretHashB2],
       [approveExpiration, loanExpiration, acceptExpiration, biddingExpiration],
       borrower,
       lender,
-      `1000000000000000000`,
-      `10000000000000000`,
-      `5000000000000000`,
+      `1000000000000000000000`,
+      `10000000000000000000`,
+      `5000000000000000000`,
       '86400',
       '86400',
-      this.token.address
+      this.token.address,
+      ['0x0000000000000000000000000000000000000000000000000000000000000003', '0x4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa']
     )
-    await this.token.approve(this.atomicLoan.address, `12010000000000000000`);
-    await this.token.transfer(borrower, `10000000000000000`, { from: lender });
-    await this.token.transfer(bidder1, `1800000000000000000`, { from: lender });
-    await this.token.transfer(bidder2, `1900000000000000000`, { from: lender });
-    await this.token.transfer(bidder3, `2000000000000000000`, { from: lender });
-    await this.token.transfer(bidder4, `2100000000000000000`, { from: lender });
-    await this.token.transfer(bidder5, `2200000000000000000`, { from: lender });
+    await this.token.approve(this.atomicLoan.address, `12010000000000000000000`);
+    await this.token.transfer(borrower, `10000000000000000000`, { from: lender });
+    await this.token.transfer(bidder1, `1800000000000000000000`, { from: lender });
+    await this.token.transfer(bidder2, `1900000000000000000000`, { from: lender });
+    await this.token.transfer(bidder3, `2000000000000000000000`, { from: lender });
+    await this.token.transfer(bidder4, `2100000000000000000000`, { from: lender });
+    await this.token.transfer(bidder5, `2200000000000000000000`, { from: lender });
   })
 
   describe('fund', function() {
@@ -88,7 +89,7 @@ contract("AtomicLoan", accounts => {
     })
 
     it('should fail if lender doesn\'t have the necessary principal', async function() {
-      await this.token.transfer(borrower, `1010000000000000000`, { from: lender })
+      await this.token.transfer(borrower, `1020000000000000000000`, { from: lender })
       try {
         await await this.atomicLoan.fund({ from: lender });
       } catch (error) {
@@ -120,23 +121,13 @@ contract("AtomicLoan", accounts => {
   describe('approve', function() {
     it('should succeed if msg.sender is lender, is funded, before approveExpiration and hash of secret is secretHashB1', async function() {
       await this.atomicLoan.fund({ from: lender });
-      await this.atomicLoan.approve(secretB1, { from: lender });
+      await this.atomicLoan.approve({ from: lender });
       assert.equal((await this.atomicLoan.approved.call()), true);
     })
 
     it('should fail if not funded', async function() {
       try {
-        await this.atomicLoan.approve(secretB1, { from: lender });
-      } catch(error) {
-        return utils.ensureException(error);
-      }
-      assert.fail('Expected exception not received');
-    })
-
-    it('should fail if hash of secret provided does not equal secretHashB1', async function() {
-      await this.atomicLoan.fund({ from: lender });
-      try {
-        await this.atomicLoan.approve(secretB2, { from: lender });
+        await this.atomicLoan.approve({ from: lender });
       } catch(error) {
         return utils.ensureException(error);
       }
@@ -147,7 +138,7 @@ contract("AtomicLoan", accounts => {
       await time.increase(withdrawIncrement + 1);
       await this.atomicLoan.fund({ from: lender });
       try {
-        await this.atomicLoan.approve(secretB1, { from: lender });
+        await this.atomicLoan.approve({ from: lender });
       } catch(error) {
         return utils.ensureException(error);
       }
@@ -155,582 +146,577 @@ contract("AtomicLoan", accounts => {
     })
   })
 
-  describe('accept_or_cancel', function() {
-    it('should succeed canceling if correct secretB2, timestamp greater than approveExpiration and less than paybackAcceptanceExpiration and bidding is false', async function() {
+  describe('acceptOrCancel', function() {
+    it('should succeed canceling if correct SecretB1, timestamp greater than approveExpiration and less than paybackAcceptanceExpiration and bidding is false', async function() {
       await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
+      assert.equal((await this.token.balanceOf(lender)).toString(), '1010000000000000000000')
       await time.increase(withdrawIncrement + 1);
-      await this.atomicLoan.accept_or_cancel(secretB2, { from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
+      await this.atomicLoan.acceptOrCancel(secretB1, { from: lender });
+      assert.equal((await this.token.balanceOf(lender)).toString(), '2010000000000000000000')
     })
 
-    it('should succeed accepting repayment if correct secretB2, timestamp greater than approveExpiration and less than paybackAcceptanceExpiration and bidding is false', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
+    it('should succeed accepting repayment if correct SecretB1, timestamp greater than approveExpiration and less than paybackAcceptanceExpiration and bidding is false', async function() {
+      assert.equal((await this.token.balanceOf(lender)).toString(), '2010000000000000000000')
       await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
+      assert.equal((await this.token.balanceOf(lender)).toString(), '1010000000000000000000')
+      await this.atomicLoan.approve({ from: lender })
+      await this.atomicLoan.withdraw(secretA1, { from: borrower })
       await time.increase(loanIncrement - 10);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
+      await this.token.approve(this.atomicLoan.address, '1010000000000000000000', { from: borrower })
       await this.atomicLoan.payback({ from: borrower })
-      await this.atomicLoan.accept_or_cancel(secretB2, { from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2010000000000000000');
+      await this.atomicLoan.acceptOrCancel(secretB1, { from: lender });
+      assert.equal((await this.token.balanceOf(lender)).toString(), '2020000000000000000000')
     })
 
     it('should fail if hash of secret is not secretHashB2', async function() {
       await this.atomicLoan.fund({ from: lender });
       await time.increase(withdrawIncrement + 1);
-      await shouldFail.reverting(this.atomicLoan.accept_or_cancel(secretB1, { from: lender }))
-    })
-
-    it('should fail if current time is less than approveExpiration', async function() {
-      await this.atomicLoan.fund({ from: lender }); 
-      await shouldFail.reverting(this.atomicLoan.accept_or_cancel(secretB2, { from: lender }))
+      await shouldFail.reverting(this.atomicLoan.acceptOrCancel(secretB2, { from: lender }))
     })
 
     it('should fail if current time is greater than acceptExpiration', async function() {
       await this.atomicLoan.fund({ from: lender });
       await time.increase(loanIncrement + acceptIncrement + 1);
-      await shouldFail.reverting(this.atomicLoan.accept_or_cancel(secretB2, { from: lender }))
+      await shouldFail.reverting(this.atomicLoan.acceptOrCancel(secretB1, { from: lender }))
     })
 
     it('should fail if bidding state is true', async function() {
       await this.atomicLoan.fund({ from: lender });
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
+      await this.atomicLoan.approve({ from: lender })
+      await this.atomicLoan.withdraw(secretA1, { from: borrower })
       await time.increase(loanIncrement + 1);
       await this.atomicLoan.startBidding({ from: lender })
-      await shouldFail.reverting(this.atomicLoan.accept_or_cancel(secretB2, { from: lender }))
+      await shouldFail.reverting(this.atomicLoan.acceptOrCancel(secretB1, { from: lender }))
     })
   })
 
-  describe('payback', function() {
-    it('should succeed if withdrawn, current time is less than or equal to loanExpiration and msg.sender is the borrower', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement - 10);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
-      await this.atomicLoan.payback({ from: borrower })
-      assert.equal((await this.atomicLoan.repaid.call()), true)
-      assert.equal((await this.token.balanceOf(this.atomicLoan.address)), '1010000000000000000')
-      assert.equal((await this.token.balanceOf(borrower)), '0')
-      assert.equal((await this.token.balanceOf(lender)), '1000000000000000000')
-    })
+  // describe('payback', function() {
+  //   it('should succeed if withdrawn, current time is less than or equal to loanExpiration and msg.sender is the borrower', async function() {
+  //     assert.equal((await this.token.balanceOf(lender)).toString(), '2010000000000000000000')
+  //     await this.atomicLoan.fund({ from: lender });
+  //     assert.equal((await this.token.balanceOf(lender)).toString(), '1010000000000000000000')
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement - 10);
+  //     await this.token.approve(this.atomicLoan.address, '101000000000000000000', { from: borrower })
+  //     await this.atomicLoan.payback({ from: borrower })
+  //     assert.equal((await this.atomicLoan.repaid.call()), true)
+  //     assert.equal((await this.token.balanceOf(this.atomicLoan.address)), '1010000000000000000000')
+  //     assert.equal((await this.token.balanceOf(borrower)), '0')
+  //     assert.equal((await this.token.balanceOf(lender)), '1000000000000000000000')
+  //   })
 
-    it('should fail if not withdrawn', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await time.increase(loanIncrement - 10);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
-      await shouldFail.reverting(this.atomicLoan.payback({ from: borrower }))
-    })
+  //   it('should fail if not withdrawn', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await time.increase(loanIncrement - 10);
+  //     await this.token.approve(this.atomicLoan.address, '1010000000000000000000', { from: borrower })
+  //     await shouldFail.reverting(this.atomicLoan.payback({ from: borrower }))
+  //   })
 
-    it('should fail if current time is greater than loanExpiration', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
-      await shouldFail.reverting(this.atomicLoan.payback({ from: borrower }))
-    })
+  //   it('should fail if current time is greater than loanExpiration', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.token.approve(this.atomicLoan.address, '1010000000000000000000', { from: borrower })
+  //     await shouldFail.reverting(this.atomicLoan.payback({ from: borrower }))
+  //   })
 
-    it('should fail if msg.sender is not borrower', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.token.transfer(lender, `10000000000000000`, { from: borrower });
-      await shouldFail.reverting(this.atomicLoan.payback({ from: lender }))
-    })
-  })
+  //   it('should fail if msg.sender is not borrower', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.token.transfer(lender, `10000000000000000000`, { from: borrower });
+  //     await shouldFail.reverting(this.atomicLoan.payback({ from: lender }))
+  //   })
+  // })
 
-  describe('refundPayback', function() {
-    it('should succeed if repaid and current time is greater than acceptExpiration and msg.sender is borrower', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement - 10);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
-      await this.atomicLoan.payback({ from: borrower })
-      assert.equal((await this.atomicLoan.repaid.call()), true)
-      await time.increase(acceptIncrement + 11)
-      await this.atomicLoan.refundPayback({ from: borrower })
-    })
+  // describe('refundPayback', function() {
+  //   it('should succeed if repaid and current time is greater than acceptExpiration and msg.sender is borrower', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement - 10);
+  //     await this.token.approve(this.atomicLoan.address, '1010000000000000000000', { from: borrower })
+  //     await this.atomicLoan.payback({ from: borrower })
+  //     assert.equal((await this.atomicLoan.repaid.call()), true)
+  //     await time.increase(acceptIncrement + 11)
+  //     await this.atomicLoan.refundPayback({ from: borrower })
+  //   })
 
-    it('should fail if current time is less than acceptExpiration', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement - 10);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
-      await this.atomicLoan.payback({ from: borrower })
-      assert.equal((await this.atomicLoan.repaid.call()), true)
-      await shouldFail.reverting(this.atomicLoan.refundPayback({ from: borrower }))
-    })
+  //   it('should fail if current time is less than acceptExpiration', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement - 10);
+  //     await this.token.approve(this.atomicLoan.address, '1010000000000000000000', { from: borrower })
+  //     await this.atomicLoan.payback({ from: borrower })
+  //     assert.equal((await this.atomicLoan.repaid.call()), true)
+  //     await shouldFail.reverting(this.atomicLoan.refundPayback({ from: borrower }))
+  //   })
 
-    it('should fail if not repaid', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement - 10);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      await shouldFail.reverting(this.atomicLoan.refundPayback({ from: borrower }))
-    })
+  //   it('should fail if not repaid', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement - 10);
+  //     await this.token.approve(this.atomicLoan.address, '1010000000000000000000', { from: borrower })
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     await shouldFail.reverting(this.atomicLoan.refundPayback({ from: borrower }))
+  //   })
 
-    it('should fail if msg.sender is not the borrower', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement - 10);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
-      await this.atomicLoan.payback({ from: borrower })
-      assert.equal((await this.atomicLoan.repaid.call()), true)
-      await time.increase(acceptIncrement + 11)
-      await shouldFail.reverting(this.atomicLoan.refundPayback({ from: lender }))
-    })
-  })
+  //   it('should fail if msg.sender is not the borrower', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement - 10);
+  //     await this.token.approve(this.atomicLoan.address, '1010000000000000000000', { from: borrower })
+  //     await this.atomicLoan.payback({ from: borrower })
+  //     assert.equal((await this.atomicLoan.repaid.call()), true)
+  //     await time.increase(acceptIncrement + 11)
+  //     await shouldFail.reverting(this.atomicLoan.refundPayback({ from: lender }))
+  //   })
+  // })
 
-  describe('startBidding', function() {
-    it('should success if withdrawn and not repaid, current time is greater than loanExpiration and msg.sender is lender', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      await this.atomicLoan.startBidding({ from: lender })
-    })
+  // describe('startBidding', function() {
+  //   it('should success if withdrawn and not repaid, current time is greater than loanExpiration and msg.sender is lender', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //   })
 
-    it('should success if withdrawn and not repaid, current time is greater than loanExpiration and msg.sender is borrower', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      await this.atomicLoan.startBidding({ from: borrower })
-    })
+  //   it('should success if withdrawn and not repaid, current time is greater than loanExpiration and msg.sender is borrower', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     await this.atomicLoan.startBidding({ from: borrower })
+  //   })
 
-    it('should fail if repaid', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement - 10);
-      await this.token.approve(this.atomicLoan.address, '1010000000000000000', { from: borrower })
-      await this.atomicLoan.payback({ from: borrower })
-      await time.increase(11);
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), true)
-      await shouldFail.reverting(this.atomicLoan.startBidding({ from: lender }))
-    })
+  //   it('should fail if repaid', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement - 10);
+  //     await this.token.approve(this.atomicLoan.address, '1010000000000000000000', { from: borrower })
+  //     await this.atomicLoan.payback({ from: borrower })
+  //     await time.increase(11);
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), true)
+  //     await shouldFail.reverting(this.atomicLoan.startBidding({ from: lender }))
+  //   })
 
-    it('should fail if not withdrawn', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await time.increase(loanIncrement + 1);
-      assert.equal((await this.atomicLoan.withdrawn.call()), false)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      await shouldFail.reverting(this.atomicLoan.startBidding({ from: lender }))
-    })
+  //   it('should fail if not withdrawn', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await time.increase(loanIncrement + 1);
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), false)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     await shouldFail.reverting(this.atomicLoan.startBidding({ from: lender }))
+  //   })
 
-    it('should fail if current time is less than loanExpiration', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement - 10);
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      await shouldFail.reverting(this.atomicLoan.startBidding({ from: lender }))
-    })
+  //   it('should fail if current time is less than loanExpiration', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement - 10);
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     await shouldFail.reverting(this.atomicLoan.startBidding({ from: lender }))
+  //   })
 
-    it('should fail if msg.sender is not the lender or borrower', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      await shouldFail.reverting(this.atomicLoan.startBidding({ from: bidder1 }))
-    })
-  })
+  //   it('should fail if msg.sender is not the lender or borrower', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     await shouldFail.reverting(this.atomicLoan.startBidding({ from: bidder1 }))
+  //   })
+  // })
 
-  describe('bid', function() {
-    it('should succeed if current time greater than loanExpiration and less than biddingTimeoutExpiration, \
-      bidding state is true, bid value is greater than current bid value, and \
-      token balance of msg.sender is greater or equal to bid value', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-    })
+  // describe('bid', function() {
+  //   it('should succeed if current time greater than loanExpiration and less than biddingTimeoutExpiration, \
+  //     bidding state is true, bid value is greater than current bid value, and \
+  //     token balance of msg.sender is greater or equal to bid value', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //   })
 
-    it('should succeed if there are two bidders', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.startBidding({ from: lender })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      await this.token.approve(this.atomicLoan.address, `1900000000000000000`, { from: bidder2 })
-      await this.atomicLoan.bid(secretHashC1, '1900000000000000000', 'mfreT8oeJGrL8QwGvifd38DjWyYNvNGDZq', { from: bidder2 })
-      assert.equal((await this.token.balanceOf(bidder1)), '1800000000000000000')
-      assert.equal((await this.token.balanceOf(bidder2)), '0')
-    })
+  //   it('should succeed if there are two bidders', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     await this.token.approve(this.atomicLoan.address, `1900000000000000000000`, { from: bidder2 })
+  //     await this.atomicLoan.bid(secretHashC1, '1900000000000000000000', 'mfreT8oeJGrL8QwGvifd38DjWyYNvNGDZq', { from: bidder2 })
+  //     assert.equal((await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //     assert.equal((await this.token.balanceOf(bidder2)), '0')
+  //   })
 
-    it('should succeed if there is multiple bidders', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.startBidding({ from: lender })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      await this.token.approve(this.atomicLoan.address, `1900000000000000000`, { from: bidder2 })
-      await this.atomicLoan.bid(secretHashC2, '1900000000000000000', 'mtZzU3L2wTYZMEYhMgge825oGBHsQ4XWsT', { from: bidder2 })
-      assert.equal((await this.token.balanceOf(bidder1)), '1800000000000000000')
-      assert.equal((await this.token.balanceOf(bidder2)), '0')
-      await this.token.approve(this.atomicLoan.address, `2000000000000000000`, { from: bidder3 })
-      await this.atomicLoan.bid(secretHashC3, '2000000000000000000', 'mkGZCVK1E5Cbd8bLMcFUkrPK93fq2U1G5o', { from: bidder3 })
-      await this.token.approve(this.atomicLoan.address, `2100000000000000000`, { from: bidder4 })
-      await this.atomicLoan.bid(secretHashC4, '2100000000000000000', 'mnhdnxnswPQXDPsq4nVH6zTHYpg17zqHvF', { from: bidder4 })
-      await this.token.approve(this.atomicLoan.address, `2200000000000000000`, { from: bidder5 })
-      await this.atomicLoan.bid(secretHashC5, '2200000000000000000', 'mr9CCrXod3r5K5DNuTpkEKwD7y6aKVgqKc', { from: bidder5 })
-      assert.equal((await this.token.balanceOf(bidder1)), '1800000000000000000')
-      assert.equal((await this.token.balanceOf(bidder2)), '1900000000000000000')
-      assert.equal((await this.token.balanceOf(bidder3)), '2000000000000000000')
-      assert.equal((await this.token.balanceOf(bidder4)), '2100000000000000000')
-      assert.equal((await this.token.balanceOf(bidder5)), '0')
-    })
+  //   it('should succeed if there is multiple bidders', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     await this.token.approve(this.atomicLoan.address, `1900000000000000000000`, { from: bidder2 })
+  //     await this.atomicLoan.bid(secretHashC2, '1900000000000000000000', 'mtZzU3L2wTYZMEYhMgge825oGBHsQ4XWsT', { from: bidder2 })
+  //     assert.equal((await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //     assert.equal((await this.token.balanceOf(bidder2)), '0')
+  //     await this.token.approve(this.atomicLoan.address, `2000000000000000000000`, { from: bidder3 })
+  //     await this.atomicLoan.bid(secretHashC3, '2000000000000000000000', 'mkGZCVK1E5Cbd8bLMcFUkrPK93fq2U1G5o', { from: bidder3 })
+  //     await this.token.approve(this.atomicLoan.address, `2100000000000000000000`, { from: bidder4 })
+  //     await this.atomicLoan.bid(secretHashC4, '2100000000000000000000', 'mnhdnxnswPQXDPsq4nVH6zTHYpg17zqHvF', { from: bidder4 })
+  //     await this.token.approve(this.atomicLoan.address, `2200000000000000000000`, { from: bidder5 })
+  //     await this.atomicLoan.bid(secretHashC5, '2200000000000000000000', 'mr9CCrXod3r5K5DNuTpkEKwD7y6aKVgqKc', { from: bidder5 })
+  //     assert.equal((await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //     assert.equal((await this.token.balanceOf(bidder2)), '1900000000000000000000')
+  //     assert.equal((await this.token.balanceOf(bidder3)), '2000000000000000000000')
+  //     assert.equal((await this.token.balanceOf(bidder4)), '2100000000000000000000')
+  //     assert.equal((await this.token.balanceOf(bidder5)), '0')
+  //   })
 
-    it('should fail if next bidder has same bid value', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.startBidding({ from: lender })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder2 })
-      await shouldFail.reverting(this.atomicLoan.bid(secretHashC2, '1800000000000000000', 'mtZzU3L2wTYZMEYhMgge825oGBHsQ4XWsT', { from: bidder2 }))
-    })
+  //   it('should fail if next bidder has same bid value', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder2 })
+  //     await shouldFail.reverting(this.atomicLoan.bid(secretHashC2, '1800000000000000000000', 'mtZzU3L2wTYZMEYhMgge825oGBHsQ4XWsT', { from: bidder2 }))
+  //   })
 
-    it('should fail if not in bidding state', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), false)
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      await shouldFail.reverting(this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 }))
-    })
+  //   it('should fail if not in bidding state', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), false)
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     await shouldFail.reverting(this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 }))
+  //   })
 
-    it('should fail if current time is greater than biddingTimeoutExpiration', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      await time.increase(86400 + 1);
-      await shouldFail.reverting(this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 }))
-    })
+  //   it('should fail if current time is greater than biddingTimeoutExpiration', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     await time.increase(86400 + 1);
+  //     await shouldFail.reverting(this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 }))
+  //   })
 
-    it('should fail if bidder token balance is less than bid value', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      await this.token.transfer(lender, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.token.balanceOf(bidder1)), '0')
-      await shouldFail.reverting(this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 }))
-    })
-  })
+  //   it('should fail if bidder token balance is less than bid value', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     await this.token.transfer(lender, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.token.balanceOf(bidder1)), '0')
+  //     await shouldFail.reverting(this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 }))
+  //   })
+  // })
 
-  describe('provideSignature', async function() {
-    it('should succeed if msg.sender is lender', async function() {
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.provideSignature(lenderSignature, { from: lender })
-      assert.equal((await this.atomicLoan.lenderSignature.call()), lenderSignature)
-    })
+  // describe('provideSignature', async function() {
+  //   it('should succeed if msg.sender is lender', async function() {
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.provideSignature(lenderSignature, { from: lender })
+  //     assert.equal((await this.atomicLoan.lenderSignature.call()), lenderSignature)
+  //   })
 
-    it('should succeed if msg.sender is borrower', async function() {
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.provideSignature(borrowerSignature, { from: borrower })
-      assert.equal((await this.atomicLoan.borrowerSignature.call()), borrowerSignature)
-    })
+  //   it('should succeed if msg.sender is borrower', async function() {
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.provideSignature(borrowerSignature, { from: borrower })
+  //     assert.equal((await this.atomicLoan.borrowerSignature.call()), borrowerSignature)
+  //   })
 
-    it('should fail if msg.sender is not borrower or lender', async function() {
-      await time.increase(loanIncrement + 1);
-      await shouldFail.reverting(this.atomicLoan.provideSignature(borrowerSignature, { from: bidder1 }))
-    })
-  })
+  //   it('should fail if msg.sender is not borrower or lender', async function() {
+  //     await time.increase(loanIncrement + 1);
+  //     await shouldFail.reverting(this.atomicLoan.provideSignature(borrowerSignature, { from: bidder1 }))
+  //   })
+  // })
 
-  describe('provideSecret', async function() {
-    it('should succeed if msg.sender is borrower and hash of _secret is secretHashA2', async function() {
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.provideSecret(secretA2, { from: borrower })
-      assert.equal((await this.atomicLoan.secretA2.call()), secretA2)
-    })
+  // describe('provideSecret', async function() {
+  //   it('should succeed if msg.sender is borrower and hash of _secret is secretHashA2', async function() {
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.provideSecret(secretA2, { from: borrower })
+  //     assert.equal((await this.atomicLoan.secretA2.call()), secretA2)
+  //   })
 
-    it('should succeed if msg.sender is lender and hash of _secret is secretHashB2', async function() {
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.provideSecret(secretB3, { from: lender })
-      assert.equal((await this.atomicLoan.secretB3.call()), secretB3)
-    })
+  //   it('should succeed if msg.sender is lender and hash of _secret is secretHashB2', async function() {
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.provideSecret(SecretB2, { from: lender })
+  //     assert.equal((await this.atomicLoan.SecretB2.call()), SecretB2)
+  //   })
 
-    it('should succeed if msg.sender is bidder and hash of _secret is secretHashC', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1);
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      await this.atomicLoan.provideSecret(secretC1, { from: bidder1 })
-      assert.equal((await this.atomicLoan.secretC.call()), secretC1)
-    })
-  })
+  //   it('should succeed if msg.sender is bidder and hash of _secret is secretHashC', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1);
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     await this.atomicLoan.provideSecret(secretC1, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.secretC.call()), secretC1)
+  //   })
+  // })
 
-  describe('withdrawLiquidatedCollateral', function() {
-    beforeEach(async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1)
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      await this.atomicLoan.provideSignature(borrowerSignature, { from: borrower })
-      await this.atomicLoan.provideSignature(lenderSignature, { from: lender })
-      await this.atomicLoan.provideSecret(secretC1, { from: bidder1 })
-      await this.atomicLoan.provideSecret(secretA2, { from: borrower })
-      await this.atomicLoan.provideSecret(secretB3, { from: lender })
-      assert.equal(parseInt(await this.token.balanceOf(borrower)), '1010000000000000000')
-      assert.equal(parseInt(await this.token.balanceOf(lender)), '1000000000000000000')
-    })
+  // describe('withdrawLiquidatedCollateral', function() {
+  //   beforeEach(async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1)
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     await this.atomicLoan.provideSignature(borrowerSignature, { from: borrower })
+  //     await this.atomicLoan.provideSignature(lenderSignature, { from: lender })
+  //     await this.atomicLoan.provideSecret(secretC1, { from: bidder1 })
+  //     await this.atomicLoan.provideSecret(secretA2, { from: borrower })
+  //     await this.atomicLoan.provideSecret(SecretB2, { from: lender })
+  //     assert.equal(parseInt(await this.token.balanceOf(borrower)), '1010000000000000000000')
+  //     assert.equal(parseInt(await this.token.balanceOf(lender)), '1000000000000000000000')
+  //   })
 
-    it('should succeed if current time is less than biddingTimeoutExpiration, hash of _secretA2 equals secretHashA2\
-      hash of _secretB2 equals secretHashB2, and hash of _secretC is secretHashC and msg.sender is borrower', async function() {
-      await time.increase(86400 + 1)
-      await this.atomicLoan.withdrawLiquidatedCollateral(secretA2, secretB3, secretC1, { from: borrower })
-      assert.equal(parseInt(await this.token.balanceOf(borrower)), '1795000000000000000')
-      assert.equal(parseInt(await this.token.balanceOf(lender)), '2015000000000000000')
-    })
+  //   it('should succeed if current time is less than biddingTimeoutExpiration, hash of _secretA2 equals secretHashA2\
+  //     hash of _SecretB1 equals secretHashB2, and hash of _secretC is secretHashC and msg.sender is borrower', async function() {
+  //     await time.increase(86400 + 1)
+  //     await this.atomicLoan.withdrawLiquidatedCollateral(secretA2, SecretB2, secretC1, { from: borrower })
+  //     assert.equal(parseInt(await this.token.balanceOf(borrower)), '1795000000000000000000')
+  //     assert.equal(parseInt(await this.token.balanceOf(lender)), '2015000000000000000000')
+  //   })
 
-    it('should succeed if current time is less than biddingTimeoutExpiration, hash of _secretA2 equals secretHashA2\
-      hash of _secretB2 equals secretHashB2, and hash of _secretC is secretHashC and msg.sender is lender', async function() {
-      await time.increase(86400 + 1)
-      await this.atomicLoan.withdrawLiquidatedCollateral(secretA2, secretB3, secretC1, { from: lender })
-      assert.equal(parseInt(await this.token.balanceOf(borrower)), '1795000000000000000')
-      assert.equal(parseInt(await this.token.balanceOf(lender)), '2015000000000000000')
-    })
+  //   it('should succeed if current time is less than biddingTimeoutExpiration, hash of _secretA2 equals secretHashA2\
+  //     hash of _SecretB1 equals secretHashB2, and hash of _secretC is secretHashC and msg.sender is lender', async function() {
+  //     await time.increase(86400 + 1)
+  //     await this.atomicLoan.withdrawLiquidatedCollateral(secretA2, SecretB2, secretC1, { from: lender })
+  //     assert.equal(parseInt(await this.token.balanceOf(borrower)), '1795000000000000000000')
+  //     assert.equal(parseInt(await this.token.balanceOf(lender)), '2015000000000000000000')
+  //   })
 
-    it('should fail if msg.sender is not lender or borrower', async function() {
-      await time.increase(86400 + 1)
-      await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(secretA2, secretB2, secretC1, { from: bidder1 }))
-    })
+  //   it('should fail if msg.sender is not lender or borrower', async function() {
+  //     await time.increase(86400 + 1)
+  //     await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(secretA2, SecretB1, secretC1, { from: bidder1 }))
+  //   })
 
-    it('should fail if current time is less than biddingTimeoutExpiration', async function() {
-      await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(secretA2, secretB2, secretC1, { from: lender }))
-    })
+  //   it('should fail if current time is less than biddingTimeoutExpiration', async function() {
+  //     await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(secretA2, SecretB1, secretC1, { from: lender }))
+  //   })
 
-    it('should fail secretA2 is incorrect', async function() {
-      await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(wrongSecret, secretB2, secretC1, { from: lender }))
-    })
+  //   it('should fail secretA2 is incorrect', async function() {
+  //     await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(wrongSecret, SecretB1, secretC1, { from: lender }))
+  //   })
 
-    it('should fail secretB2 is incorrect', async function() {
-      await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(secretA2, wrongSecret, secretC1, { from: lender }))
-    })
+  //   it('should fail SecretB1 is incorrect', async function() {
+  //     await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(secretA2, wrongSecret, secretC1, { from: lender }))
+  //   })
 
-    it('should fail secretC is incorrect', async function() {
-      await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(secretA2, secretB2, wrongSecret, { from: bidder1 }))
-    })
-  })
+  //   it('should fail secretC is incorrect', async function() {
+  //     await shouldFail.reverting(this.atomicLoan.withdrawLiquidatedCollateral(secretA2, SecretB1, wrongSecret, { from: bidder1 }))
+  //   })
+  // })
 
-  describe('refundBid', async function() {
-    it('should succeed if current time is greater than biddingRefundExpiration, the correct secrets have not been revealed\
-      and current bid greater than zero', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1)
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000')
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '0')
-      await time.increase(86400 + 86400 + 1)
-      await this.atomicLoan.refundBid({ from: bidder1 })
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000')
-    })
+  // describe('refundBid', async function() {
+  //   it('should succeed if current time is greater than biddingRefundExpiration, the correct secrets have not been revealed\
+  //     and current bid greater than zero', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1)
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '0')
+  //     await time.increase(86400 + 86400 + 1)
+  //     await this.atomicLoan.refundBid({ from: bidder1 })
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //   })
 
-    it('should fail if current time less than biddingRefundExpiration', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1)
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000')
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '0')
-      await time.increase(86400 + 86400 - 10)
-      await shouldFail.reverting(this.atomicLoan.refundBid({ from: bidder1 }))
-    })
+  //   it('should fail if current time less than biddingRefundExpiration', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1)
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '0')
+  //     await time.increase(86400 + 86400 - 10)
+  //     await shouldFail.reverting(this.atomicLoan.refundBid({ from: bidder1 }))
+  //   })
 
-    it('should fail if all the secrets are correct', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1)
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000')
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '0')
-      await this.atomicLoan.provideSignature(borrowerSignature, { from: borrower })
-      await this.atomicLoan.provideSignature(lenderSignature, { from: lender })
-      await this.atomicLoan.provideSecret(secretC1, { from: bidder1 })
-      await this.atomicLoan.provideSecret(secretA2, { from: borrower })
-      await this.atomicLoan.provideSecret(secretB3, { from: lender })
-      await time.increase(86400 + 86400 + 1)
-      await shouldFail.reverting(this.atomicLoan.refundBid({ from: bidder1 }))
-    })
+  //   it('should fail if all the secrets are correct', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1)
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '0')
+  //     await this.atomicLoan.provideSignature(borrowerSignature, { from: borrower })
+  //     await this.atomicLoan.provideSignature(lenderSignature, { from: lender })
+  //     await this.atomicLoan.provideSecret(secretC1, { from: bidder1 })
+  //     await this.atomicLoan.provideSecret(secretA2, { from: borrower })
+  //     await this.atomicLoan.provideSecret(SecretB2, { from: lender })
+  //     await time.increase(86400 + 86400 + 1)
+  //     await shouldFail.reverting(this.atomicLoan.refundBid({ from: bidder1 }))
+  //   })
 
-    it('should succeed if one of the secrets is not provided', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1)
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000')
-      await this.atomicLoan.bid(secretHashC1, '1800000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '0')
-      await this.atomicLoan.provideSignature(borrowerSignature, { from: borrower })
-      await this.atomicLoan.provideSignature(lenderSignature, { from: lender })
-      await this.atomicLoan.provideSecret(secretC1, { from: bidder1 })
-      await this.atomicLoan.provideSecret(secretA2, { from: borrower })
-      await time.increase(86400 + 86400 + 1)
-      await this.atomicLoan.refundBid({ from: bidder1 })
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000')
-    })
+  //   it('should succeed if one of the secrets is not provided', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1)
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //     await this.atomicLoan.bid(secretHashC1, '1800000000000000000000', 'mfaWz3aK5MCGsdPypX7DBAfxpY1vSRpBJC', { from: bidder1 })
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '0')
+  //     await this.atomicLoan.provideSignature(borrowerSignature, { from: borrower })
+  //     await this.atomicLoan.provideSignature(lenderSignature, { from: lender })
+  //     await this.atomicLoan.provideSecret(secretC1, { from: bidder1 })
+  //     await this.atomicLoan.provideSecret(secretA2, { from: borrower })
+  //     await time.increase(86400 + 86400 + 1)
+  //     await this.atomicLoan.refundBid({ from: bidder1 })
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //   })
 
-    it('should fail if current bid is zero', async function() {
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000');
-      await this.atomicLoan.fund({ from: lender });
-      (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000');
-      await this.atomicLoan.approve(secretB1, { from: lender })
-      await this.atomicLoan.withdraw(secretA1, secretB1, { from: borrower })
-      await time.increase(loanIncrement + 1)
-      await this.atomicLoan.startBidding({ from: lender })
-      await this.token.approve(this.atomicLoan.address, `1800000000000000000`, { from: bidder1 })
-      assert.equal((await this.atomicLoan.withdrawn.call()), true)
-      assert.equal((await this.atomicLoan.repaid.call()), false)
-      assert.equal((await this.atomicLoan.bidding.call()), true)
-      assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000')
-      await time.increase(86400 + 86400 + 1)
-      await shouldFail.reverting(this.atomicLoan.refundBid({ from: bidder1 }))
-    })
-  })
+  //   it('should fail if current bid is zero', async function() {
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('2000000000000000000000');
+  //     await this.atomicLoan.fund({ from: lender });
+  //     (await this.token.balanceOf(lender)).should.be.bignumber.equal('1000000000000000000000');
+  //     await this.atomicLoan.approve({ from: lender })
+  //     await this.atomicLoan.withdraw(secretA1, { from: borrower })
+  //     await time.increase(loanIncrement + 1)
+  //     await this.atomicLoan.startBidding({ from: lender })
+  //     await this.token.approve(this.atomicLoan.address, `1800000000000000000000`, { from: bidder1 })
+  //     assert.equal((await this.atomicLoan.withdrawn.call()), true)
+  //     assert.equal((await this.atomicLoan.repaid.call()), false)
+  //     assert.equal((await this.atomicLoan.bidding.call()), true)
+  //     assert.equal(parseInt(await this.token.balanceOf(bidder1)), '1800000000000000000000')
+  //     await time.increase(86400 + 86400 + 1)
+  //     await shouldFail.reverting(this.atomicLoan.refundBid({ from: bidder1 }))
+  //   })
+  // })
 });

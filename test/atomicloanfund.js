@@ -1,6 +1,6 @@
 const { time, shouldFail, balance } = require('openzeppelin-test-helpers');
 
-const ExampleCoin = artifacts.require("./ExampleCoin.sol");
+const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 const AtomicLoanFund = artifacts.require("./AtomicLoanFund.sol");
 const AtomicLoan = artifacts.require("./AtomicLoan.sol");
 
@@ -86,7 +86,10 @@ contract("AtomicLoanFund", accounts => {
       1209600,
       7990868,
       3995434,
-      this.token.address
+      this.token.address,
+      '0x0000000000000000000000000000000000000000000000000000000000000003',
+      '0x4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa',
+      150000000
     )
     await this.token.approve(this.atomicLoanFund.address, `12010000000000000000`, { from: lender });
     await this.token.transfer(borrower1, `10000000000000000`, { from: lender });
@@ -99,36 +102,17 @@ contract("AtomicLoanFund", accounts => {
 
   describe('fund', function() {
     it('should succeed if msg.sender is lender and has necesary principal', async function() {
-      await this.atomicLoanFund.fund('1000000000000000000', { from: lender });
+      await this.token.transfer(this.atomicLoanFund.address, '1000000000000000000', { from: lender })
       const liquidityPoolBalance = await this.token.balanceOf(this.atomicLoanFund.address);
       assert.equal(liquidityPoolBalance, '1000000000000000000');
-    })
-
-    it('should fail if lender doesn\'t have the necessary principal', async function() {
-      await this.token.transfer(borrower1, `1010000000000000000`, { from: lender })
-      try {
-        await await this.atomicLoanFund.fund('1000000000000000000', { from: lender });
-      } catch (error) {
-        return utils.ensureException(error);
-      }
-      assert.fail('Expected exception not received');
-    })
-
-    it('should fail msg.sender is not the lender', async function() {
-      try {
-        await this.atomicLoanFund.fund('1000000000000000000', { from: borrower1 });
-      } catch (error) {
-        return utils.ensureException(error);
-      }
-      assert.fail('Expected exception not received');
     })
   })
 
   describe('requestLoan', function() {
     it('should succeed if amount is less than maxLoanAmount and secretHashesA are provided and loanDuration is between max/min LoanDuration', async function() {
-      await this.atomicLoanFund.fund('1000000000000000000', { from: lender })
+      await this.token.transfer(this.atomicLoanFund.address, '1000000000000000000', { from: lender })
       assert.equal((await this.token.balanceOf(this.atomicLoanFund.address)),'1000000000000000000')
-      await this.atomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 604800, { from: borrower1 })
+      await this.atomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 604800, ['0x0000000000000000000000000000000000000000000000000000000000000003', '0x4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'], { from: borrower1 })
       const atomicLoanAddress = await this.atomicLoanFund.atomicLoanContracts.call(0)
       const atomicLoan = await AtomicLoan.at(atomicLoanAddress)
       const funded = await atomicLoan.funded.call()
@@ -136,31 +120,31 @@ contract("AtomicLoanFund", accounts => {
     })
 
     it('should fail if amount is greater than maxLoanAmount', async function() {
-      await this.atomicLoanFund.fund('1000000000000000000', { from: lender });
-      await shouldFail.reverting(this.atomicLoanFund.requestLoan('1000000000000000000', [ secretHashA1_1, secretHashA2_1 ], 604800, { from: borrower1 }))
+      await this.token.transfer(this.atomicLoanFund.address, '1000000000000000000', { from: lender })
+      await shouldFail.reverting(this.atomicLoanFund.requestLoan('1000000000000000000', [ secretHashA1_1, secretHashA2_1 ], 604800, ['0x0000000000000000000000000000000000000000000000000000000000000003', '0x4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'], { from: borrower1 }))
     })
 
     it('should fail if loanDuration is greater than maxLoanDuration', async function() {
-      await this.atomicLoanFund.fund('1000000000000000000', { from: lender });
-      await shouldFail.reverting(this.atomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 2419200, { from: borrower1 }))
+      await this.token.transfer(this.atomicLoanFund.address, '1000000000000000000', { from: lender })
+      await shouldFail.reverting(this.atomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 2419200, ['0x0000000000000000000000000000000000000000000000000000000000000003', '0x4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'], { from: borrower1 }))
     })
 
     it('should fail if loanDuration is less than minLoanDuration', async function() {
-      await this.atomicLoanFund.fund('1000000000000000000', { from: lender });
-      await shouldFail.reverting(this.atomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 86399, { from: borrower1 }))
+      await this.token.transfer(this.atomicLoanFund.address, '1000000000000000000', { from: lender })
+      await shouldFail.reverting(this.atomicLoanFund.requestLoan('500000000000000000', [ secretHashA1_1, secretHashA2_1 ], 86399, ['0x0000000000000000000000000000000000000000000000000000000000000003', '0x4f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'], { from: borrower1 }))
     })
   })
 
-  describe('widthdraw', function() {
+  describe('withdraw', function() {
     it('should succeed if msg.sender is the lender', async function() {
-      await this.atomicLoanFund.fund('1000000000000000000', { from: lender })
+      await this.token.transfer(this.atomicLoanFund.address, '1000000000000000000', { from: lender })
       assert.equal((await this.token.balanceOf(this.atomicLoanFund.address)),'1000000000000000000')
       await this.atomicLoanFund.withdraw('1000000000000000000', { from: lender })
       assert.equal((await this.token.balanceOf(this.atomicLoanFund.address)),'0')
     })
 
     it('should fail if msg.sender is not lender', async function() {
-      await this.atomicLoanFund.fund('1000000000000000000', { from: lender })
+      await this.token.transfer(this.atomicLoanFund.address, '1000000000000000000', { from: lender })
       assert.equal((await this.token.balanceOf(this.atomicLoanFund.address)),'1000000000000000000')
       await shouldFail.reverting(this.atomicLoanFund.withdraw('1000000000000000000', { from: borrower1 }))
     })
