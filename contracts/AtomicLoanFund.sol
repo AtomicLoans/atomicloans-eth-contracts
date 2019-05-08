@@ -30,6 +30,11 @@ contract AtomicLoanFund {
 
     uint256 public collateralizationRatio;
 
+    event RequestLoan(
+        address indexed _atomicLoanAddress,
+        uint _amount
+    );
+
     constructor (
         bytes32[] memory _secretHashes,
         uint256 _maxLoanAmount,
@@ -87,7 +92,15 @@ contract AtomicLoanFund {
         token.approve(address(atomicLoan), _amount.add(loanInterest).add(loanLiquidationFee));
         atomicLoan.fund();
         counter = counter.add(1);
+        emit RequestLoan(address(atomicLoan), _amount);
         return address(atomicLoan);
+    }
+
+    function addSecretHashes (bytes32[] memory _secretHashes) public {
+        require(msg.sender == lender);
+        for (uint i = 0; i < _secretHashes.length; i++) {
+            secretHashes.push(_secretHashes[i]);
+        }
     }
 
     function withdraw (uint256 _amount) public {
