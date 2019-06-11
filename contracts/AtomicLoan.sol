@@ -3,12 +3,16 @@ import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 pragma solidity ^0.5.2;
 
+contract Medianizer {
+    function read() view public returns (bytes32);
+}
+
 contract AtomicLoan {
     using SafeMath for uint256;
 
-    address payable borrower;
-    address payable lender;
-    address bidder;
+    address payable public borrower;
+    address payable public lender;
+    address public bidder;
     
     bytes32 public secretHashA1;
     bytes32 public secretHashA2;
@@ -20,17 +24,19 @@ contract AtomicLoan {
     bytes32 public secretB2;
     bytes32 public secretC;
     
+    uint256 public createAt;
     uint256 public approveExpiration;
     uint256 public loanExpiration;
     uint256 public acceptExpiration;
     uint256 public biddingExpiration;
     
-    uint256 biddingTimeout;
-    uint256 biddingRefund;
+    uint256 public biddingTimeout;
+    uint256 public biddingRefund;
     
     uint256 public principal;
     uint256 public interest;
     uint256 public liquidationFee;
+    uint256 public collateral;
     
     bool public funded = false;
     bool public approved = false;
@@ -38,15 +44,15 @@ contract AtomicLoan {
     bool public bidding = false;
     bool public repaid = false;
     
-    uint256 currentBid = 0;
-    uint256 biddingTimeoutExpiration;
-    uint256 biddingRefundExpiration;
+    uint256 public currentBid = 0;
+    uint256 public biddingTimeoutExpiration;
+    uint256 public biddingRefundExpiration;
     
-    bytes32[3] public borrowerSignature;
-    bytes32[3] public lenderSignature;
+    bytes32[3] public borrowerRefundableSignature;
+    bytes32[3] public borrowerSeizableSignature;
+    bytes32[3] public lenderRefundableSignature;
+    bytes32[3] public lenderSeizableSignature;
     
-    bool liquidatedCollateralWidthdrawn = false;
-
     bytes32 public aCoinPubKeyHash;
 
     bytes32 public aCoinPubKeyPrefix;
@@ -54,38 +60,57 @@ contract AtomicLoan {
 
     ERC20 public token;
 
+    Medianizer public medianizer;
+
+    uint256 public minColRatio;
+    uint256 public amountPaidBack = 0;
+
     constructor (
         bytes32[2] memory _secretHashesA,
         bytes32[2] memory _secretHashesB,
-        uint256[4] memory _expirations,
+        uint256[5] memory _expirations,
         address payable _borrower,
         address payable _lender,
         uint256 _principal,
         uint256 _interest,
         uint256 _liquidationFee,
+        uint256 _collateral,
         uint256 _biddingTimeout,
         uint256 _biddingRefund,
         address _tokenAddress,
-        bytes32[2] memory _aCoinPubKey
+        bytes32[2] memory _aCoinPubKey,
+        address _medianizer,
+        uint256 _minColRatio
     ) public {
         secretHashA1 = _secretHashesA[0];
         secretHashA2 = _secretHashesA[1];
         secretHashB1 = _secretHashesB[0];
         secretHashB2 = _secretHashesB[1];
-        approveExpiration = _expirations[0];
-        loanExpiration = _expirations[1];
-        acceptExpiration = _expirations[2];
-        biddingExpiration = _expirations[3];
+        createAt = now;
+        approveExpiration = _expirations[1];
+        loanExpiration = _expirations[2];
+        acceptExpiration = _expirations[3];
+        biddingExpiration = _expirations[4];
         borrower = _borrower;
         lender = _lender;
         principal = _principal;
         interest = _interest;
         liquidationFee = _liquidationFee;
+        collateral = _collateral;
         biddingTimeout = _biddingTimeout;
         biddingRefund = _biddingRefund;
         token = ERC20(_tokenAddress);
         aCoinPubKeyPrefix = _aCoinPubKey[0];
         aCoinPubKeySuffix = _aCoinPubKey[1];
+        medianizer = Medianizer(_medianizer);
+        minColRatio = _minColRatio;
+    }
+
+    function canLiquidate () public view returns (bool) {
+        uint256 colPrice = uint(medianizer.read());
+        uint256 colVal = colPrice.mul(collateral).div(10**8);
+        uint256 minColVal = (principal.sub(amountPaidBack)).mul(minColRatio).div(10**18);
+        return colVal < minColVal;
     }
 
     function fund () public {
@@ -110,6 +135,7 @@ contract AtomicLoan {
     }
 
     function acceptOrCancel (bytes32 _secretB1) public {
+        require(withdrawn == false || repaid == true);
         require(sha256(abi.encodePacked(_secretB1)) == secretHashB1);
         require(now <= acceptExpiration);
         require(bidding == false);
@@ -117,12 +143,17 @@ contract AtomicLoan {
         selfdestruct(lender);
     }
     
-    function payback () public {
+    function payback (uint256 _amount) public {
         require(withdrawn == true);
         require(now <= loanExpiration);
         require(msg.sender == borrower);
-        token.transferFrom(borrower, address(this), principal.add(interest));
-        repaid = true;
+        require(_amount.add(amountPaidBack) <= principal.add(interest));
+
+        token.transferFrom(borrower, address(this), _amount);
+        amountPaidBack = _amount.add(amountPaidBack);
+        if (amountPaidBack == principal.add(interest)) {
+            repaid = true;
+        }
     }
 
     function refundPayback () public {
@@ -132,12 +163,14 @@ contract AtomicLoan {
         token.transfer(borrower, token.balanceOf(address(this)));
         selfdestruct(borrower);
     }
-    
-    function startBidding () public {
-        require(repaid == false);
-        require(withdrawn == true);
-        require(now > loanExpiration);
-        require(msg.sender == borrower || msg.sender == lender);
+
+    function startAuction () public {
+        if (now > loanExpiration) {
+            require(repaid == false);
+            require(withdrawn == true);
+        } else {
+            require(canLiquidate());
+        }
         biddingTimeoutExpiration = now.add(biddingTimeout);
         biddingRefundExpiration = biddingTimeoutExpiration.add(biddingRefund);
         bidding = true;
@@ -159,16 +192,22 @@ contract AtomicLoan {
         aCoinPubKeyHash = _aCoinPubKeyHash;
     }
     
-    function provideSignature (bytes32[3] memory _signature) public {
+    function provideSignature (bytes32[3] memory _refundableSignature, bytes32[3] memory _seizableSignature) public {
         require(now > loanExpiration); // Is this needed? 
         if (msg.sender == borrower) {
-            borrowerSignature[0] = _signature[0];
-            borrowerSignature[1] = _signature[1];
-            borrowerSignature[2] = _signature[2];
+            borrowerRefundableSignature[0] = _refundableSignature[0];
+            borrowerRefundableSignature[1] = _refundableSignature[1];
+            borrowerRefundableSignature[2] = _refundableSignature[2];
+            borrowerSeizableSignature[0] = _seizableSignature[0];
+            borrowerSeizableSignature[1] = _seizableSignature[1];
+            borrowerSeizableSignature[2] = _seizableSignature[2];
         } else if (msg.sender == lender) {
-            lenderSignature[0] = _signature[0];
-            lenderSignature[1] = _signature[1];
-            lenderSignature[2] = _signature[2];
+            lenderRefundableSignature[0] = _refundableSignature[0];
+            lenderRefundableSignature[1] = _refundableSignature[1];
+            lenderRefundableSignature[2] = _refundableSignature[2];
+            lenderSeizableSignature[0] = _seizableSignature[0];
+            lenderSeizableSignature[1] = _seizableSignature[1];
+            lenderSeizableSignature[2] = _seizableSignature[2];
         } else {
             revert();
         }
@@ -190,7 +229,7 @@ contract AtomicLoan {
         }
     }
     
-    function withdrawLiquidatedCollateral (bytes32 _secretA2, bytes32 _secretB2, bytes32 _secretC) public {
+    function withdrawBid (bytes32 _secretA2, bytes32 _secretB2, bytes32 _secretC) public {
         require(now > biddingTimeoutExpiration);
         require(sha256(abi.encodePacked(_secretA2)) == secretHashA2);
         require(sha256(abi.encodePacked(_secretB2)) == secretHashB2);

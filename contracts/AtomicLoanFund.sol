@@ -28,7 +28,9 @@ contract AtomicLoanFund {
     bytes32 public aCoinPubKeyPrefix;
     bytes32 public aCoinPubKeySuffix;
 
-    uint256 public collateralizationRatio;
+    uint256 public minColRatio;
+
+    address public medianizer;
 
     event RequestLoan(
         address indexed _atomicLoanAddress,
@@ -45,7 +47,8 @@ contract AtomicLoanFund {
         address _tokenAddress,
         bytes32 _aCoinPubKeyPrefix,
         bytes32 _aCoinPubKeySuffix,
-        uint256 _collateralizationRatio // Min collateralization ratio to 6 decimal places
+        uint256 _minColRatio, // Min collateralization ratio to 6 decimal places
+        address _medianizer
     ) public {
         secretHashes = _secretHashes;
         maxLoanAmount = _maxLoanAmount;
@@ -57,35 +60,43 @@ contract AtomicLoanFund {
         lender = msg.sender;
         aCoinPubKeyPrefix = _aCoinPubKeyPrefix;
         aCoinPubKeySuffix = _aCoinPubKeySuffix;
-        collateralizationRatio = _collateralizationRatio;
+        minCollateralization = _minCollateralization;
+        medianizer = _medianizer;
+        minColRatio = _minColRatio;
     }
 
     function requestLoan (
         uint256 _amount,
+        uint256 _collateralAmount,
         bytes32[2] memory _secretHashesA,
-        uint256 _loanDuration,
+        uint256[6] memory _durations,
         bytes32[2] memory _aCoinPubKey
     ) public returns (address) {
         require(_amount <= maxLoanAmount);
-        require(_loanDuration <= maxLoanDuration);
-        require(_loanDuration >= minLoanDuration);
+        require(_durations[1] <= maxLoanDuration);
+        require(_durations[1] >= minLoanDuration);
 
-        uint256 loanInterest = _amount.mul(_loanDuration.div(3600)).mul(interestRate).div(10**12);
-        uint256 loanLiquidationFee = _amount.mul(_loanDuration.div(3600)).mul(interestRate).div(10**12);
+        uint256 loanInterest = _amount.mul(_durations[1].div(3600)).mul(interestRate).div(10**12);
+        uint256 loanLiquidationFee = _amount.mul(_durations[1].div(3600)).mul(interestRate).div(10**12);
+
+        uint256 minColVal = _amount.mul(minColRatio).div(10**18);
 
         AtomicLoan atomicLoan = new AtomicLoan(
             _secretHashesA,
-            [secretHashes[counter * 2], secretHashes[(counter * 2) + 1]],
-            [ now + 21600, now + _loanDuration, now + _loanDuration + 259200, now + (_loanDuration * 2)],
+            [ secretHashes[counter * 2], secretHashes[(counter * 2) + 1] ],
+            [ now + _durations[0], now + _durations[1], now + _durations[2], now + _durations[3]],
             msg.sender,
             lender,
             _amount,
             loanInterest,
             loanLiquidationFee,
-            42300,
-            42300,
+            _collateralAmount,
+            _durations[4],
+            _durations[5],
             address(token),
-            _aCoinPubKey
+            _aCoinPubKey,
+            medianizer,
+            minColRatio
         );
         
         atomicLoanContracts.push(address(atomicLoan));
