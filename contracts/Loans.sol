@@ -5,17 +5,20 @@ import './Funds.sol';
 import './Sales.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
+import './Currency.sol';
 
 pragma solidity ^0.5.8;
 
-contract Loans {
-    using SafeMath for uint256;
-
+contract Loans is DSMath {
     uint256 constant ASAEX = 3600; // All auction expiration
+    uint256 constant APEXT = 7200;   // approval expiration threshold
+    uint256 constant ACEXT = 172800; // acceptance expiration threshold
+    uint256 constant BIEXT = 604800; // bidding expirataion threshold
 
     Funds funds;
     Medianizer med;
     Sales sales;
+    Currency cur;
 
     mapping (bytes32 => Loan)      public loans;
     mapping (bytes32 => Sechs)     public sechs;
@@ -26,17 +29,13 @@ contract Loans {
     mapping (bytes32 => uint256)   public asaex; // All Auction expiration
     uint256                        public loani;
 
-    uint256 constant apext = 7200;   // approval expiration threshold
-    uint256 constant acext = 172800; // acceptance expiration threshold
-    uint256 constant biext = 604800; // bidding expirataion threshold
-
     struct Loan {
     	address bor;     // Address Borrower
         address lend;    // Address Lender
         address agent;   // Optional Address automated agent
         uint256 born;    // Created At
         uint256 loex;    // Loan Expiration
-        uint256 prin;     // Principal
+        uint256 prin;    // Principal
         uint256 lint;    // Interest
         uint256 lpen;    // Liquidation Penalty
         uint256 lfee;    // Optional fee paid to auto if address not 0x0
@@ -65,10 +64,11 @@ contract Loans {
     	bool off;
     }
 
-    constructor (address funds_, address med_) public {
+    constructor (address funds_, address med_, address cur_) public {
     	funds = Funds(funds_);
     	med = Medianizer(med_);
     	sales = new Sales(address(this), med_);
+    	cur = Currency(cur_);
     }
 
     function bor(bytes32 loan) public view returns (address) {
@@ -76,15 +76,15 @@ contract Loans {
     }
 
     function apex(bytes32 loan) public view returns (uint256) { // Approval Expiration
-        return loans[loan].born.add(apext);
+        return add(loans[loan].born, APEXT);
     }
 
     function acex(bytes32 loan) public view returns (uint256) { // Acceptance Expiration
-        return loans[loan].loex.add(acext);
+        return add(loans[loan].loex, ACEXT);
     }
 
     function biex(bytes32 loan) public view returns (uint256) { // Bidding Expiration
-        return loans[loan].loex.add(biext);
+        return add(loans[loan].loex, BIEXT);
     }
 
     function prin(bytes32 loan) public view returns (uint256) {
@@ -119,12 +119,16 @@ contract Loans {
     	return bools[loan].pushed;
     }
 
-    function owed(bytes32 loan) public view returns (uint256) {
-    	return prin(loan).add(lint(loan)).add(lfee(loan));
+    function lent(bytes32 loan) public view returns (uint256) { // Amount lent by Lender
+    	return add(prin(loan), lint(loan));
+    }
+
+    function owed(bytes32 loan) public view returns (uint256) { // Amount owed
+    	return add(lent(loan), lfee(loan));
     }
 
     function dedu(bytes32 loan) public view returns (uint256) { // Deductible amount from collateral
-    	return owed(loan).add(loans[loan].lpen);
+    	return add(owed(loan), lpen(loan));
     }
 
     function off(bytes32 loan) public view returns (bool) {
@@ -138,7 +142,7 @@ contract Loans {
         ERC20             tok_,    // Token
         bytes32           fundi_   // Optional Fund Index
     ) public returns (bytes32 loan) {
-        loani = loani.add(1);
+        loani = add(loani, 1);
         loan = bytes32(loani);
         loans[loan].loex   = loex_;
         loans[loan].bor    = usrs_[0];
@@ -156,7 +160,7 @@ contract Loans {
     }
 
     function setSechs( // Set Secret Hashes for Loan
-    	bytes32 loan,
+    	bytes32           loan,
     	bytes32[4] memory bsechs,
     	bytes32[4] memory lsechs,
     	bytes32[4] memory asechs,
@@ -171,18 +175,18 @@ contract Loans {
 		sechs[loan].sechBS = [ lsechs[0], lsechs[1], lsechs[2] ];
 		sechs[loan].sechC1 = asechs[0];
 		sechs[loan].sechCS = [ asechs[0], asechs[1], asechs[2] ];
-		loans[loan].bpubk = bpubk_;
-		loans[loan].lpubk = lpubk_;
+		loans[loan].bpubk  = bpubk_;
+		loans[loan].lpubk  = lpubk_;
         sechs[loan].set    = true;
 	}
 
 	function colv(bytes32 loan) public returns (uint256) { // Current Collateral Value
     	uint256 val = uint(med.read());
-    	return val.mul(col(loan)).div(10**8); // NOTE NEED TO SPECIFY 10**8 SOMEWHERE
+    	return cur.cmul(val, col(loan)); // Multiply value dependent on number of decimals with currency
     }
 
     function min(bytes32 loan) public returns (uint256) {  // Minimum Collateral Value
-    	return (prin(loan).sub(back(loan))).mul(rat(loan)).div(10**18);
+    	return  rmul(sub(prin(loan), back(loan)), rat(loan));
     }
 
     function safe(bytes32 loan) public returns (bool) {
@@ -222,7 +226,7 @@ contract Loans {
     		tokes[loan].transfer(loans[loan].lend, loans[loan].prin);
     		bools[loan].off = true;
 		} else if (bools[loan].taken == true) {
-			tokes[loan].transfer(loans[loan].lend, prin(loan).add(lint(loan)));
+			tokes[loan].transfer(loans[loan].lend, lent(loan));
 			tokes[loan].transfer(loans[loan].agent, lfee(loan));
 			bools[loan].off = true;
 		}
@@ -233,10 +237,10 @@ contract Loans {
     	require(bools[loan].taken         == true);
     	require(now                       <= loans[loan].loex);
     	require(msg.sender                == loans[loan].bor);
-    	require(amt.add(backs[loan])      <= owed(loan));
+    	require(add(amt, backs[loan])     <= owed(loan));
 
     	tokes[loan].transferFrom(loans[loan].bor, address(this), amt);
-    	backs[loan] = amt.add(backs[loan]);
+    	backs[loan] = add(amt, backs[loan]);
     	if (backs[loan] == owed(loan)) {
     		bools[loan].paid = true;
     	}

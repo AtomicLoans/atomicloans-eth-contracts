@@ -24,11 +24,9 @@ contract Sales is DSMath { // Auctions
     uint256                         public salei; // Auction Index
 
     mapping (bytes32 => bytes32[])  public salel; // Loan Auctions (find by loani)
-    // mapping (bytes32 => uint256)  public salem; // Loan auction 
 
     struct Sale {
         bytes32    loani;  // Loan Index
-        // uint256    salen;  // Index of Sale within Loan
         uint256    bid;    // Current Bid
         address    bidr;   // Bidder
         address    bor;    // Lender
