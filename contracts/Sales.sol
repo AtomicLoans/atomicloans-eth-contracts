@@ -3,10 +3,9 @@ import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 import './Loans.sol';
 import './Medianizer.sol';
+import './DSMath.sol';
 
-contract Sales { // Auctions
-	using SafeMath for uint256;
-
+contract Sales is DSMath { // Auctions
 	Loans loans;
 	Medianizer med;
 
@@ -14,19 +13,22 @@ contract Sales { // Auctions
 
 	uint256 constant SALEX = 3600;
 	uint256 constant SATEX = 14400;
+	uint256 constant MINBI = 1005000000000000000000000000; // Minimum Bid Increment in RAY
 
-	mapping (bytes32 => Sale)     public sales; // Auctions
-	mapping (bytes32 => ERC20)    public tokes; // Auction token
-	mapping (bytes32 => Bsig)     public bsigs; // Borrower Signatures
-	mapping (bytes32 => Lsig)     public lsigs; // Lender Signatures
-	mapping (bytes32 => Asig)     public asigs; // Lender Signatures
-	mapping (bytes32 => Sech)     public sechs; // Auction Secret Hashes
-    uint256                       public salei; // Auction Index
-    mapping (bytes32 => Sale[])   public salel; // Loan Auctions (find by loani)
+	mapping (bytes32 => Sale)       public sales; // Auctions
+	mapping (bytes32 => ERC20)      public tokes; // Auction token
+	mapping (bytes32 => Bsig)       public bsigs; // Borrower Signatures
+	mapping (bytes32 => Lsig)       public lsigs; // Lender Signatures
+	mapping (bytes32 => Asig)       public asigs; // Lender Signatures
+	mapping (bytes32 => Sech)       public sechs; // Auction Secret Hashes
+    uint256                         public salei; // Auction Index
+
+    mapping (bytes32 => bytes32[])  public salel; // Loan Auctions (find by loani)
+    // mapping (bytes32 => uint256)  public salem; // Loan auction 
 
     struct Sale {
         bytes32    loani;  // Loan Index
-        uint256    salen;  // Index of Sale within Loan
+        // uint256    salen;  // Index of Sale within Loan
         uint256    bid;    // Current Bid
         address    bidr;   // Bidder
         address    bor;    // Lender
@@ -76,26 +78,21 @@ contract Sales { // Auctions
     	med = Medianizer(med_);
     }
 
-    function salen(bytes32 sale) public view returns (uint256) {
-    	return sales[sale].salen;
-    }
-
-    function setSalen(bytes32 sale, uint256 salen) public {
-    	require(msg.sender == own);
-
+    function next(bytes32 loan) public returns (uint256) {
+    	return salel[loan].length;
     }
 
     function open(
     	bytes32 loani,
-    	bytes32 sech,
     	address bor,
     	address lend,
     	bytes32 sechA,
     	bytes32 sechB,
-    	ERC20 tok
+    	bytes32 sechC,
+    	ERC20   tok
 	) public returns(bytes32 sale) {
     	require(msg.sender == own);
-    	salei = salei.add(1);
+    	salei = add(salei, 1);
         sale = bytes32(salei);
         sales[sale].loani = loani;
         sales[sale].salex = now + SALEX;
@@ -104,6 +101,7 @@ contract Sales { // Auctions
         sales[sale].set = true;
         sechs[sale].sechA = sechA;
         sechs[sale].sechB = sechB;
+        salel[loani].push(sale);
     }
 
     function push(
@@ -116,8 +114,9 @@ contract Sales { // Auctions
     	require(now < sales[sale].salex);
     	require(amt > sales[sale].bid);
     	require(tokes[sale].balanceOf(msg.sender) >= amt);
-
-    	// NOTE: ADD REQUIREMENT FOR NEXT BID TO BE 0.5% MORE
+    	if (sales[sale].bid > 0) {
+    		require(amt > rmul(sales[sale].bid, MINBI)); // Make sure next bid is at least 0.5% more than the last bid
+    	}
 
     	tokes[sale].transferFrom(msg.sender, address(this), amt);
     	if (sales[sale].bid > 0) {
@@ -191,11 +190,11 @@ contract Sales { // Auctions
 		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
 
         if (sales[sale].bid > (loans.dedu(sales[sale].loani))) {
-            tokes[sale].transfer(sales[sale].lend, (loans.prin(sales[sale].loani).add(loans.lint(sales[sale].loani))));
+            tokes[sale].transfer(sales[sale].lend, add(loans.prin(sales[sale].loani), loans.lint(sales[sale].loani)));
             tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani));
             tokes[sale].approve(address(med), loans.lpen(sales[sale].loani));
             med.push(loans.lpen(sales[sale].loani));
-            tokes[sale].transfer(sales[sale].bor, sales[sale].bid.sub(loans.dedu(sales[sale].loani)));
+            tokes[sale].transfer(sales[sale].bor, sub(sales[sale].bid, loans.dedu(sales[sale].loani)));
         } else {
             tokes[sale].transfer(sales[sale].lend, sales[sale].bid);
         }

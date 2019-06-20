@@ -26,9 +26,9 @@ contract Loans {
     mapping (bytes32 => uint256)   public asaex; // All Auction expiration
     uint256                        public loani;
 
-    uint256 apext = 7200;   // approval expiration threshold
-    uint256 acext = 172800; // acceptance expiration threshold
-    uint256 biext = 604800; // bidding expirataion threshold
+    uint256 constant apext = 7200;   // approval expiration threshold
+    uint256 constant acext = 172800; // acceptance expiration threshold
+    uint256 constant biext = 604800; // bidding expirataion threshold
 
     struct Loan {
     	address bor;     // Address Borrower
@@ -48,11 +48,11 @@ contract Loans {
 
     struct Sechs {
     	bytes32 sechA1;
-    	bytes32 sechA2;
+    	bytes32[3] sechAS;
     	bytes32 sechB1;
-    	bytes32 sechB2;
+    	bytes32[3] sechBS;
     	bytes32 sechC1;
-    	bytes32 sechC2;
+    	bytes32[3] sechCS;
     	bool    set;
     }
 
@@ -62,7 +62,7 @@ contract Loans {
     	bool taken;
     	bool sale;
     	bool paid;
-    	bool pulled;
+    	bool off;
     }
 
     constructor (address funds_, address med_) public {
@@ -120,43 +120,36 @@ contract Loans {
     }
 
     function owed(bytes32 loan) public view returns (uint256) {
-    	return loans[loan].prin.add(loans[loan].lint).add(loans[loan].lfee);
+    	return prin(loan).add(lint(loan)).add(lfee(loan));
     }
 
     function dedu(bytes32 loan) public view returns (uint256) { // Deductible amount from collateral
     	return owed(loan).add(loans[loan].lpen);
     }
 
+    function off(bytes32 loan) public view returns (bool) {
+    	return bools[loan].off;
+    }
+
     function open(
         uint256           loex_,   // Loan Expiration
-        address           bor_,    // Borrower Address
-        address           lend_,   // Lender Address
-        address           agent_,  // Optional Automated Agent
-        uint256           prin_,   // Principal
-        uint256           int_,    // Interest
-        uint256           pen_,    // Liquidation penalty
-        uint256           fee_,    // Optional Automation Fee
-        uint256           col_,    // Collateral Amount (in satoshis)
-        uint256           rat_,    // Liquidation Ratio
-        bytes      memory bpubk_,  // Borrower Pubkey
-        bytes      memory lpubk_,  // Lender Pubkey
+        address[3] memory  usrs_, // Borrower, Lender, Optional Automated Agent Addresses
+        uint256[6] memory vals_, // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
         ERC20             tok_,    // Token
         bytes32           fundi_   // Optional Fund Index
     ) public returns (bytes32 loan) {
         loani = loani.add(1);
         loan = bytes32(loani);
         loans[loan].loex   = loex_;
-        loans[loan].bor    = bor_;
-        loans[loan].lend   = lend_;
-        loans[loan].agent  = agent_;
-        loans[loan].prin   = prin_;
-        loans[loan].lint   = int_;
-        loans[loan].lpen   = pen_;
-        loans[loan].lfee   = fee_;
-        loans[loan].col    = col_;
-        loans[loan].rat    = rat_;
-        loans[loan].bpubk  = bpubk_;
-        loans[loan].lpubk  = lpubk_;
+        loans[loan].bor    = usrs_[0];
+        loans[loan].lend   = usrs_[1];
+        loans[loan].agent  = usrs_[2];
+        loans[loan].prin   = vals_[0];
+        loans[loan].lint   = vals_[1];
+        loans[loan].lpen   = vals_[2];
+        loans[loan].lfee   = vals_[3];
+        loans[loan].col    = vals_[4];
+        loans[loan].rat    = vals_[5];
         tokes[loan]        = tok_;
         fundi[loan]        = fundi_;
         sechs[loan].set    = false;
@@ -164,21 +157,22 @@ contract Loans {
 
     function setSechs( // Set Secret Hashes for Loan
     	bytes32 loan,
-    	bytes32 sechA1,
-    	bytes32 sechA2,
-    	bytes32 sechB1,
-    	bytes32 sechB2,
-    	bytes32 sechC1,
-    	bytes32 sechC2
+    	bytes32[4] memory bsechs,
+    	bytes32[4] memory lsechs,
+    	bytes32[4] memory asechs,
+		bytes      memory bpubk_,  // Borrower Pubkey
+        bytes      memory lpubk_  // Lender Pubkey
 	) public returns (bool) {
 		require(!sechs[loan].set);
 		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend);
-    	sechs[loan].sechA1 = sechA1;
-        sechs[loan].sechA2 = sechA2;
-        sechs[loan].sechB1 = sechB1;
-        sechs[loan].sechB2 = sechB2;
-        sechs[loan].sechC1 = sechC1;
-        sechs[loan].sechC2 = sechC2;
+		sechs[loan].sechA1 = bsechs[0];
+		sechs[loan].sechAS = [ bsechs[0], bsechs[1], bsechs[2] ];
+		sechs[loan].sechB1 = lsechs[0];
+		sechs[loan].sechBS = [ lsechs[0], lsechs[1], lsechs[2] ];
+		sechs[loan].sechC1 = asechs[0];
+		sechs[loan].sechCS = [ asechs[0], asechs[1], asechs[2] ];
+		loans[loan].bpubk = bpubk_;
+		loans[loan].lpubk = lpubk_;
         sechs[loan].set    = true;
 	}
 
@@ -210,6 +204,7 @@ contract Loans {
     }
 
     function take(bytes32 loan, bytes32 secA1) public { // Withdraw
+    	require(!off(loan));
     	require(bools[loan].pushed == true);
     	require(bools[loan].marked == true);
     	require(sha256(abi.encodePacked(secA1)) == sechs[loan].sechA1);
@@ -218,20 +213,23 @@ contract Loans {
     }
 
     function pull(bytes32 loan, bytes32 secB1) public { // Accept or Cancel
-    	require(bools[loan].taken == false || bools[loan].taken == true);
+    	require(!off(loan));
+    	require(bools[loan].taken == false || bools[loan].paid == true);
     	require(sha256(abi.encodePacked(secB1)) == sechs[loan].sechB1);
     	require(now                             <= acex(loan));
     	require(bools[loan].sale                == false);
     	if (bools[loan].taken == false) {
     		tokes[loan].transfer(loans[loan].lend, loans[loan].prin);
-    		bools[loan].pulled = true;
+    		bools[loan].off = true;
 		} else if (bools[loan].taken == true) {
-			tokes[loan].transfer(loans[loan].lend, owed(loan));
-			bools[loan].pulled = true;
+			tokes[loan].transfer(loans[loan].lend, prin(loan).add(lint(loan)));
+			tokes[loan].transfer(loans[loan].agent, lfee(loan));
+			bools[loan].off = true;
 		}
     }
 
     function pay(bytes32 loan, uint256 amt) public { // Payback Loan
+    	require(!off(loan));
     	require(bools[loan].taken         == true);
     	require(now                       <= loans[loan].loex);
     	require(msg.sender                == loans[loan].bor);
@@ -245,20 +243,34 @@ contract Loans {
     }
 
     function unpay(bytes32 loan) public { // Refund payback
+    	require(!off(loan));
     	require(now              >  acex(loan));
     	require(bools[loan].paid == true);
     	require(msg.sender       == loans[loan].bor);
     	tokes[loan].transfer(loans[loan].bor, owed(loan));
     }
 
-    function sell(bytes32 loan) public { // Start Auction
-    	if (now > loans[loan].loex) {
-    		require(bools[loan].paid  == false);
-    		require(bools[loan].taken == true);
-		} else {
-			require(!safe(loan));
-		}
+    function sechi(bytes32 loan, bytes32 usr) private returns (bytes32 sech) {
+    	if      (usr == 'A') { sech = sechs[loan].sechAS[sales.next(loan)]; }
+    	else if (usr == 'B') { sech = sechs[loan].sechBS[sales.next(loan)]; }
+    	else if (usr == 'C') { sech = sechs[loan].sechCS[sales.next(loan)]; }
+    	else revert();
+    }
 
+    function sell(bytes32 loan) public { // Start Auction
+    	require(!off(loan));
+    	if (sales.next(loan) == 0) {
+    		if (now > loans[loan].loex) {
+	    		require(bools[loan].paid  == false);
+	    		require(bools[loan].taken == true);
+			} else {
+				require(!safe(loan));
+			}
+		} else {
+			require(sales.next(loan) < 3);
+			require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend);
+		}
+		sales.open(loan, loans[loan].bor, loans[loan].lend, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan]);
 		bools[loan].sale = true;
     }
 }
