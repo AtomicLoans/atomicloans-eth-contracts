@@ -5,11 +5,13 @@ import './Loans.sol';
 import './Medianizer.sol';
 import './DSMath.sol';
 
+pragma solidity ^0.5.8;
+
 contract Sales is DSMath { // Auctions
 	Loans loans;
 	Medianizer med;
 
-	address own; // Only the Loans contract can edit data
+	address public own; // Only the Loans contract can edit data
 
 	uint256 constant SALEX = 3600;
 	uint256 constant SATEX = 14400;
@@ -34,8 +36,9 @@ contract Sales is DSMath { // Auctions
         address    agent;  // Optional Automated Agent
         uint256    salex;  // Auction Bidding Expiration
         uint256    setex;  // Auction Settlement Expiration
-        bytes32    pbkh;   // Bidder PubKey Hash
+        bytes20    pbkh;   // Bidder PubKey Hash
         bool       set;
+        bool       taken;
     }
 
     struct Bsig {
@@ -70,13 +73,25 @@ contract Sales is DSMath { // Auctions
         bytes32    secD;
     }
 
-    constructor (address loans_, address med_) public {
-    	own = msg.sender;
-    	loans = Loans(loans_);
-    	med = Medianizer(med_);
+    function agent(bytes32 sale) public returns (address) {
+        return sales[sale].agent;
     }
 
-    function next(bytes32 loan) public returns (uint256) {
+    function taken(bytes32 sale) public returns (bool) {
+        return sales[sale].taken;
+    }
+
+    function pbkh(bytes32 sale) public returns (bytes20) {
+        return sales[sale].pbkh;
+    }
+
+    constructor (address loans_, address med_) public {
+    	own   = loans_;
+    	loans = Loans(loans_);
+    	med   = Medianizer(med_);
+    }
+
+    function next(bytes32 loan) public view returns (uint256) {
     	return salel[loan].length;
     }
 
@@ -84,6 +99,7 @@ contract Sales is DSMath { // Auctions
     	bytes32 loani,
     	address bor,
     	address lend,
+        address agent,
     	bytes32 sechA,
     	bytes32 sechB,
     	bytes32 sechC,
@@ -93,12 +109,16 @@ contract Sales is DSMath { // Auctions
     	salei = add(salei, 1);
         sale = bytes32(salei);
         sales[sale].loani = loani;
+        sales[sale].bor   = bor;
+        sales[sale].lend  = lend;
+        sales[sale].agent = agent;
         sales[sale].salex = now + SALEX;
         sales[sale].setex = now + SALEX + SATEX;
-        tokes[sale] = tok;
-        sales[sale].set = true;
+        tokes[sale]       = tok;
+        sales[sale].set   = true;
         sechs[sale].sechA = sechA;
         sechs[sale].sechB = sechB;
+        sechs[sale].sechC = sechC;
         salel[loani].push(sale);
     }
 
@@ -106,7 +126,7 @@ contract Sales is DSMath { // Auctions
     	bytes32 sale,
     	uint256 amt,
     	bytes32 sech,
-    	bytes32 pbkh
+    	bytes20 pbkh
 	) public {
 		require(sales[sale].set);
     	require(now < sales[sale].salex);
@@ -122,7 +142,7 @@ contract Sales is DSMath { // Auctions
     	}
     	sales[sale].bidr = msg.sender;
     	sales[sale].bid  = amt;
-    	sechs[sale].sechC = sech;
+    	sechs[sale].sechD = sech;
     	sales[sale].pbkh = pbkh;
 	}
 
@@ -155,26 +175,16 @@ contract Sales is DSMath { // Auctions
 		}
 	}
 
-	function sec(bytes32 sale, bytes32 sec) public {
+	function sec(bytes32 sale, bytes32 sec_) public {
 		require(sales[sale].set);
-		if (msg.sender == sales[sale].bor) {
-            require(sha256(abi.encodePacked(sec)) == sechs[sale].sechA);
-            sechs[sale].secA = sec;
-        } else if (msg.sender == sales[sale].lend) {
-            require(sha256(abi.encodePacked(sec)) == sechs[sale].sechB);
-            sechs[sale].secB = sec;
-        } else if (msg.sender == sales[sale].agent) {
-            require(sha256(abi.encodePacked(sec)) == sechs[sale].sechC);
-            sechs[sale].secC = sec;
-        } else if (msg.sender == sales[sale].bidr) {
-        	require(sha256(abi.encodePacked(sec)) == sechs[sale].sechD);
-        	sechs[sale].secD = sec;
-    	} else {
-            revert();
-        }
+		if      (sha256(abi.encodePacked(sec_)) == sechs[sale].sechA) { sechs[sale].secA = sec_; }
+        else if (sha256(abi.encodePacked(sec_)) == sechs[sale].sechB) { sechs[sale].secB = sec_; }
+        else if (sha256(abi.encodePacked(sec_)) == sechs[sale].sechC) { sechs[sale].secC = sec_; }
+        else if (sha256(abi.encodePacked(sec_)) == sechs[sale].sechD) { sechs[sale].secD = sec_; }
+        else                                                          { revert(); }
 	}
 
-	function hasSecs(bytes32 sale) public returns (bool) {
+	function hasSecs(bytes32 sale) public view returns (bool) {
 		uint8 secs = 0;
 		if (sha256(abi.encodePacked(sechs[sale].secA)) == sechs[sale].sechA) { secs = secs + 1; }
 		if (sha256(abi.encodePacked(sechs[sale].secB)) == sechs[sale].sechB) { secs = secs + 1; }
@@ -183,22 +193,27 @@ contract Sales is DSMath { // Auctions
 	}
 
 	function take(bytes32 sale) public {
+        require(!taken(sale));
 		require(now > sales[sale].salex);
 		require(hasSecs(sale));
 		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
 
         if (sales[sale].bid > (loans.dedu(sales[sale].loani))) {
-            tokes[sale].transfer(sales[sale].lend, add(loans.prin(sales[sale].loani), loans.lint(sales[sale].loani)));
-            tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani));
+            tokes[sale].transfer(sales[sale].lend, loans.lent(sales[sale].loani));
+            if (agent(sale) != address(0)) {
+                tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani));
+            }
             tokes[sale].approve(address(med), loans.lpen(sales[sale].loani));
-            med.push(loans.lpen(sales[sale].loani));
+            med.push(loans.lpen(sales[sale].loani), tokes[sale]);
             tokes[sale].transfer(sales[sale].bor, sub(sales[sale].bid, loans.dedu(sales[sale].loani)));
         } else {
             tokes[sale].transfer(sales[sale].lend, sales[sale].bid);
         }
+        sales[sale].taken = true;
 	}
 
 	function unpush(bytes32 sale) public {
+        require(!taken(sale));
 		require(now > sales[sale].setex);
 		require(!hasSecs(sale));
 		require(sha256(abi.encodePacked(sechs[sale].secD)) != sechs[sale].sechD);

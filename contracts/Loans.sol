@@ -10,7 +10,7 @@ import './Currency.sol';
 pragma solidity ^0.5.8;
 
 contract Loans is DSMath {
-    uint256 constant ASAEX = 3600; // All auction expiration
+    uint256 constant ASAEX = 3600;   // All auction expiration
     uint256 constant APEXT = 7200;   // approval expiration threshold
     uint256 constant ACEXT = 172800; // acceptance expiration threshold
     uint256 constant BIEXT = 604800; // bidding expirataion threshold
@@ -18,16 +18,20 @@ contract Loans is DSMath {
     Funds funds;
     Medianizer med;
     Sales sales;
-    Currency cur;
 
     mapping (bytes32 => Loan)      public loans;
     mapping (bytes32 => Sechs)     public sechs;
     mapping (bytes32 => Bools)     public bools;
     mapping (bytes32 => bytes32)   public fundi;
     mapping (bytes32 => ERC20)     public tokes;
+    mapping (bytes32 => Currency)  public cures;
     mapping (bytes32 => uint256)   public backs;
     mapping (bytes32 => uint256)   public asaex; // All Auction expiration
     uint256                        public loani;
+
+    mapping (address => bool)      public tokas;  // Is ERC20 Token Approved
+
+    bool on; // Ensure that Sales contract is created
 
     struct Loan {
     	address bor;     // Address Borrower
@@ -46,13 +50,13 @@ contract Loans is DSMath {
     }
 
     struct Sechs {
-    	bytes32 sechA1;
+    	bytes32    sechA1;
     	bytes32[3] sechAS;
-    	bytes32 sechB1;
+    	bytes32    sechB1;
     	bytes32[3] sechBS;
-    	bytes32 sechC1;
+    	bytes32    sechC1;
     	bytes32[3] sechCS;
-    	bool    set;
+    	bool       set;
     }
 
     struct Bools {
@@ -64,13 +68,21 @@ contract Loans is DSMath {
     	bool off;
     }
 
-    constructor (address funds_, address med_, address cur_) public {
+    event DeploySales(
+        address indexed _salesAddr
+    );
+
+    constructor (address funds_, address med_) public {
     	funds = Funds(funds_);
-    	med = Medianizer(med_);
-    	sales = new Sales(address(this), med_);
-    	cur = Currency(cur_);
+    	med   = Medianizer(med_);
     }
 
+    function setSales(address sales_) public {
+        require(!on);
+        sales = Sales(sales_);
+        on = true;
+    }
+    
     function bor(bytes32 loan) public view returns (address) {
         return loans[loan].bor;
     }
@@ -140,10 +152,12 @@ contract Loans is DSMath {
         address[3] memory  usrs_, // Borrower, Lender, Optional Automated Agent Addresses
         uint256[6] memory vals_, // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
         ERC20             tok_,    // Token
+        Currency          cur_,
         bytes32           fundi_   // Optional Fund Index
     ) public returns (bytes32 loan) {
         loani = add(loani, 1);
         loan = bytes32(loani);
+        loans[loan].born   = now;
         loans[loan].loex   = loex_;
         loans[loan].bor    = usrs_[0];
         loans[loan].lend   = usrs_[1];
@@ -155,8 +169,14 @@ contract Loans is DSMath {
         loans[loan].col    = vals_[4];
         loans[loan].rat    = vals_[5];
         tokes[loan]        = tok_;
+        cures[loan]        = cur_;
         fundi[loan]        = fundi_;
         sechs[loan].set    = false;
+
+        if (fundi_ != bytes32(0) && tokas[address(tok_)] == false) {
+            tok_.approve(address(funds), 2**256-1);
+            tokas[address(tok_)] = true;
+        }
     }
 
     function setSechs( // Set Secret Hashes for Loan
@@ -168,7 +188,7 @@ contract Loans is DSMath {
         bytes      memory lpubk_  // Lender Pubkey
 	) public returns (bool) {
 		require(!sechs[loan].set);
-		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend);
+		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend || msg.sender == address(funds));
 		sechs[loan].sechA1 = bsechs[0];
 		sechs[loan].sechAS = [ bsechs[0], bsechs[1], bsechs[2] ];
 		sechs[loan].sechB1 = lsechs[0];
@@ -182,18 +202,18 @@ contract Loans is DSMath {
 
 	function colv(bytes32 loan) public returns (uint256) { // Current Collateral Value
     	uint256 val = uint(med.read());
-    	return cur.cmul(val, col(loan)); // Multiply value dependent on number of decimals with currency
+    	return cures[loan].cmul(val, col(loan)); // Multiply value dependent on number of decimals with currency
     }
 
-    function min(bytes32 loan) public returns (uint256) {  // Minimum Collateral Value
-    	return  rmul(sub(prin(loan), back(loan)), rat(loan));
+    function min(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
+    	return rmul(sub(prin(loan), back(loan)), rat(loan));
     }
 
     function safe(bytes32 loan) public returns (bool) {
         return colv(loan) >= min(loan);
     }
 
-	function push(bytes32 loan, uint256 amt) public {
+	function push(bytes32 loan) public {
 		require(sechs[loan].set);
     	require(bools[loan].pushed == false);
     	tokes[loan].transferFrom(msg.sender, address(this), prin(loan));
@@ -216,27 +236,11 @@ contract Loans is DSMath {
     	bools[loan].taken = true;
     }
 
-    function pull(bytes32 loan, bytes32 secB1) public { // Accept or Cancel
-    	require(!off(loan));
-    	require(bools[loan].taken == false || bools[loan].paid == true);
-    	require(sha256(abi.encodePacked(secB1)) == sechs[loan].sechB1);
-    	require(now                             <= acex(loan));
-    	require(bools[loan].sale                == false);
-    	if (bools[loan].taken == false) {
-    		tokes[loan].transfer(loans[loan].lend, loans[loan].prin);
-    		bools[loan].off = true;
-		} else if (bools[loan].taken == true) {
-			tokes[loan].transfer(loans[loan].lend, lent(loan));
-			tokes[loan].transfer(loans[loan].agent, lfee(loan));
-			bools[loan].off = true;
-		}
-    }
-
     function pay(bytes32 loan, uint256 amt) public { // Payback Loan
     	require(!off(loan));
     	require(bools[loan].taken         == true);
     	require(now                       <= loans[loan].loex);
-    	require(msg.sender                == loans[loan].bor);
+    	// require(msg.sender                == loans[loan].bor); // IS THIS NECESSARY?
     	require(add(amt, backs[loan])     <= owed(loan));
 
     	tokes[loan].transferFrom(loans[loan].bor, address(this), amt);
@@ -254,19 +258,42 @@ contract Loans is DSMath {
     	tokes[loan].transfer(loans[loan].bor, owed(loan));
     }
 
-    function sechi(bytes32 loan, bytes32 usr) private returns (bytes32 sech) {
+    function pull(bytes32 loan, bytes32 sec) public {
+        pull(loan, sec, true); // Default to true for returning funds to fund
+    }
+
+    function pull(bytes32 loan, bytes32 sec, bool fund) public { // Accept or Cancel // Bool fund set true if lender wants fund to return to fund
+        require(!off(loan));
+        require(bools[loan].taken == false || bools[loan].paid == true);
+        require(sha256(abi.encodePacked(sec)) == sechs[loan].sechB1 || sha256(abi.encodePacked(sec)) == sechs[loan].sechC1);
+        require(now                             <= acex(loan));
+        require(bools[loan].sale                == false);
+        if (bools[loan].taken == false) {
+            tokes[loan].transfer(loans[loan].lend, loans[loan].prin);
+        } else if (bools[loan].taken == true) {
+            if (fundi[loan] == bytes32(0) || !fund) {
+                tokes[loan].transfer(loans[loan].lend, lent(loan));
+            } else {
+                funds.push(fundi[loan], lent(loan));
+            }
+            tokes[loan].transfer(loans[loan].agent, lfee(loan));
+        }
+        bools[loan].off = true;
+    }
+
+    function sechi(bytes32 loan, bytes32 usr) private view returns (bytes32 sech) {
     	if      (usr == 'A') { sech = sechs[loan].sechAS[sales.next(loan)]; }
     	else if (usr == 'B') { sech = sechs[loan].sechBS[sales.next(loan)]; }
     	else if (usr == 'C') { sech = sechs[loan].sechCS[sales.next(loan)]; }
     	else revert();
     }
 
-    function sell(bytes32 loan) public { // Start Auction
+    function sell(bytes32 loan) public returns (bytes32 sale) { // Start Auction
     	require(!off(loan));
+        require(bools[loan].taken  == true);
     	if (sales.next(loan) == 0) {
     		if (now > loans[loan].loex) {
-	    		require(bools[loan].paid  == false);
-	    		require(bools[loan].taken == true);
+	    		require(bools[loan].paid == false);
 			} else {
 				require(!safe(loan));
 			}
@@ -274,7 +301,7 @@ contract Loans is DSMath {
 			require(sales.next(loan) < 3);
 			require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend);
 		}
-		sales.open(loan, loans[loan].bor, loans[loan].lend, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan]);
+		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan]);
 		bools[loan].sale = true;
     }
 }
