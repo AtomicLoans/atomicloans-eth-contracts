@@ -75,8 +75,7 @@ contract AtomicLoan {
         uint256 _interest,
         uint256 _liquidationFee,
         uint256 _collateral,
-        uint256 _biddingTimeout,
-        uint256 _biddingRefund,
+        uint256[2] memory _biddingDurations,
         address _tokenAddress,
         bytes32[2] memory _aCoinPubKey,
         address _medianizer,
@@ -97,8 +96,8 @@ contract AtomicLoan {
         interest = _interest;
         liquidationFee = _liquidationFee;
         collateral = _collateral;
-        biddingTimeout = _biddingTimeout;
-        biddingRefund = _biddingRefund;
+        biddingTimeout = _biddingDurations[0];
+        biddingRefund = _biddingDurations[1];
         token = ERC20(_tokenAddress);
         aCoinPubKeyPrefix = _aCoinPubKey[0];
         aCoinPubKeySuffix = _aCoinPubKey[1];
