@@ -145,13 +145,13 @@ contract Loans is DSMath {
     }
 
     function open(
-        uint256           loex_,   // Loan Expiration
-        address[3] memory  usrs_, // Borrower, Lender, Optional Automated Agent Addresses
-        uint256[6] memory vals_, // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
-        ERC20             tok_,    // Token
-        Currency          cur_,
-        Vars              vars_,
-        bytes32           fundi_   // Optional Fund Index
+        uint256            loex_,   // Loan Expiration
+        address[3] memory  usrs_,   // Borrower, Lender, Optional Automated Agent Addresses
+        uint256[6] memory  vals_,   // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
+        ERC20              tok_,    // Token
+        Currency           cur_,
+        Vars               vars_,
+        bytes32            fundi_   // Optional Fund Index
     ) public returns (bytes32 loan) {
         loani = add(loani, 1);
         loan = bytes32(loani);
@@ -184,7 +184,7 @@ contract Loans is DSMath {
     	bytes32[4] memory lsechs,
     	bytes32[4] memory asechs,
 		bytes      memory bpubk_,  // Borrower Pubkey
-        bytes      memory lpubk_  // Lender Pubkey
+        bytes      memory lpubk_   // Lender Pubkey
 	) public returns (bool) {
 		require(!sechs[loan].set);
 		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend || msg.sender == address(funds));
@@ -239,7 +239,7 @@ contract Loans is DSMath {
     	require(!off(loan));
     	require(bools[loan].taken         == true);
     	require(now                       <= loans[loan].loex);
-    	// require(msg.sender                == loans[loan].bor); // IS THIS NECESSARY?
+    	// require(msg.sender                == loans[loan].bor); // NOTE: this is not necessary. Anyone can pay off the loan
     	require(add(amt, backs[loan])     <= owed(loan));
 
     	tokes[loan].transferFrom(loans[loan].bor, address(this), amt);

@@ -131,7 +131,7 @@ contract Funds is DSMath {
     }
 
     function push(bytes32 fund, uint256 amt) public {
-        // require(msg.sender == own(fund) || msg.sender == address(loans)); // IS THIS NECESSARY?
+        // require(msg.sender == own(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         funds[fund].tok.transferFrom(msg.sender, address(this), amt);
         funds[fund].bal = add(funds[fund].bal, amt);
     }
