@@ -12,6 +12,7 @@ const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
 const Med   = artifacts.require("./MedianizerExample.sol");
 const Cur   = artifacts.require('./BTCCurrency.sol');
+const Vars  = artifacts.require('./VarsExample.sol');
 
 const utils = require('./helpers/Utils.js');
 
@@ -77,7 +78,8 @@ contract("Funds", accounts => {
 
   beforeEach(async function () {
     currentTime = await time.latest();
-    btcPrice = await fetchCoin('bitcoin')
+    // btcPrice = await fetchCoin('bitcoin')
+    btcPrice = '9340.23'
     console.log('btcPrice')
     console.log(btcPrice)
     col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
@@ -89,6 +91,8 @@ contract("Funds", accounts => {
     this.sales = await Sales.deployed();
     this.token = await ExampleCoin.deployed();
     this.cur   = await Cur.deployed();
+    this.vars  = await Vars.deployed();
+
     this.med   = await Med.deployed();
 
     this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
@@ -107,7 +111,8 @@ contract("Funds", accounts => {
       toWei(rateToSec('0.75'), 'gether'), //  0.75%
       agent,
       this.token.address,
-      this.cur.address
+      this.cur.address,
+      this.vars.address
     ]
 
     this.fund = await this.funds.open.call(...fundParams)

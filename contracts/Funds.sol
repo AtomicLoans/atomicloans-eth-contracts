@@ -3,6 +3,7 @@ import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 import './Loans.sol';
 import './Currency.sol';
+import './Vars.sol';
 import './DSMath.sol';
 
 pragma solidity ^0.5.8;
@@ -35,7 +36,8 @@ contract Funds is DSMath {
         address  agent; // Optional Automator Agent
         uint256  bal;   // Locked amount in fund (in TOK)
         ERC20    tok;   // Debt Token
-        Currency cur;
+        Currency cur;   // Currency info
+        Vars     vars;  // Variable contract
     }
 
     function setLoans(address loans_) public {
@@ -103,7 +105,8 @@ contract Funds is DSMath {
         uint256  lfee_,  // Optional Automation Fee Rate
         address  agent_, // Optional Address Automated Agent
         ERC20    tok_,   // Debt Token
-        Currency cur_
+        Currency cur_,
+        Vars     vars_
     ) public returns (bytes32 fund) {
         fundi = add(fundi, 1);
         fund = bytes32(fundi);
@@ -118,6 +121,7 @@ contract Funds is DSMath {
         funds[fund].rat   = rat_;
         funds[fund].tok   = tok_;
         funds[fund].cur   = cur_;
+        funds[fund].vars  = vars_;
         funds[fund].agent = agent_;
 
         if (tokas[address(tok_)] == false) {
@@ -143,7 +147,7 @@ contract Funds is DSMath {
     }
 
     function set(
-        bytes32  fund,  // Loan Fund Index
+        bytes32  fund,   // Loan Fund Index
         uint256  mila_,  // Min Loan Amount
         uint256  mala_,  // Max Loan Amount
         uint256  mild_,  // Min Loan Duration
@@ -176,7 +180,7 @@ contract Funds is DSMath {
         uint256           col_,   // Collateral Amount in satoshis
         uint256           lodu_,  // Loan Duration in seconds
         bytes32[4] memory sechs_, // Secret Hash A1 & A2
-        bytes      memory pubk_  // Pubkey
+        bytes      memory pubk_   // Pubkey
     ) public returns (bytes32 loani) { // Request Loan
         require(msg.sender != own(fund));
         require(amt_       <= bal(fund));
@@ -202,6 +206,7 @@ contract Funds is DSMath {
             [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, lfee(fund), lodu_), col_, funds[fund].rat],
             funds[fund].tok,
             funds[fund].cur,
+            funds[fund].vars,
             fund
         );
     }

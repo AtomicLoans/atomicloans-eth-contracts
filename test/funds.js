@@ -12,6 +12,7 @@ const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
 const Med   = artifacts.require("./Medianizer.sol");
 const Cur   = artifacts.require('./BTCCurrency.sol');
+const Vars  = artifacts.require('./VarsExample.sol');
 
 const utils = require('./helpers/Utils.js');
 
@@ -61,7 +62,8 @@ contract("Funds", accounts => {
 
   beforeEach(async function () {
     currentTime = await time.latest();
-    btcPrice = await fetchCoin('bitcoin')
+    // btcPrice = await fetchCoin('bitcoin')
+    btcPrice = '9340.23'
     console.log('btcPrice')
     console.log(btcPrice)
 
@@ -70,6 +72,7 @@ contract("Funds", accounts => {
     this.sales = await Sales.deployed();
     this.token = await ExampleCoin.deployed();
     this.cur   = await Cur.deployed();
+    this.vars  = await Vars.deployed();
 
     console.log('ratetosec')
     console.log(utils.rateToSec('16.5'))
@@ -85,7 +88,8 @@ contract("Funds", accounts => {
       web3.utils.toWei(utils.rateToSec('0.75'), 'gether'), //  0.75%
       agent,
       this.token.address,
-      this.cur.address
+      this.cur.address,
+      this.vars.address
     ]
 
     this.fund = await this.funds.open.call(...fundParams)
@@ -145,7 +149,7 @@ contract("Funds", accounts => {
       const lendBal = await this.token.balanceOf.call(this.funds.address)
       console.log(lendBal)
 
-      
+
     })
   })
 })

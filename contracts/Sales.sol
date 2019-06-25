@@ -4,6 +4,7 @@ import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import './Loans.sol';
 import './Medianizer.sol';
 import './DSMath.sol';
+import './Vars.sol';
 
 pragma solidity ^0.5.8;
 
@@ -13,12 +14,9 @@ contract Sales is DSMath { // Auctions
 
 	address public own; // Only the Loans contract can edit data
 
-	uint256 constant SALEX = 3600;
-	uint256 constant SATEX = 14400;
-	uint256 constant MINBI = 1005000000000000000000000000; // Minimum Bid Increment in RAY
-
 	mapping (bytes32 => Sale)       public sales; // Auctions
 	mapping (bytes32 => ERC20)      public tokes; // Auction token
+    mapping (bytes32 => Vars)       public vares; // Vars contract
 	mapping (bytes32 => Bsig)       public bsigs; // Borrower Signatures
 	mapping (bytes32 => Lsig)       public lsigs; // Lender Signatures
 	mapping (bytes32 => Asig)       public asigs; // Lender Signatures
@@ -37,8 +35,8 @@ contract Sales is DSMath { // Auctions
         uint256    salex;  // Auction Bidding Expiration
         uint256    setex;  // Auction Settlement Expiration
         bytes20    pbkh;   // Bidder PubKey Hash
-        bool       set;
-        bool       taken;
+        bool       set;    //
+        bool       taken;  // 
     }
 
     struct Bsig {
@@ -103,7 +101,8 @@ contract Sales is DSMath { // Auctions
     	bytes32 sechA,
     	bytes32 sechB,
     	bytes32 sechC,
-    	ERC20   tok
+    	ERC20   tok,
+        Vars    vars
 	) public returns(bytes32 sale) {
     	require(msg.sender == own);
     	salei = add(salei, 1);
@@ -112,9 +111,10 @@ contract Sales is DSMath { // Auctions
         sales[sale].bor   = bor;
         sales[sale].lend  = lend;
         sales[sale].agent = agent;
-        sales[sale].salex = now + SALEX;
-        sales[sale].setex = now + SALEX + SATEX;
+        sales[sale].salex = now + vars.SALEX();
+        sales[sale].setex = now + vars.SALEX() + vars.SETEX();
         tokes[sale]       = tok;
+        vares[sale]       = vars;
         sales[sale].set   = true;
         sechs[sale].sechA = sechA;
         sechs[sale].sechB = sechB;
@@ -133,7 +133,7 @@ contract Sales is DSMath { // Auctions
     	require(amt > sales[sale].bid);
     	require(tokes[sale].balanceOf(msg.sender) >= amt);
     	if (sales[sale].bid > 0) {
-    		require(amt > rmul(sales[sale].bid, MINBI)); // Make sure next bid is at least 0.5% more than the last bid
+    		require(amt > rmul(sales[sale].bid, vares[sale].MINBI())); // Make sure next bid is at least 0.5% more than the last bid
     	}
 
     	tokes[sale].transferFrom(msg.sender, address(this), amt);
