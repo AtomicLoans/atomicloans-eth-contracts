@@ -97,84 +97,25 @@ Getters:
    dedu            deductible amount from collateral
    lend            lender address
    lent            amount lent by lender
-
-acex
-agent
-apex
-back
-biex
-bor
-col
-colv
-dedu
-lend
-lent
-lfee
-lint
-lpen
-min
-off
-owed
-prin
-pushed
-rat
-safe
-
-
-
-
-
-bor
-apex
-acex
-biex
-prin
-lint
-lfee
-lpen
-col
-back
-rat
-pushed
-lent
-owed
-dedu
-off
-colv
-min
-safe
+   lfee            optional fee paid to automator agent if address not 0x0
+   lint            loan interest
+   lpen            liquidation penalty in case not safe or defaulted
+   min             minimum collateral value to be safe
+   off             loan repayment accepted or loan cancelled
+   owed            prin + lint + lfee
+   prin            loan principal
+   pushed          loan funded
+   rat             liquidation ratio
+   safe            loan is safe from liquidation
 
 
 Vars:
 
-fundi
-backs
-asaex
-loani
-tokas
-
-
-
-
-
-
-sales
-
-next
-open
-push
-sign
-sec
-hasSecs
-take
-unpush
-
-
-
-
-
-
-
-process:
+   fundi           loan fund index
+   backs           amount of loan paid back
+   asaex           auction expirations by loan index
+   loani           get the last loan id
+   tokas           erc20 approved by address
 ```
+
 
