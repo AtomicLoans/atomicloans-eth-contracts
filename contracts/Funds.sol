@@ -11,12 +11,12 @@ pragma solidity ^0.5.8;
 contract Funds is DSMath {
     Loans loans;
 
-    mapping (address => bytes32[]) public sechs; // User secret hashes
-    mapping (address => uint256)   public sechi; // User secret hash index
+    mapping (address => bytes32[]) public sechs;  // User secret hashes
+    mapping (address => uint256)   public sechi;  // User secret hash index
 
     mapping (address => bytes)     public pubks;  // User A Coin PubKeys
     
-    mapping (bytes32 => Fund)      public funds;
+    mapping (bytes32 => Fund)      public funds;  
     uint256                        public fundi;
 
     mapping (address => bool)      public tokas;  // Is ERC20 Token Approved
@@ -46,35 +46,35 @@ contract Funds is DSMath {
         on = true;
     }
 
-    function own(bytes32 fund) public view returns (address) {
+    function own(bytes32 fund)   public view returns (address) {
         return funds[fund].own;
     }
 
-    function mila(bytes32 fund) public view returns (uint256) {
+    function mila(bytes32 fund)  public view returns (uint256) {
         return funds[fund].mila;
     }
 
-    function mala(bytes32 fund) public view returns (uint256) {
+    function mala(bytes32 fund)  public view returns (uint256) {
         return funds[fund].mala;
     }
 
-    function mild(bytes32 fund) public view returns (uint256) {
+    function mild(bytes32 fund)  public view returns (uint256) {
         return funds[fund].mild;
     }
 
-    function mald(bytes32 fund) public view returns (uint256) {
+    function mald(bytes32 fund)  public view returns (uint256) {
         return funds[fund].mald;
     }
 
-    function lint(bytes32 fund) public view returns (uint256) {
+    function lint(bytes32 fund)  public view returns (uint256) {
         return funds[fund].lint;
     }
 
-    function lpen(bytes32 fund) public view returns (uint256) {
+    function lpen(bytes32 fund)  public view returns (uint256) {
         return funds[fund].lpen;
     }
 
-    function lfee(bytes32 fund) public view returns (uint256) {
+    function lfee(bytes32 fund)  public view returns (uint256) {
         return funds[fund].lfee;
     }
 
@@ -82,16 +82,20 @@ contract Funds is DSMath {
         return funds[fund].agent;
     }
 
-    function bal(bytes32 fund) public view returns (uint256) {
+    function bal(bytes32 fund)   public view returns (uint256) {
         return funds[fund].bal;
     }
 
-    function toka(bytes32 fund) public view returns (address) {
+    function tok(bytes32 fund)   public view returns (address) {
         return address(funds[fund].tok);
     }
 
-    function pubk(address addr) public view returns (bytes memory) { // Get pubkey
-        return pubks[addr];
+    function cur(bytes32 fund)   public view returns (address) {
+        return address(funds[fund].cur);
+    }
+
+    function vars(bytes32 fund)  public view returns (address) {
+        return address(funds[fund].vars);
     }
 
     function open(
@@ -105,16 +109,16 @@ contract Funds is DSMath {
         uint256  lfee_,  // Optional Automation Fee Rate
         address  agent_, // Optional Address Automated Agent
         ERC20    tok_,   // Debt Token
-        Currency cur_,
-        Vars     vars_
+        Currency cur_,   // Currency contract
+        Vars     vars_   // Variable contract
     ) public returns (bytes32 fund) {
         fundi = add(fundi, 1);
         fund = bytes32(fundi);
-        funds[fund].own   = msg.sender; // Loan Fund Owner (Lender)
-        funds[fund].mila  = mila_;      // Min Loan Amount
-        funds[fund].mala  = mala_;      // Max Loan Amount
-        funds[fund].mild  = mild_;      // Min Loan Duration
-        funds[fund].mald  = mald_;      // Max Loan Duration
+        funds[fund].own   = msg.sender;
+        funds[fund].mila  = mila_;
+        funds[fund].mala  = mala_;
+        funds[fund].mild  = mild_;
+        funds[fund].mald  = mald_;
         funds[fund].lint  = lint_;
         funds[fund].lpen  = lpen_;
         funds[fund].lfee  = lfee_;
@@ -130,7 +134,7 @@ contract Funds is DSMath {
         }
     }
 
-    function push(bytes32 fund, uint256 amt) public {
+    function push(bytes32 fund, uint256 amt) public { // Push funds to Loan Fund
         // require(msg.sender == own(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         funds[fund].tok.transferFrom(msg.sender, address(this), amt);
         funds[fund].bal = add(funds[fund].bal, amt);
@@ -142,11 +146,11 @@ contract Funds is DSMath {
         }
     }
 
-    function set(bytes memory pubk) public {
+    function set(bytes memory pubk) public { // Set PubKey for Fund
         pubks[msg.sender] = pubk;
     }
 
-    function set(
+    function set(        // Set Loan Fund details
         bytes32  fund,   // Loan Fund Index
         uint256  mila_,  // Min Loan Amount
         uint256  mala_,  // Max Loan Amount
@@ -159,10 +163,10 @@ contract Funds is DSMath {
         address  agent_  // Optional Automator Agent)
     ) public {
         require(msg.sender == own(fund));
-        funds[fund].mila  = mila_;      // Min Loan Amount
-        funds[fund].mala  = mala_;      // Max Loan Amount
-        funds[fund].mild  = mild_;      // Min Loan Duration
-        funds[fund].mald  = mald_;      // Max Loan Duration
+        funds[fund].mila  = mila_;
+        funds[fund].mala  = mala_;
+        funds[fund].mild  = mild_;
+        funds[fund].mald  = mald_;
         funds[fund].lint  = lint_;
         funds[fund].lpen  = lpen_;
         funds[fund].lfee  = lfee_;
@@ -170,18 +174,14 @@ contract Funds is DSMath {
         funds[fund].agent = agent_;
     }
 
-    function calc(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
-        return sub(rmul(amt, rpow(rate, lodu)), amt);
-    }
-
-    function req(
+    function req(                 // Request Loan
         bytes32           fund,   // Fund Index
         uint256           amt_,   // Loan Amount
         uint256           col_,   // Collateral Amount in satoshis
         uint256           lodu_,  // Loan Duration in seconds
         bytes32[4] memory sechs_, // Secret Hash A1 & A2
         bytes      memory pubk_   // Pubkey
-    ) public returns (bytes32 loani) { // Request Loan
+    ) public returns (bytes32 loani) {
         require(msg.sender != own(fund));
         require(amt_       <= bal(fund));
         require(amt_       >= mila(fund));
@@ -194,7 +194,18 @@ contract Funds is DSMath {
         loans.push(loani);
     }
 
-    function lopen( // Private Open Loan
+    function pull(bytes32 fund, uint256 amt) public { // Pull funds from Loan Fund
+        require(msg.sender == own(fund));
+        require(bal(fund)  >= amt);
+        funds[fund].tok.transfer(own(fund), amt);
+        funds[fund].bal = sub(funds[fund].bal, amt);
+    }
+
+    function calc(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
+        return sub(rmul(amt, rpow(rate, lodu)), amt);
+    }
+
+    function lopen(               // Private Open Loan
         bytes32           fund,   // Fund Index
         uint256           amt_,   // Loan Amount
         uint256           col_,   // Collateral Amount in satoshis
@@ -211,12 +222,12 @@ contract Funds is DSMath {
         );
     }
 
-    function gsech(address addr) private view returns (bytes32[4] memory) { // Get 4 secrethashes for loan
-        require((sechs[addr].length - sechi[addr]) >= 4);
-        return [ sechs[addr][add(sechi[addr], 0)], sechs[addr][add(sechi[addr], 1)], sechs[addr][add(sechi[addr], 2)], sechs[addr][add(sechi[addr], 3)] ];
-    }
-
-    function lsech(bytes32 fund, bytes32 loan, bytes32[4] memory sechs_, bytes memory pubk_) private { // Loan set Secret Hash and PubKey
+    function lsech(                // Loan Set Secret Hashes
+        bytes32 fund,              // Fund Index
+        bytes32 loan,              // Loan Index
+        bytes32[4] memory sechs_,  // 4 Secret Hashes
+        bytes memory pubk_         // Public Key
+    ) private { // Loan set Secret Hash and PubKey
         loans.setSechs(
             loan,
             sechs_,
@@ -227,10 +238,8 @@ contract Funds is DSMath {
         );
     }
 
-    function pull(bytes32 fund, uint256 amt) public {
-        require(msg.sender == own(fund));
-        require(bal(fund)  >= amt);
-        funds[fund].tok.transfer(own(fund), amt);
-        funds[fund].bal = sub(funds[fund].bal, amt);
+    function gsech(address addr) private view returns (bytes32[4] memory) { // Get 4 secrethashes for loan
+        require((sechs[addr].length - sechi[addr]) >= 4);
+        return [ sechs[addr][add(sechi[addr], 0)], sechs[addr][add(sechi[addr], 1)], sechs[addr][add(sechi[addr], 2)], sechs[addr][add(sechi[addr], 3)] ];
     }
 }

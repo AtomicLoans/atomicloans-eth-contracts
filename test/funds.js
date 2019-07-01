@@ -111,7 +111,7 @@ contract("Funds", accounts => {
 
   describe('fund', function() {
     it('should succeed if msg.sender is lender and has necesary principal', async function() {
-      const tokenAddress = await this.funds.toka.call(this.fund)
+      const tokenAddress = await this.funds.tok.call(this.fund)
       assert.equal(this.token.address, tokenAddress);
 
       // request collateralization ratio 2

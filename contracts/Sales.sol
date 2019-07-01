@@ -35,8 +35,8 @@ contract Sales is DSMath { // Auctions
         uint256    salex;  // Auction Bidding Expiration
         uint256    setex;  // Auction Settlement Expiration
         bytes20    pbkh;   // Bidder PubKey Hash
-        bool       set;    //
-        bool       taken;  // 
+        bool       set;    // Sale at index opened
+        bool       taken;  // Winning bid accepted
     }
 
     struct Bsig {
@@ -61,26 +61,130 @@ contract Sales is DSMath { // Auctions
     }
 
     struct Sech {
-        bytes32    sechA;  // Secret Hash A
-        bytes32    secA;
-        bytes32    sechB;  // Secret Hash B
-        bytes32    secB;
-        bytes32    sechC;   // Secret Hash
-        bytes32    secC;    // Secret
-        bytes32    sechD;
-        bytes32    secD;
+        bytes32    sechA; // Secret Hash A
+        bytes32    secA;  // Secret A
+        bytes32    sechB; // Secret Hash B
+        bytes32    secB;  // Secret B
+        bytes32    sechC; // Secret Hash C
+        bytes32    secC;  // Secret C
+        bytes32    sechD; // Secret Hash D
+        bytes32    secD;  // Secret D
+    }
+
+    function bid(bytes32 sale) public returns (uint256) {
+        return sales[sale].bid;
+    }
+
+    function bidr(bytes32 sale) public returns (address) {
+        return sales[sale].bidr;
+    }
+
+    function bor(bytes32 sale) public returns (address) {
+        return sales[sale].bor;
+    }
+
+    function lend(bytes32 sale) public returns (address) {
+        return sales[sale].lend;
     }
 
     function agent(bytes32 sale) public returns (address) {
         return sales[sale].agent;
     }
 
-    function taken(bytes32 sale) public returns (bool) {
-        return sales[sale].taken;
+    function salex(bytes32 sale) public returns (uint256) {
+        return sales[sale].salex;
+    }
+
+    function setex(bytes32 sale) public returns (uint256) {
+        return sales[sale].setex;
     }
 
     function pbkh(bytes32 sale) public returns (bytes20) {
         return sales[sale].pbkh;
+    }
+
+    function taken(bytes32 sale) public returns (bool) {
+        return sales[sale].taken;
+    }
+
+    function bsigRsig(bytes32 sale) public returns (bytes memory) {
+        return bsigs[sale].rsig;
+    }
+
+    function bsigSsig(bytes32 sale) public returns (bytes memory) {
+        return bsigs[sale].ssig;
+    }
+
+    function bsigRbsig(bytes32 sale) public returns (bytes memory) {
+        return bsigs[sale].rbsig;
+    }
+
+    function bsigSbsig(bytes32 sale) public returns (bytes memory) {
+        return bsigs[sale].sbsig;
+    }
+
+    function lsigRsig(bytes32 sale) public returns (bytes memory) {
+        return lsigs[sale].rsig;
+    }
+
+    function lsigSsig(bytes32 sale) public returns (bytes memory) {
+        return lsigs[sale].ssig;
+    }
+
+    function lsigRbsig(bytes32 sale) public returns (bytes memory) {
+        return lsigs[sale].rbsig;
+    }
+
+    function lsigSbsig(bytes32 sale) public returns (bytes memory) {
+        return lsigs[sale].sbsig;
+    }
+
+    function asigRsig(bytes32 sale) public returns (bytes memory) {
+        return asigs[sale].rsig;
+    }
+
+    function asigSsig(bytes32 sale) public returns (bytes memory) {
+        return asigs[sale].ssig;
+    }
+
+    function asigRbsig(bytes32 sale) public returns (bytes memory) {
+        return asigs[sale].rbsig;
+    }
+
+    function asigSbsig(bytes32 sale) public returns (bytes memory) {
+        return asigs[sale].sbsig;
+    }
+
+    function sechA(bytes32 sale) public returns (bytes32) {
+        return sechs[sale].sechA;
+    }
+
+    function secA(bytes32 sale) public returns (bytes32) {
+        return sechs[sale].secA;
+    }
+
+    function sechB(bytes32 sale) public returns (bytes32) {
+        return sechs[sale].sechB;
+    }
+
+    function secB(bytes32 sale) public returns (bytes32) {
+        return sechs[sale].secB;
+    }
+
+    function sechC(bytes32 sale) public returns (bytes32) {
+        return sechs[sale].sechC;
+    }
+
+    function secC(bytes32 sale) public returns (bytes32) {
+        return sechs[sale].secC;
+    }
+
+    function sechD(bytes32 sale) public returns (bytes32) {
+        return sechs[sale].sechD;
+    }
+
+    function secD(bytes32 sale) public returns (bytes32) {
+        return sechs[sale].secD;
     }
 
     constructor (address loans_, address med_) public {
@@ -94,15 +198,15 @@ contract Sales is DSMath { // Auctions
     }
 
     function open(
-    	bytes32 loani,
-    	address bor,
-    	address lend,
-        address agent,
-    	bytes32 sechA,
-    	bytes32 sechB,
-    	bytes32 sechC,
-    	ERC20   tok,
-        Vars    vars
+    	bytes32 loani, // Loan Index
+    	address bor,   // Address Borrower
+    	address lend,  // Address Lender
+        address agent, // Optional Address automated agent
+    	bytes32 sechA, // Secret Hash A
+    	bytes32 sechB, // Secret Hash B
+    	bytes32 sechC, // Secret Hash C
+    	ERC20   tok,   // Debt Token
+        Vars    vars   // Variable contract
 	) public returns(bytes32 sale) {
     	require(msg.sender == own);
     	salei = add(salei, 1);
@@ -122,11 +226,11 @@ contract Sales is DSMath { // Auctions
         salel[loani].push(sale);
     }
 
-    function push(
-    	bytes32 sale,
-    	uint256 amt,
-    	bytes32 sech,
-    	bytes20 pbkh
+    function push(     // Bid on Collateral
+    	bytes32 sale,  // Auction Index
+    	uint256 amt,   // Bid Amount
+    	bytes32 sech,  // Secret Hash
+    	bytes20 pbkh   // PubKeyHash
 	) public {
 		require(sales[sale].set);
     	require(now < sales[sale].salex);
@@ -146,12 +250,12 @@ contract Sales is DSMath { // Auctions
     	sales[sale].pbkh = pbkh;
 	}
 
-	function sign(
-		bytes32      sale,
-		bytes memory rsig,
-		bytes memory ssig,
-		bytes memory rbsig,
-		bytes memory sbsig
+	function sign(           // Provide Signature to move collateral to collateral swap
+		bytes32      sale,   // Auction Index
+		bytes memory rsig,   // Refundable Signature
+		bytes memory ssig,   // Seizable Signature
+		bytes memory rbsig,  // Refundable Back Signature
+		bytes memory sbsig   // Seizable Back Signataure
 	) public {
 		require(sales[sale].set);
 		require(now < sales[sale].setex);
@@ -175,7 +279,7 @@ contract Sales is DSMath { // Auctions
 		}
 	}
 
-	function sec(bytes32 sale, bytes32 sec_) public {
+	function sec(bytes32 sale, bytes32 sec_) public { // Provide Secret
 		require(sales[sale].set);
 		if      (sha256(abi.encodePacked(sec_)) == sechs[sale].sechA) { sechs[sale].secA = sec_; }
         else if (sha256(abi.encodePacked(sec_)) == sechs[sale].sechB) { sechs[sale].secB = sec_; }
@@ -184,7 +288,7 @@ contract Sales is DSMath { // Auctions
         else                                                          { revert(); }
 	}
 
-	function hasSecs(bytes32 sale) public view returns (bool) {
+	function hasSecs(bytes32 sale) public view returns (bool) { // 2 of 3 secrets
 		uint8 secs = 0;
 		if (sha256(abi.encodePacked(sechs[sale].secA)) == sechs[sale].sechA) { secs = secs + 1; }
 		if (sha256(abi.encodePacked(sechs[sale].secB)) == sechs[sale].sechB) { secs = secs + 1; }
@@ -192,7 +296,7 @@ contract Sales is DSMath { // Auctions
 		return (secs >= 2);
 	}
 
-	function take(bytes32 sale) public {
+	function take(bytes32 sale) public { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
         require(!taken(sale));
 		require(now > sales[sale].salex);
 		require(hasSecs(sale));
@@ -212,7 +316,7 @@ contract Sales is DSMath { // Auctions
         sales[sale].taken = true;
 	}
 
-	function unpush(bytes32 sale) public {
+	function unpush(bytes32 sale) public { // Refund Bid
         require(!taken(sale));
 		require(now > sales[sale].setex);
 		require(!hasSecs(sale));
