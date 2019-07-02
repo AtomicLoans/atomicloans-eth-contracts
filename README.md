@@ -27,7 +27,7 @@ Now run the tests:
 
 MIT
 
-## Glosary
+## Glossary
 
 ### `Fund`
 ```
