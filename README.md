@@ -118,4 +118,56 @@ Vars:
    tokas           erc20 approved by address
 ```
 
+Sales
+```
+Actions:
+
+   open            create new auction (can only be called by loan)
+   push            bid on collateral
+   sec             provide secret
+   sign            provide signature to move collateral to collateral swap
+   take            withdraw bid (accept bid and disperse funds to rightful parties)
+   unpush          refund bid
+
+
+Getters:
+
+   agent           optional automated agent
+   asigRbsig       agent refundable back signature
+   asigRsig        agent refundable signature
+   asigSbsig       agent seizable back signature
+   asigSsig        agent seizable signature
+   bid             current bid
+   bidr            address current bidder
+   bor             address borrower
+   bsigRbsig       borrower refundable back signature
+   bsigRsig        borrower refundable signature
+   bsigSbsig       borrower seizable back signature
+   bsigSsig        borrower seizable signature
+   hasSecs         2 of 3 secrets from bor, lend, and agent are correct
+   lend            address lender
+   lsigRbsig       lender refundable back signature
+   lsigRsig        lender refundable signature
+   lsigSbsig       lender seizable back signature
+   lsigSsig        lender seizable signature
+   next            get the last auction id by loan
+   pbkh            bidder pubkeyhash
+   salex           auction bidding expiration
+   secA            Secret A
+   secB            Secret B
+   secC            Secret C
+   secD            Secret D
+   sechA           Secret Hash A
+   sechB           Secret Hash B
+   sechC           Secret Hash C
+   sechD           Secret Hash D
+   setex           auction settlement expiration
+   taken           winning bid accepted
+
+
+Vars:
+
+   salel           loan auction (find by loani)
+
+```
 

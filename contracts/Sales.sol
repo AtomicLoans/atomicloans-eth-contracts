@@ -29,8 +29,8 @@ contract Sales is DSMath { // Auctions
         bytes32    loani;  // Loan Index
         uint256    bid;    // Current Bid
         address    bidr;   // Bidder
-        address    bor;    // Lender
-        address    lend;   // Borrower
+        address    bor;    // Borrower
+        address    lend;   // Lender
         address    agent;  // Optional Automated Agent
         uint256    salex;  // Auction Bidding Expiration
         uint256    setex;  // Auction Settlement Expiration
@@ -232,6 +232,7 @@ contract Sales is DSMath { // Auctions
     	bytes32 sech,  // Secret Hash
     	bytes20 pbkh   // PubKeyHash
 	) public {
+        require(msg.sender != bor(sale) && msg.sender != lend(sale));
 		require(sales[sale].set);
     	require(now < sales[sale].salex);
     	require(amt > sales[sale].bid);
