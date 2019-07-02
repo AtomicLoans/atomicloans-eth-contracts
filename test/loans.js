@@ -27,7 +27,7 @@ async function fetchCoin(coinName) {
   return (await axios.get(url)).data[0].price_usd; // this returns a promise - stored in 'request'
 }
 
-contract("Funds", accounts => {
+contract("Loans", accounts => {
   const lender   = accounts[0]
   const borrower = accounts[1]
   const agent    = accounts[2]
@@ -80,11 +80,8 @@ contract("Funds", accounts => {
     currentTime = await time.latest();
     // btcPrice = await fetchCoin('bitcoin')
     btcPrice = '9340.23'
-    console.log('btcPrice')
-    console.log(btcPrice)
+
     col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
-    console.log('col')
-    console.log(col)
 
     this.funds = await Funds.deployed();
     this.loans = await Loans.deployed();
@@ -96,9 +93,6 @@ contract("Funds", accounts => {
     this.med   = await Med.deployed();
 
     this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
-
-    console.log('ratetosec')
-    console.log(rateToSec('16.5'))
 
     const fundParams = [
       toWei('1', 'ether'),
@@ -143,21 +137,67 @@ contract("Funds", accounts => {
 
     this.loan = await this.funds.req.call(...loanParams, { from: borrower })
     await this.funds.req(...loanParams, { from: borrower })
+  })
 
-    await this.loans.mark(this.loan)
+  describe('pull', function() {
+    it('should pull successfully if lender secret provided', async function() {
+      await this.loans.mark(this.loan)
 
-    await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.take(this.loan, borSecs[0], { from: borrower })
 
-    const bal = await this.token.balanceOf.call(borrower)
+      // Send funds to borrower so they can repay full
+      await this.token.transfer(borrower, toWei('1', 'ether'))
+
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
+
+      const owed = await this.loans.owed.call(this.loan)
+      await this.loans.pay(this.loan, owed, { from: borrower })
+
+      await this.loans.pull(this.loan, lendSecs[0]) // accept loan repayment
+
+      const off = await this.loans.off.call(this.loan)
+      assert.equal(off, true);
+    })
+
+    it('should pull successfully if agent secret provided', async function() {
+      await this.loans.mark(this.loan)
+
+      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+
+      // Send funds to borrower so they can repay full
+      await this.token.transfer(borrower, toWei('1', 'ether'))
+
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
+
+      const owed = await this.loans.owed.call(this.loan)
+      await this.loans.pay(this.loan, owed, { from: borrower })
+
+      await this.loans.pull(this.loan, agentSecs[0]) // accept loan repayment
+
+      const off = await this.loans.off.call(this.loan)
+      assert.equal(off, true);
+    })
   })
 
   describe('sell', function() {
-    it('should succeed at creating a sale if below liquidation ratio', async function() {
+    it('should be safe if above liquidation ratio', async function() {
+      await this.loans.mark(this.loan)
+
+      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+
+      const bal = await this.token.balanceOf.call(borrower)
+
       const safe = await this.loans.safe.call(this.loan)
       assert.equal(safe, true)
     })
 
-    it('should not be safe', async function() {
+    it('should succeed at creating a sale if below liquidation ratio', async function() {
+      await this.loans.mark(this.loan)
+
+      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+
+      const bal = await this.token.balanceOf.call(borrower)
+
       this.med.poke(numToBytes32(toWei((btcPrice * 0.7).toString(), 'ether')))
 
       const safe = await this.loans.safe.call(this.loan)
@@ -169,34 +209,56 @@ contract("Funds", accounts => {
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
 
-      console.log('colv')
-      console.log(colv)
-      console.log(colv * 0.9)
-
       const col = await this.loans.col.call(this.loan)
-
-      console.log('col')
-      console.log(col)
 
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
       await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
-      await time.increase(1800);
+      await time.increase(1800)
 
       await this.token.transfer(bidr2, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
       await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
-      await time.increase(1800 + 1);
+      await time.increase(1800 + 1)
 
       await this.sales.sec(this.sale, lendSecs[0])
       await this.sales.sec(this.sale, borSecs[0], { from: borrower })
       await this.sales.sec(this.sale, bidrSecs[1])
 
       await this.sales.take(this.sale)
+
+      const taken = await this.sales.taken.call(this.sale)
+      assert.equal(taken, true)
+    })
+  })
+
+  describe('default', function() {
+    it('should fail liquidation if current time before loan expiration', async function() {
+      await this.loans.mark(this.loan)
+
+      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+
+      await time.increase(toSecs({days: 1, hours: 23}))
+
+      await shouldFail.reverting(this.loans.sell(this.loan, { from: bidr }))
+    })
+
+    it('should allow for liquidation to start if loan is defaulted', async function() {
+      await this.loans.mark(this.loan)
+
+      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+
+      await time.increase(toSecs({days: 2, minutes: 1}))
+
+      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
+      await this.loans.sell(this.loan, { from: bidr })
+
+      const sale = await this.loans.sale.call(this.loan)
+      assert.equal(sale, true)
     })
   })
 })

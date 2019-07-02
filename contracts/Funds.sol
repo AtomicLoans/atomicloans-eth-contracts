@@ -78,6 +78,10 @@ contract Funds is DSMath {
         return funds[fund].lfee;
     }
 
+    function rat(bytes32 fund)   public view returns (uint256) {
+        return funds[fund].rat;
+    }
+
     function agent(bytes32 fund) public view returns (address) {
         return funds[fund].agent;
     }

@@ -117,10 +117,6 @@ contract Loans is DSMath {
         return loans[loan].rat;
     }
 
-    function pushed(bytes32 loan) public view returns (bool) {
-        return bools[loan].pushed;
-    }
-
     function lent(bytes32 loan)   public view returns (uint256) { // Amount lent by Lender
         return add(prin(loan), lint(loan));
     }
@@ -131,6 +127,26 @@ contract Loans is DSMath {
 
     function dedu(bytes32 loan)   public view returns (uint256) { // Deductible amount from collateral
         return add(owed(loan), lpen(loan));
+    }
+
+    function pushed(bytes32 loan) public view returns (bool) {
+        return bools[loan].pushed;
+    }
+
+    function marked(bytes32 loan) public view returns (bool) {
+        return bools[loan].marked;
+    }
+
+    function taken(bytes32 loan) public view returns (bool) {
+        return bools[loan].taken;
+    }
+
+    function sale(bytes32 loan) public view returns (bool) {
+        return bools[loan].sale;
+    }
+
+    function paid(bytes32 loan) public view returns (bool) {
+        return bools[loan].paid;
     }
 
     function off(bytes32 loan)    public view returns (bool) {
