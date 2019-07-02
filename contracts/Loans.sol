@@ -121,12 +121,24 @@ contract Loans is DSMath {
         return add(prin(loan), lint(loan));
     }
 
+    function lentb(bytes32 loan)  public view returns (uint256) { // Amount lent by lender minus amount paid back
+        return sub(lent(loan), back(loan));
+    }
+
     function owed(bytes32 loan)   public view returns (uint256) { // Amount owed
         return add(lent(loan), lfee(loan));
     }
 
+    function owedb(bytes32 loan)  public view returns (uint256) {
+        return sub(owed(loan), back(loan));
+    }
+
     function dedu(bytes32 loan)   public view returns (uint256) { // Deductible amount from collateral
         return add(owed(loan), lpen(loan));
+    }
+
+    function dedub(bytes32 loan)  public view returns (uint256) {
+        return sub(dedu(loan), back(loan));
     }
 
     function pushed(bytes32 loan) public view returns (bool) {
@@ -258,6 +270,7 @@ contract Loans is DSMath {
     function pay(bytes32 loan, uint256 amt) public { // Payback Loan
         // require(msg.sender                == loans[loan].bor); // NOTE: this is not necessary. Anyone can pay off the loan
     	require(!off(loan));
+        require(!sale(loan));
     	require(bools[loan].taken         == true);
     	require(now                       <= loans[loan].loex);
     	require(add(amt, backs[loan])     <= owed(loan));
@@ -271,6 +284,7 @@ contract Loans is DSMath {
 
     function unpay(bytes32 loan) public { // Refund payback
     	require(!off(loan));
+        require(!sale(loan));
     	require(now              >  acex(loan));
     	require(bools[loan].paid == true);
     	require(msg.sender       == loans[loan].bor);
@@ -321,6 +335,7 @@ contract Loans is DSMath {
 			require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend);
 		}
 		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan], vares[loan]);
+        tokes[loan].transfer(address(sales), back(loan));
 		bools[loan].sale = true;
     }
 }

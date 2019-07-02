@@ -304,13 +304,13 @@ contract Sales is DSMath { // Auctions
 		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
 
         if (sales[sale].bid > (loans.dedu(sales[sale].loani))) {
-            tokes[sale].transfer(sales[sale].lend, loans.lent(sales[sale].loani));
+            tokes[sale].transfer(sales[sale].lend, loans.lentb(sales[sale].loani));
             if (agent(sale) != address(0)) {
                 tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani));
             }
             tokes[sale].approve(address(med), loans.lpen(sales[sale].loani));
             med.push(loans.lpen(sales[sale].loani), tokes[sale]);
-            tokes[sale].transfer(sales[sale].bor, sub(sales[sale].bid, loans.dedu(sales[sale].loani)));
+            tokes[sale].transfer(sales[sale].bor, add(sub(sales[sale].bid, loans.dedub(sales[sale].loani)), loans.back(sales[sale].loani)));
         } else {
             tokes[sale].transfer(sales[sale].lend, sales[sale].bid);
         }
@@ -324,5 +324,8 @@ contract Sales is DSMath { // Auctions
 		require(sha256(abi.encodePacked(sechs[sale].secD)) != sechs[sale].sechD);
 		require(sales[sale].bid > 0);
 		tokes[sale].transfer(sales[sale].bidr, sales[sale].bid);
+        if (next(sales[sale].loani) == 2) {
+            tokes[sale].transfer(sales[sale].bor, loans.back(sales[sale].loani));
+        }
 	}
 }
