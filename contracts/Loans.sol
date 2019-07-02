@@ -129,7 +129,7 @@ contract Loans is DSMath {
         return add(lent(loan), lfee(loan));
     }
 
-    function owedb(bytes32 loan)  public view returns (uint256) {
+    function owedb(bytes32 loan)  public view returns (uint256) { // Amount owed minus amount paid back
         return sub(owed(loan), back(loan));
     }
 
@@ -137,7 +137,7 @@ contract Loans is DSMath {
         return add(owed(loan), lpen(loan));
     }
 
-    function dedub(bytes32 loan)  public view returns (uint256) {
+    function dedub(bytes32 loan)  public view returns (uint256) { // Deductible amount from collateral minus amount paid back
         return sub(dedu(loan), back(loan));
     }
 
