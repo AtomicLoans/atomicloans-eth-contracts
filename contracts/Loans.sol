@@ -333,6 +333,8 @@ contract Loans is DSMath {
 		} else {
 			require(sales.next(loan) < 3);
 			require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend);
+            require(now > sales.setex(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction after settlement expiration of pervious auction
+            require(!sales.taken(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
 		}
 		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan], vares[loan]);
         tokes[loan].transfer(address(sales), back(loan));
