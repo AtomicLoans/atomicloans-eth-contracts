@@ -324,7 +324,7 @@ contract Sales is DSMath { // Auctions
 		require(sha256(abi.encodePacked(sechs[sale].secD)) != sechs[sale].sechD);
 		require(sales[sale].bid > 0);
 		tokes[sale].transfer(sales[sale].bidr, sales[sale].bid);
-        if (next(sales[sale].loani) == 2) {
+        if (next(sales[sale].loani) == 3) {
             tokes[sale].transfer(sales[sale].bor, loans.back(sales[sale].loani));
         }
 	}
