@@ -29,7 +29,7 @@ MIT
 
 ## Glosary
 
-`Fund`
+### `Fund`
 ```
 Actions:
 
@@ -69,7 +69,7 @@ Vars:
 ```
 
 
-`Loan`
+### `Loan`
 ```
 Actions:
 
@@ -118,7 +118,7 @@ Vars:
    tokas           erc20 approved by address
 ```
 
-Sales
+### `Sales`
 ```
 Actions:
 
