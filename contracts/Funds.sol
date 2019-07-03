@@ -107,7 +107,7 @@ contract Funds is DSMath {
         uint256  mala_,  // Max Loan Amount
         uint256  mild_,  // Min Loan Duration
         uint256  mald_,  // Max Loan Duration
-        uint256  rat_,   // Liquidation Ratio (to 6 decimal places)
+        uint256  rat_,   // Liquidation Ratio
         uint256  lint_,  // Interest Rate
         uint256  lpen_,  // Liquidation Penalty Rate
         uint256  lfee_,  // Optional Automation Fee Rate
