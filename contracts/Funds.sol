@@ -108,7 +108,7 @@ contract Funds is DSMath {
         uint256  mild_,  // Min Loan Duration
         uint256  mald_,  // Max Loan Duration
         uint256  rat_,   // Liquidation Ratio (to 6 decimal places)
-        uint256  lint_,  // Hourly Interest Rate to ten decimal places (i.e. 0.000799086758% would be inputed as 7990868)
+        uint256  lint_,  // Interest Rate
         uint256  lpen_,  // Liquidation Penalty Rate
         uint256  lfee_,  // Optional Automation Fee Rate
         address  agent_, // Optional Address Automated Agent
