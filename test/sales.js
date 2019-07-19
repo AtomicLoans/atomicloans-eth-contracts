@@ -174,8 +174,8 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await this.sales.sec(this.sale, lendSecs[0])
-      await this.sales.sec(this.sale, borSecs[0], { from: borrower })
+      await this.sales.sec(this.sale, lendSecs[1])
+      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
       await this.sales.sec(this.sale, bidrSecs[1])
 
       await this.sales.take(this.sale)

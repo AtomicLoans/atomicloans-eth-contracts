@@ -1,10 +1,20 @@
 const { time, shouldFail, balance } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
-const { sha256 }    = require('@liquality/crypto')
+const { sha256, hash160 }    = require('@liquality/crypto')
 const { ensure0x, remove0x   }  = require('@liquality/ethereum-utils');
 const { BigNumber } = require('bignumber.js');
 const axios         = require('axios');
+
+const { Client, providers, crypto } = require('@liquality/bundle');
+const LoanBundle = require('@atomicloans/loan-bundle');
+const LoanClient = require('@atomicloans/loan-client');
+const lproviders = LoanBundle.providers
+let bitcoin = new Client()
+const loan = new LoanClient(bitcoin)
+bitcoin.loan = loan
+const bitcoinNetworks = providers.bitcoin.BitcoinNetworks
+bitcoin.loan.addProvider(new lproviders.bitcoin.BitcoinCollateralAgentProvider({ network: bitcoinNetworks.bitcoin_testnet }))
 
 const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 const Funds = artifacts.require("./Funds.sol");
@@ -13,11 +23,12 @@ const Sales = artifacts.require("./Sales.sol");
 const Med   = artifacts.require("./MedianizerExample.sol");
 const Cur   = artifacts.require('./BTCCurrency.sol');
 const Vars  = artifacts.require('./VarsExample.sol');
+const P2SH  = artifacts.require('./P2SH.sol');
 
 const utils = require('./helpers/Utils.js');
 
 const { rateToSec, numToBytes32 } = utils;
-const { toWei, fromWei } = web3.utils;
+const { toWei, fromWei, asciiToHex } = web3.utils;
 
 const API_ENDPOINT_COIN = "https://atomicloans.io/marketcap/api/v1/"
 const BTC_TO_SAT = 10**8
@@ -27,7 +38,7 @@ async function fetchCoin(coinName) {
   return (await axios.get(url)).data[0].price_usd; // this returns a promise - stored in 'request'
 }
 
-contract("Loans", accounts => {
+contract("P2SH", accounts => {
   const lender   = accounts[0]
   const borrower = accounts[1]
   const agent    = accounts[2]
@@ -58,6 +69,8 @@ contract("Loans", accounts => {
     borSechs.push(ensure0x(sha256(sec)))
   }
 
+  const borpubk = '03f36a45ce2ec373d5d523963d8e9bac09be6e8b138cf633509701a790a4fe1b9e'
+
   let agentSecs = []
   let agentSechs = []
   for (let i = 0; i < 4; i++) {
@@ -65,6 +78,8 @@ contract("Loans", accounts => {
     agentSecs.push(ensure0x(sec))
     agentSechs.push(ensure0x(sha256(sec)))
   }
+
+  const agentpubk = '030ad7d1035f9050fd10318abe924d23ea50aefed57b25ab444a9fe36979b445c7'
 
   let bidrSecs = []
   let bidrSechs = []
@@ -89,6 +104,7 @@ contract("Loans", accounts => {
     this.token = await ExampleCoin.deployed();
     this.cur   = await Cur.deployed();
     this.vars  = await Vars.deployed();
+    this.p2sh  = await P2SH.deployed();
 
     this.med   = await Med.deployed();
 
@@ -121,6 +137,8 @@ contract("Loans", accounts => {
     // Set Lender PubKey
     await this.funds.set(ensure0x(lendpubk))
 
+    await this.funds.set(ensure0x(agentpubk), { from: agent })
+
     // Push funds to loan fund
     await this.token.approve(this.funds.address, toWei('100', 'ether'))
     await this.funds.push(this.fund, toWei('100', 'ether'))
@@ -132,15 +150,15 @@ contract("Loans", accounts => {
       col,
       toSecs({days: 2}),
       borSechs,
-      ensure0x(lendpubk)
+      ensure0x(borpubk)
     ]
 
     this.loan = await this.funds.req.call(...loanParams, { from: borrower })
     await this.funds.req(...loanParams, { from: borrower })
   })
 
-  describe('pull', function() {
-    it('should pull successfully if lender secret provided', async function() {
+  describe('getP2SH', function() {
+    it('should generate p2sh pubkey and pubkeyhash correctly', async function() {
       await this.loans.mark(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
@@ -150,115 +168,27 @@ contract("Loans", accounts => {
 
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
-      const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, owed, { from: borrower })
+      const sezCol = await this.p2sh.getP2SH.call(this.loan, true);
+      const refCol = await this.p2sh.getP2SH.call(this.loan, false);
 
-      await this.loans.pull(this.loan, lendSecs[0]) // accept loan repayment
+      const bpubk = await this.loans.pubk.call(this.loan, asciiToHex('A'))
+      const lpubk = await this.loans.pubk.call(this.loan, asciiToHex('B'))
+      const apubk = await this.loans.pubk.call(this.loan, asciiToHex('C'))
 
-      const off = await this.loans.off.call(this.loan)
-      assert.equal(off, true);
-    })
+      const { sechA1, sechB1, sechC1 } = await this.loans.sechs(this.loan)
 
-    it('should pull successfully if agent secret provided', async function() {
-      await this.loans.mark(this.loan)
+      const sechA2 = await this.loans.sechi(this.loan, asciiToHex('A'))
+      const sechB2 = await this.loans.sechi(this.loan, asciiToHex('B'))
+      const sechC2 = await this.loans.sechi(this.loan, asciiToHex('C'))
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      const loex = await this.loans.loex.call(this.loan)
+      const biex = await this.loans.biex.call(this.loan)
+      const siex = await this.loans.siex.call(this.loan)
 
-      // Send funds to borrower so they can repay full
-      await this.token.transfer(borrower, toWei('1', 'ether'))
+      const sezScript = await bitcoin.loan.collateralAgent.createSeizableScript(remove0x(bpubk), remove0x(lpubk), remove0x(apubk), remove0x(sechA1), remove0x(sechA2), remove0x(sechB1), remove0x(sechB2), remove0x(sechC1), remove0x(sechC2), remove0x(loex), remove0x(biex), remove0x(siex))
 
-      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
-
-      const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, owed, { from: borrower })
-
-      await this.loans.pull(this.loan, agentSecs[0]) // accept loan repayment
-
-      const off = await this.loans.off.call(this.loan)
-      assert.equal(off, true);
-    })
-  })
-
-  describe('sell', function() {
-    it('should be safe if above liquidation ratio', async function() {
-      await this.loans.mark(this.loan)
-
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
-
-      const bal = await this.token.balanceOf.call(borrower)
-
-      const safe = await this.loans.safe.call(this.loan)
-      assert.equal(safe, true)
-    })
-
-    it('should succeed at creating a sale if below liquidation ratio', async function() {
-      await this.loans.mark(this.loan)
-
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
-
-      const bal = await this.token.balanceOf.call(borrower)
-
-      this.med.poke(numToBytes32(toWei((btcPrice * 0.7).toString(), 'ether')))
-
-      const safe = await this.loans.safe.call(this.loan)
-      assert.equal(safe, false)
-
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
-
-      const colvWei = await this.loans.colv.call(this.loan)
-      const colv = fromWei(colvWei)
-
-      const col = await this.loans.col.call(this.loan)
-
-      await this.token.transfer(bidr, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
-
-      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(1800)
-
-      await this.token.transfer(bidr2, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
-
-      await time.increase(1800 + 1)
-
-      await this.sales.sec(this.sale, lendSecs[1])
-      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
-      await this.sales.sec(this.sale, bidrSecs[1])
-
-      await this.sales.take(this.sale)
-
-      const taken = await this.sales.taken.call(this.sale)
-      assert.equal(taken, true)
-    })
-  })
-
-  describe('default', function() {
-    it('should fail liquidation if current time before loan expiration', async function() {
-      await this.loans.mark(this.loan)
-
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
-
-      await time.increase(toSecs({days: 1, hours: 23}))
-
-      await shouldFail.reverting(this.loans.sell(this.loan, { from: bidr }))
-    })
-
-    it('should allow for liquidation to start if loan is defaulted', async function() {
-      await this.loans.mark(this.loan)
-
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
-
-      await time.increase(toSecs({days: 2, minutes: 1}))
-
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
-
-      const sale = await this.loans.sale.call(this.loan)
-      assert.equal(sale, true)
+      assert.equal(sezScript, remove0x(sezCol[0]))
+      assert.equal(hash160(sezScript), remove0x(sezCol[1]))
     })
   })
 })

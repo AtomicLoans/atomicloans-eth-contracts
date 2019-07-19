@@ -5,6 +5,7 @@ var Vars       = artifacts.require('./VarsExample.sol');
 var Funds = artifacts.require('./Funds.sol');
 var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
+var P2SH  = artifacts.require('./P2SH.sol');
 
 module.exports = function(deployer) {
   deployer.then(async () => {
@@ -23,5 +24,6 @@ module.exports = function(deployer) {
     var sales = await Sales.deployed();
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
+    await deployer.deploy(P2SH, loans.address);
   })
 };

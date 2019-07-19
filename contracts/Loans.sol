@@ -16,6 +16,7 @@ contract Loans is DSMath {
     Sales sales;
 
     mapping (bytes32 => Loan)      public loans;
+    mapping (bytes32 => Pubks)     public pubks;
     mapping (bytes32 => Sechs)     public sechs;  // Secret Hashes
     mapping (bytes32 => Bools)     public bools;  // Boolean state of Loan
     mapping (bytes32 => bytes32)   public fundi;  // Mapping of Loan Index to Fund Index
@@ -42,8 +43,12 @@ contract Loans is DSMath {
         uint256 lfee;       // Optional fee paid to auto if address not 0x0
         uint256 col;        // Collateral
         uint256 rat;        // Liquidation Ratio
+    }
+
+    struct Pubks {
         bytes   bpubk;      // Borrower PubKey
         bytes   lpubk;      // Lender PubKey
+        bytes   apubk;      // Agent PubKey
     }
 
     struct Sechs {
@@ -81,12 +86,20 @@ contract Loans is DSMath {
         return add(loans[loan].born, vares[loan].APEXT());
     }
 
+    function loex(bytes32 loan)   public view returns (uint256) {
+        return loans[loan].loex;
+    }
+
     function acex(bytes32 loan)   public returns (uint256) { // Acceptance Expiration
         return add(loans[loan].loex, vares[loan].ACEXT());
     }
 
-    function biex(bytes32 loan)   public returns (uint256) { // Bidding Expiration
+    function biex(bytes32 loan)   public view returns (uint256) { // Bidding Expiration
         return add(loans[loan].loex, vares[loan].BIEXT());
+    }
+
+    function siex(bytes32 loan)   public view returns (uint256) {
+        return add(biex(loan), vares[loan].SIEXT());
     }
 
     function prin(bytes32 loan)   public view returns (uint256) {
@@ -115,6 +128,13 @@ contract Loans is DSMath {
 
     function rat(bytes32 loan)    public view returns (uint256) {
         return loans[loan].rat;
+    }
+
+    function pubk(bytes32 loan, bytes32 usr) public view returns (bytes memory pubk) {
+        if      (usr == 'A') { pubk = pubks[loan].bpubk; }
+        else if (usr == 'B') { pubk = pubks[loan].lpubk; }
+        else if (usr == 'C') { pubk = pubks[loan].apubk; }
+        else revert();
     }
 
     function lent(bytes32 loan)   public view returns (uint256) { // Amount lent by Lender
@@ -229,18 +249,20 @@ contract Loans is DSMath {
     	bytes32[4] memory lsechs,  // Lender Secret Hashes
     	bytes32[4] memory asechs,  // Agent Secret Hashes
 		bytes      memory bpubk_,  // Borrower Pubkey
-        bytes      memory lpubk_   // Lender Pubkey
+        bytes      memory lpubk_,  // Lender Pubkey
+        bytes      memory apubk_
 	) public returns (bool) {
 		require(!sechs[loan].set);
 		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend || msg.sender == address(funds));
 		sechs[loan].sechA1 = bsechs[0];
-		sechs[loan].sechAS = [ bsechs[0], bsechs[1], bsechs[2] ];
+		sechs[loan].sechAS = [ bsechs[1], bsechs[2], bsechs[3] ];
 		sechs[loan].sechB1 = lsechs[0];
-		sechs[loan].sechBS = [ lsechs[0], lsechs[1], lsechs[2] ];
+		sechs[loan].sechBS = [ lsechs[1], lsechs[2], lsechs[3] ];
 		sechs[loan].sechC1 = asechs[0];
-		sechs[loan].sechCS = [ asechs[0], asechs[1], asechs[2] ];
-		loans[loan].bpubk  = bpubk_;
-		loans[loan].lpubk  = lpubk_;
+		sechs[loan].sechCS = [ asechs[1], asechs[2], asechs[3] ];
+		pubks[loan].bpubk  = bpubk_;
+		pubks[loan].lpubk  = lpubk_;
+        pubks[loan].apubk  = apubk_;
         sechs[loan].set    = true;
 	}
 
@@ -314,7 +336,7 @@ contract Loans is DSMath {
         bools[loan].off = true;
     }
 
-    function sechi(bytes32 loan, bytes32 usr) private view returns (bytes32 sech) { // Get Secret Hash for Sale Index
+    function sechi(bytes32 loan, bytes32 usr) public view returns (bytes32 sech) { // Get Secret Hash for Sale Index
     	if      (usr == 'A') { sech = sechs[loan].sechAS[sales.next(loan)]; }
     	else if (usr == 'B') { sech = sechs[loan].sechBS[sales.next(loan)]; }
     	else if (usr == 'C') { sech = sechs[loan].sechCS[sales.next(loan)]; }
