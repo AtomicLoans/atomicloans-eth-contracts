@@ -22,7 +22,7 @@ contract P2SH is Bytes {
 		c = loans.pubk(loan, 'C');
 	}
 
-	function loanPeriodP2SH(bytes32 loan, bytes memory script) public view returns (bytes memory) {
+	function loanPeriodP2SH(bytes32 loan, bytes memory script) internal view returns (bytes memory) {
 		(, bytes32 sechB1_, bytes32 sechC1_,) = loans.sechs(loan);
 
 		bytes memory result = conc(conc(conc(conc(conc(conc(conc(conc(
@@ -39,7 +39,7 @@ contract P2SH is Bytes {
 		return result;
 	}
 
-	function biddingPeriodSechP2SH(bytes32 loan) public view returns (bytes memory) {
+	function biddingPeriodSechP2SH(bytes32 loan) internal view returns (bytes memory) {
 		(bytes32 sechA2_, bytes32 sechB2_, bytes32 sechC2_) = sechis(loan);
 
 		bytes memory result = conc(conc(conc(conc(conc(conc(conc(conc(conc(
@@ -57,7 +57,7 @@ contract P2SH is Bytes {
 		return result;
 	}
 
-	function biddingPeriodSigP2SH(bytes32 loan) public view returns (bytes memory) {
+	function biddingPeriodSigP2SH(bytes32 loan) internal view returns (bytes memory) {
 		(bytes memory bpubk_, bytes memory lpubk_, bytes memory apubk_) = pubks(loan);
 
 		bytes memory result = conc(conc(conc(conc(conc(conc(conc(
@@ -73,7 +73,7 @@ contract P2SH is Bytes {
 		return result;
 	}
 
-	function biddingPeriodP2SH(bytes32 loan, bytes memory script) public view returns (bytes memory) {
+	function biddingPeriodP2SH(bytes32 loan, bytes memory script) internal view returns (bytes memory) {
 		bytes memory result = conc(conc(conc(conc(conc(
 			hex"63", // OP_IF
 			biddingPeriodSechP2SH(loan)),
@@ -85,7 +85,7 @@ contract P2SH is Bytes {
 		return result;
 	}
 
-	function seizurePeriodSechP2SH(bytes32 loan) public view returns (bytes memory) {
+	function seizurePeriodSechP2SH(bytes32 loan) internal view returns (bytes memory) {
 		(bytes32 sechA1_, , ,) = loans.sechs(loan);
 
 		bytes memory result = conc(conc(conc(conc(
@@ -98,7 +98,7 @@ contract P2SH is Bytes {
 		return result;
 	}
 
-	function seizurePeriodP2SH(bytes32 loan, bytes memory script, bool sez) public view returns (bytes memory) {
+	function seizurePeriodP2SH(bytes32 loan, bytes memory script, bool sez) internal view returns (bytes memory) {
 		(bytes memory bpubk_, bytes memory lpubk_, ) = pubks(loan);
 
 		bytes memory pubk;
@@ -121,7 +121,7 @@ contract P2SH is Bytes {
 		return result;
 	}
 
-	function refundablePeriodP2SH(bytes32 loan) public view returns (bytes memory) {
+	function refundablePeriodP2SH(bytes32 loan) internal view returns (bytes memory) {
 		(bytes memory bpubk_, , ) = pubks(loan);
 
 		bytes memory result = conc(conc(conc(conc(
