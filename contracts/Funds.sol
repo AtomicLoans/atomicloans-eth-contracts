@@ -133,14 +133,14 @@ contract Funds is DSMath {
         funds[fund].agent = agent_;
 
         if (tokas[address(tok_)] == false) {
-            tok_.approve(address(loans), 2**256-1);
+            require(tok_.approve(address(loans), 2**256-1));
             tokas[address(tok_)] = true;
         }
     }
 
     function push(bytes32 fund, uint256 amt) public { // Push funds to Loan Fund
         // require(msg.sender == own(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
-        funds[fund].tok.transferFrom(msg.sender, address(this), amt);
+        require(funds[fund].tok.transferFrom(msg.sender, address(this), amt));
         funds[fund].bal = add(funds[fund].bal, amt);
     }
 
@@ -202,7 +202,7 @@ contract Funds is DSMath {
         require(msg.sender == own(fund));
         require(bal(fund)  >= amt);
         funds[fund].bal = sub(funds[fund].bal, amt);
-        funds[fund].tok.transfer(own(fund), amt);
+        require(funds[fund].tok.transfer(own(fund), amt));
     }
 
     function calc(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
@@ -242,9 +242,9 @@ contract Funds is DSMath {
         );
     }
 
-    function gsech(address addr) private returns (bytes32[4] memory secha) { // Get 4 secrethashes for loan
+    function gsech(address addr) private returns (bytes32[4] memory) { // Get 4 secrethashes for loan
         require((sechs[addr].length - sechi[addr]) >= 4);
-        bytes32[4] memory secha = [ sechs[addr][add(sechi[addr], 0)], sechs[addr][add(sechi[addr], 1)], sechs[addr][add(sechi[addr], 2)], sechs[addr][add(sechi[addr], 3)] ];
         sechi[addr] = add(sechi[addr], 4);
+        return [ sechs[addr][sub(sechi[addr], 4)], sechs[addr][sub(sechi[addr], 3)], sechs[addr][sub(sechi[addr], 2)], sechs[addr][sub(sechi[addr], 1)] ];
     }
 }
