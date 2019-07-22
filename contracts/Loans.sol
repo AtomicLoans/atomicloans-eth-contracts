@@ -337,7 +337,7 @@ contract Loans is DSMath {
             require(!sales.taken(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
 		}
 		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan], vares[loan]);
-        tokes[loan].transfer(address(sales), back(loan));
+        if (bools[loan].sale == false) { tokes[loan].transfer(address(sales), back(loan)); }
 		bools[loan].sale = true;
     }
 }
