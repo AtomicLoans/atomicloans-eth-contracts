@@ -288,6 +288,7 @@ contract Loans is DSMath {
     	require(now              >  acex(loan));
     	require(bools[loan].paid == true);
     	require(msg.sender       == loans[loan].bor);
+        bools[loan].off = true;
     	tokes[loan].transfer(loans[loan].bor, owed(loan));
     }
 
