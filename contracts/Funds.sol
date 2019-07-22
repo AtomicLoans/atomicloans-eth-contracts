@@ -201,8 +201,8 @@ contract Funds is DSMath {
     function pull(bytes32 fund, uint256 amt) public { // Pull funds from Loan Fund
         require(msg.sender == own(fund));
         require(bal(fund)  >= amt);
-        funds[fund].tok.transfer(own(fund), amt);
         funds[fund].bal = sub(funds[fund].bal, amt);
+        funds[fund].tok.transfer(own(fund), amt);
     }
 
     function calc(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
