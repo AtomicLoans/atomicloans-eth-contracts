@@ -262,13 +262,13 @@ contract Sales is DSMath { // Auctions
 		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
         sales[sale].taken = true;
         if (sales[sale].bid > (loans.dedu(sales[sale].loani))) {
-            require(tokes[sale].transfer(sales[sale].lend, loans.lentb(sales[sale].loani)));
+            require(tokes[sale].transfer(sales[sale].lend, loans.lent(sales[sale].loani)));
             if (agent(sale) != address(0)) {
                 require(tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani)));
             }
             require(tokes[sale].approve(address(med), loans.lpen(sales[sale].loani)));
             med.push(loans.lpen(sales[sale].loani), tokes[sale]);
-            require(tokes[sale].transfer(sales[sale].bor, add(sub(sales[sale].bid, loans.dedub(sales[sale].loani)), loans.back(sales[sale].loani))));
+            require(tokes[sale].transfer(sales[sale].bor, sub(sales[sale].bid, loans.dedu(sales[sale].loani))));
         } else {
             require(tokes[sale].transfer(sales[sale].lend, sales[sale].bid));
         }
