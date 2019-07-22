@@ -301,6 +301,7 @@ contract Loans is DSMath {
         require(sha256(abi.encodePacked(sec)) == sechs[loan].sechB1 || sha256(abi.encodePacked(sec)) == sechs[loan].sechC1);
         require(now                             <= acex(loan));
         require(bools[loan].sale                == false);
+        bools[loan].off = true;
         if (bools[loan].taken == false) {
             tokes[loan].transfer(loans[loan].lend, loans[loan].prin);
         } else if (bools[loan].taken == true) {
@@ -311,7 +312,6 @@ contract Loans is DSMath {
             }
             tokes[loan].transfer(loans[loan].agent, lfee(loan));
         }
-        bools[loan].off = true;
     }
 
     function sechi(bytes32 loan, bytes32 usr) private view returns (bytes32 sech) { // Get Secret Hash for Sale Index
