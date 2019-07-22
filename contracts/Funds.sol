@@ -243,7 +243,6 @@ contract Funds is DSMath {
     }
 
     function gsech(address addr) private returns (bytes32[4] memory) { // Get 4 secrethashes for loan
-        require((sechs[addr].length - sechi[addr]) >= 4);
         sechi[addr] = add(sechi[addr], 4);
         return [ sechs[addr][sub(sechi[addr], 4)], sechs[addr][sub(sechi[addr], 3)], sechs[addr][sub(sechi[addr], 2)], sechs[addr][sub(sechi[addr], 1)] ];
     }
