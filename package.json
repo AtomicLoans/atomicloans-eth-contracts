@@ -9,11 +9,7 @@
     "bignumber.js": "^9.0.0",
     "decimal.js": "^10.2.0",
     "lodash": "^4.17.11",
-    "moment": "^2.24.0",
     "openzeppelin-solidity": "^2.2.0",
-    "react": "^16.4.2",
-    "react-dom": "^16.4.2",
-    "react-scripts": "1.1.5",
     "truffle-contract": "^4.0.11",
     "truffle-hdwallet-provider": "^1.0.9",
     "web3": "^1.0.0-beta.35"
