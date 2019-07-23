@@ -218,7 +218,7 @@ contract Loans is DSMath {
         sechs[loan].set    = false;
 
         if (fundi_ != bytes32(0) && tokas[address(tok_)] == false) {
-            tok_.approve(address(funds), 2**256-1);
+            require(tok_.approve(address(funds), 2**256-1));
             tokas[address(tok_)] = true;
         }
     }
@@ -247,7 +247,7 @@ contract Loans is DSMath {
 	function push(bytes32 loan) public { // Fund Loan
 		require(sechs[loan].set);
     	require(bools[loan].pushed == false);
-    	tokes[loan].transferFrom(msg.sender, address(this), prin(loan));
+    	require(tokes[loan].transferFrom(msg.sender, address(this), prin(loan)));
     	bools[loan].pushed = true;
     }
 
@@ -263,7 +263,7 @@ contract Loans is DSMath {
     	require(bools[loan].pushed == true);
     	require(bools[loan].marked == true);
     	require(sha256(abi.encodePacked(secA1)) == sechs[loan].sechA1);
-    	tokes[loan].transfer(loans[loan].bor, prin(loan));
+    	require(tokes[loan].transfer(loans[loan].bor, prin(loan)));
     	bools[loan].taken = true;
     }
 
@@ -275,7 +275,7 @@ contract Loans is DSMath {
     	require(now                       <= loans[loan].loex);
     	require(add(amt, backs[loan])     <= owed(loan));
 
-    	tokes[loan].transferFrom(loans[loan].bor, address(this), amt);
+    	require(tokes[loan].transferFrom(loans[loan].bor, address(this), amt));
     	backs[loan] = add(amt, backs[loan]);
     	if (backs[loan] == owed(loan)) {
     		bools[loan].paid = true;
@@ -288,7 +288,7 @@ contract Loans is DSMath {
     	require(now              >  acex(loan));
     	require(bools[loan].paid == true);
     	require(msg.sender       == loans[loan].bor);
-    	tokes[loan].transfer(loans[loan].bor, owed(loan));
+    	require(tokes[loan].transfer(loans[loan].bor, owed(loan)));
     }
 
     function pull(bytes32 loan, bytes32 sec) public {
@@ -302,14 +302,14 @@ contract Loans is DSMath {
         require(now                             <= acex(loan));
         require(bools[loan].sale                == false);
         if (bools[loan].taken == false) {
-            tokes[loan].transfer(loans[loan].lend, loans[loan].prin);
+            require(tokes[loan].transfer(loans[loan].lend, loans[loan].prin));
         } else if (bools[loan].taken == true) {
             if (fundi[loan] == bytes32(0) || !fund) {
-                tokes[loan].transfer(loans[loan].lend, lent(loan));
+                require(tokes[loan].transfer(loans[loan].lend, lent(loan)));
             } else {
                 funds.push(fundi[loan], lent(loan));
             }
-            tokes[loan].transfer(loans[loan].agent, lfee(loan));
+            require(tokes[loan].transfer(loans[loan].agent, lfee(loan)));
         }
         bools[loan].off = true;
     }
@@ -337,7 +337,7 @@ contract Loans is DSMath {
             require(!sales.taken(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
 		}
 		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan], vares[loan]);
-        tokes[loan].transfer(address(sales), back(loan));
+        require(tokes[loan].transfer(address(sales), back(loan)));
 		bools[loan].sale = true;
     }
 }
