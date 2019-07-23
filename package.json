@@ -19,12 +19,15 @@
     "web3": "^1.0.0-beta.35"
   },
   "scripts": {
-    "test": "react-scripts test --env=jsdom"
+    "test": "truffle test",
+    "coverage": "npx solidity-coverage"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-bignumber": "^3.0.0",
     "chai-bn": "^0.1.1",
-    "openzeppelin-test-helpers": "^0.3.2"
+    "coveralls": "^3.0.5",
+    "openzeppelin-test-helpers": "^0.3.2",
+    "solidity-coverage": "^0.6.3"
   }
 }
