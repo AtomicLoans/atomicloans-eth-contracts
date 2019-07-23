@@ -11,7 +11,6 @@ const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
 const Med   = artifacts.require("./MedianizerExample.sol");
-const Cur   = artifacts.require('./BTCCurrency.sol');
 const Vars  = artifacts.require('./VarsExample.sol');
 
 const utils = require('./helpers/Utils.js');
@@ -87,7 +86,6 @@ contract("Loans", accounts => {
     this.loans = await Loans.deployed();
     this.sales = await Sales.deployed();
     this.token = await ExampleCoin.deployed();
-    this.cur   = await Cur.deployed();
     this.vars  = await Vars.deployed();
 
     this.med   = await Med.deployed();
@@ -105,7 +103,6 @@ contract("Loans", accounts => {
       toWei(rateToSec('0.75'), 'gether'), //  0.75%
       agent,
       this.token.address,
-      this.cur.address,
       this.vars.address
     ]
 
