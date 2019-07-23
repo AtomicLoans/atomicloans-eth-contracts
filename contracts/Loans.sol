@@ -299,6 +299,7 @@ contract Loans is DSMath {
     function pull(bytes32 loan, bytes32 sec, bool fund) public { // Accept or Cancel // Bool fund set true if lender wants fund to return to fund
         require(!off(loan));
         require(bools[loan].taken == false || bools[loan].paid == true);
+        require(msg.sender == loans[loan].lend || msg.sender == loans[loan].agent);
         require(sha256(abi.encodePacked(sec)) == sechs[loan].sechB1 || sha256(abi.encodePacked(sec)) == sechs[loan].sechC1);
         require(now                             <= acex(loan));
         require(bools[loan].sale                == false);
