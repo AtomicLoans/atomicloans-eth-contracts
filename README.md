@@ -1,6 +1,8 @@
 
 # Atomic Loans Ethereum Contracts
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/AtomicLoans/atomicloans-eth-contracts.svg)](https://greenkeeper.io/)
+
 Loan Contracts
 
 ## How to run
