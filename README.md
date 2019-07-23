@@ -1,6 +1,10 @@
 
 # Atomic Loans Ethereum Contracts
 
+[![Build Status](https://travis-ci.com/atomicloans/atomicloans-eth-contracts.svg?branch=master)](https://travis-ci.com/atomicloans/atomicloans-eth-contracts)
+[![Coverage Status](https://coveralls.io/repos/github/atomicloans/atomicloans-eth-contracts/badge.svg?branch=master)](https://coveralls.io/github/atomicloans/atomicloans-eth-contracts?branch=master)
+[![MIT License](https://img.shields.io/badge/license-MIT-brightgreen.svg)](./LICENSE.md)
+[![Telegram](https://img.shields.io/badge/chat-on%20telegram-blue.svg)](https://t.me/Atomic_Loans)
 [![Greenkeeper badge](https://badges.greenkeeper.io/AtomicLoans/atomicloans-eth-contracts.svg)](https://greenkeeper.io/)
 
 Loan Contracts
