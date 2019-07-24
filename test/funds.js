@@ -302,4 +302,10 @@ contract("Funds", accounts => {
       await shouldFail.reverting(this.funds.pull(this.fund, toWei('50', 'ether'), { from: agent }))
     })
   })
+
+  describe('setLoans', function() {
+    it('should not allow setLoans to be called twice', async function() {
+      await shouldFail.reverting(this.funds.setLoans(this.loans.address))
+    })
+  })
 })
