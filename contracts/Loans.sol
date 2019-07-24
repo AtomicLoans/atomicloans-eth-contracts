@@ -234,11 +234,11 @@ contract Loans is DSMath {
 		require(!sechs[loan].set);
 		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend || msg.sender == address(funds));
 		sechs[loan].sechA1 = bsechs[0];
-		sechs[loan].sechAS = [ bsechs[0], bsechs[1], bsechs[2] ];
+		sechs[loan].sechAS = [ bsechs[1], bsechs[2], bsechs[3] ];
 		sechs[loan].sechB1 = lsechs[0];
-		sechs[loan].sechBS = [ lsechs[0], lsechs[1], lsechs[2] ];
+		sechs[loan].sechBS = [ lsechs[1], lsechs[2], lsechs[3] ];
 		sechs[loan].sechC1 = asechs[0];
-		sechs[loan].sechCS = [ asechs[0], asechs[1], asechs[2] ];
+		sechs[loan].sechCS = [ asechs[1], asechs[2], asechs[3] ];
 		loans[loan].bpubk  = bpubk_;
 		loans[loan].lpubk  = lpubk_;
         sechs[loan].set    = true;
