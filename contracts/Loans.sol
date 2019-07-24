@@ -275,7 +275,7 @@ contract Loans is DSMath {
     	require(now                       <= loans[loan].loex);
     	require(add(amt, backs[loan])     <= owed(loan));
 
-    	require(tokes[loan].transferFrom(loans[loan].bor, address(this), amt));
+    	require(tokes[loan].transferFrom(msg.sender, address(this), amt));
     	backs[loan] = add(amt, backs[loan]);
     	if (backs[loan] == owed(loan)) {
     		bools[loan].paid = true;
