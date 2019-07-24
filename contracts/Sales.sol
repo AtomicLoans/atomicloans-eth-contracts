@@ -278,13 +278,11 @@ contract Sales is DSMath { // Auctions
         require(!taken(sale));
         require(!off(sale));
 		require(now > sales[sale].setex);
-		require(!hasSecs(sale));
-		require(sha256(abi.encodePacked(sechs[sale].secD)) != sechs[sale].sechD);
 		require(sales[sale].bid > 0);
+        sales[sale].off = true;
 		require(tokes[sale].transfer(sales[sale].bidr, sales[sale].bid));
         if (next(sales[sale].loani) == 3) {
             require(tokes[sale].transfer(sales[sale].bor, loans.back(sales[sale].loani)));
         }
-        sales[sale].off = true;
 	}
 }
