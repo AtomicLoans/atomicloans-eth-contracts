@@ -260,7 +260,7 @@ contract Sales is DSMath { // Auctions
 		require(now > sales[sale].salex);
 		require(hasSecs(sale));
 		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
-
+        sales[sale].taken = true;
         if (sales[sale].bid > (loans.dedu(sales[sale].loani))) {
             require(tokes[sale].transfer(sales[sale].lend, loans.lentb(sales[sale].loani)));
             if (agent(sale) != address(0)) {
@@ -272,7 +272,6 @@ contract Sales is DSMath { // Auctions
         } else {
             require(tokes[sale].transfer(sales[sale].lend, sales[sale].bid));
         }
-        sales[sale].taken = true;
 	}
 
 	function unpush(bytes32 sale) public { // Refund Bid
