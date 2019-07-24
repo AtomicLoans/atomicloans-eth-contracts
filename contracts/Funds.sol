@@ -133,14 +133,14 @@ contract Funds is DSMath {
         funds[fund].agent = agent_;
 
         if (tokas[address(tok_)] == false) {
-            tok_.approve(address(loans), 2**256-1);
+            require(tok_.approve(address(loans), 2**256-1));
             tokas[address(tok_)] = true;
         }
     }
 
     function push(bytes32 fund, uint256 amt) public { // Push funds to Loan Fund
         // require(msg.sender == own(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
-        funds[fund].tok.transferFrom(msg.sender, address(this), amt);
+        require(funds[fund].tok.transferFrom(msg.sender, address(this), amt));
         funds[fund].bal = add(funds[fund].bal, amt);
     }
 
@@ -201,7 +201,7 @@ contract Funds is DSMath {
     function pull(bytes32 fund, uint256 amt) public { // Pull funds from Loan Fund
         require(msg.sender == own(fund));
         require(bal(fund)  >= amt);
-        funds[fund].tok.transfer(own(fund), amt);
+        require(funds[fund].tok.transfer(own(fund), amt));
         funds[fund].bal = sub(funds[fund].bal, amt);
     }
 

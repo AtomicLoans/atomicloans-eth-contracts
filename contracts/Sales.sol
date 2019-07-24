@@ -198,9 +198,9 @@ contract Sales is DSMath { // Auctions
     		require(amt > rmul(sales[sale].bid, vares[sale].MINBI())); // Make sure next bid is at least 0.5% more than the last bid
     	}
 
-    	tokes[sale].transferFrom(msg.sender, address(this), amt);
+    	require(tokes[sale].transferFrom(msg.sender, address(this), amt));
     	if (sales[sale].bid > 0) {
-    		tokes[sale].transfer(sales[sale].bidr, sales[sale].bid);
+    		require(tokes[sale].transfer(sales[sale].bidr, sales[sale].bid));
     	}
     	sales[sale].bidr = msg.sender;
     	sales[sale].bid  = amt;
@@ -262,15 +262,15 @@ contract Sales is DSMath { // Auctions
 		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
 
         if (sales[sale].bid > (loans.dedu(sales[sale].loani))) {
-            tokes[sale].transfer(sales[sale].lend, loans.lentb(sales[sale].loani));
+            require(tokes[sale].transfer(sales[sale].lend, loans.lentb(sales[sale].loani)));
             if (agent(sale) != address(0)) {
-                tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani));
+                require(tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani)));
             }
-            tokes[sale].approve(address(med), loans.lpen(sales[sale].loani));
+            require(tokes[sale].approve(address(med), loans.lpen(sales[sale].loani)));
             med.push(loans.lpen(sales[sale].loani), tokes[sale]);
-            tokes[sale].transfer(sales[sale].bor, add(sub(sales[sale].bid, loans.dedub(sales[sale].loani)), loans.back(sales[sale].loani)));
+            require(tokes[sale].transfer(sales[sale].bor, add(sub(sales[sale].bid, loans.dedub(sales[sale].loani)), loans.back(sales[sale].loani))));
         } else {
-            tokes[sale].transfer(sales[sale].lend, sales[sale].bid);
+            require(tokes[sale].transfer(sales[sale].lend, sales[sale].bid));
         }
         sales[sale].taken = true;
 	}
@@ -282,9 +282,9 @@ contract Sales is DSMath { // Auctions
 		require(!hasSecs(sale));
 		require(sha256(abi.encodePacked(sechs[sale].secD)) != sechs[sale].sechD);
 		require(sales[sale].bid > 0);
-		tokes[sale].transfer(sales[sale].bidr, sales[sale].bid);
+		require(tokes[sale].transfer(sales[sale].bidr, sales[sale].bid));
         if (next(sales[sale].loani) == 3) {
-            tokes[sale].transfer(sales[sale].bor, loans.back(sales[sale].loani));
+            require(tokes[sale].transfer(sales[sale].bor, loans.back(sales[sale].loani)));
         }
         sales[sale].off = true;
 	}
