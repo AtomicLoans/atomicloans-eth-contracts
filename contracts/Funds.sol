@@ -2,7 +2,6 @@ import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 import './Loans.sol';
-import './Currency.sol';
 import './Vars.sol';
 import './DSMath.sol';
 
@@ -36,7 +35,6 @@ contract Funds is DSMath {
         address  agent; // Optional Automator Agent
         uint256  bal;   // Locked amount in fund (in TOK)
         ERC20    tok;   // Debt Token
-        Currency cur;   // Currency info
         Vars     vars;  // Variable contract
     }
 
@@ -98,10 +96,6 @@ contract Funds is DSMath {
         return address(funds[fund].tok);
     }
 
-    function cur(bytes32 fund)   public view returns (address) {
-        return address(funds[fund].cur);
-    }
-
     function vars(bytes32 fund)  public view returns (address) {
         return address(funds[fund].vars);
     }
@@ -117,7 +111,6 @@ contract Funds is DSMath {
         uint256  lfee_,  // Optional Automation Fee Rate
         address  agent_, // Optional Address Automated Agent
         ERC20    tok_,   // Debt Token
-        Currency cur_,   // Currency contract
         Vars     vars_   // Variable contract
     ) public returns (bytes32 fund) {
         fundi = add(fundi, 1);
@@ -132,7 +125,6 @@ contract Funds is DSMath {
         funds[fund].lfee  = lfee_;
         funds[fund].rat   = rat_;
         funds[fund].tok   = tok_;
-        funds[fund].cur   = cur_;
         funds[fund].vars  = vars_;
         funds[fund].agent = agent_;
 
@@ -224,7 +216,6 @@ contract Funds is DSMath {
             [ msg.sender, lend(fund), funds[fund].agent],
             [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, lfee(fund), lodu_), col_, funds[fund].rat],
             funds[fund].tok,
-            funds[fund].cur,
             funds[fund].vars,
             fund
         );
