@@ -5,7 +5,6 @@ import './Funds.sol';
 import './Sales.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
-import './Currency.sol';
 import './Vars.sol';
 
 pragma solidity ^0.5.8;
@@ -20,7 +19,6 @@ contract Loans is DSMath {
     mapping (bytes32 => Bools)     public bools;  // Boolean state of Loan
     mapping (bytes32 => bytes32)   public fundi;  // Mapping of Loan Index to Fund Index
     mapping (bytes32 => ERC20)     public tokes;  // Mapping of Loan index to Token contract
-    mapping (bytes32 => Currency)  public cures;  // Mapping of Loan index to Currency contract
     mapping (bytes32 => Vars)      public vares;  // Mapping of Loan index to Vars contract
     mapping (bytes32 => uint256)   public backs;  // Amount paid back in a Loan
     mapping (bytes32 => uint256)   public asaex;  // All Auction expiration
@@ -167,7 +165,7 @@ contract Loans is DSMath {
 
     function colv(bytes32 loan) public returns (uint256) { // Current Collateral Value
         uint256 val = uint(med.read());
-        return cures[loan].cmul(val, col(loan)); // Multiply value dependent on number of decimals with currency
+        return cmul(val, col(loan)); // Multiply value dependent on number of decimals with currency
     }
 
     function min(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
@@ -194,7 +192,6 @@ contract Loans is DSMath {
         address[3] memory  usrs_,   // Borrower, Lender, Optional Automated Agent Addresses
         uint256[6] memory  vals_,   // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
         ERC20              tok_,    // Token contract
-        Currency           cur_,    // Currency contract
         Vars               vars_,   // Variable contract
         bytes32            fundi_   // Optional Fund Index
     ) public returns (bytes32 loan) {
@@ -212,7 +209,6 @@ contract Loans is DSMath {
         loans[loan].col    = vals_[4];
         loans[loan].rat    = vals_[5];
         tokes[loan]        = tok_;
-        cures[loan]        = cur_;
         vares[loan]        = vars_;
         fundi[loan]        = fundi_;
         sechs[loan].set    = false;
