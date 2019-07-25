@@ -5,7 +5,6 @@ import './Funds.sol';
 import './Sales.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
-import './Vars.sol';
 
 pragma solidity ^0.5.8;
 
@@ -14,12 +13,15 @@ contract Loans is DSMath {
     Medianizer med;
     Sales sales;
 
+    uint256 public constant APEXT = 7200;         // approval expiration threshold
+    uint256 public constant ACEXT = 172800;       // acceptance expiration threshold
+    uint256 public constant BIEXT = 604800;       // bidding expirataion threshold
+
     mapping (bytes32 => Loan)      public loans;
     mapping (bytes32 => Sechs)     public sechs;  // Secret Hashes
     mapping (bytes32 => Bools)     public bools;  // Boolean state of Loan
     mapping (bytes32 => bytes32)   public fundi;  // Mapping of Loan Index to Fund Index
     mapping (bytes32 => ERC20)     public tokes;  // Mapping of Loan index to Token contract
-    mapping (bytes32 => Vars)      public vares;  // Mapping of Loan index to Vars contract
     mapping (bytes32 => uint256)   public backs;  // Amount paid back in a Loan
     mapping (bytes32 => uint256)   public asaex;  // All Auction expiration
     uint256                        public loani;  // Current Loan Index
@@ -76,15 +78,15 @@ contract Loans is DSMath {
     }
 
     function apex(bytes32 loan)   public returns (uint256) { // Approval Expiration
-        return add(loans[loan].born, vares[loan].APEXT());
+        return add(loans[loan].born, APEXT);
     }
 
     function acex(bytes32 loan)   public returns (uint256) { // Acceptance Expiration
-        return add(loans[loan].loex, vares[loan].ACEXT());
+        return add(loans[loan].loex, ACEXT);
     }
 
     function biex(bytes32 loan)   public returns (uint256) { // Bidding Expiration
-        return add(loans[loan].loex, vares[loan].BIEXT());
+        return add(loans[loan].loex, BIEXT);
     }
 
     function prin(bytes32 loan)   public view returns (uint256) {
@@ -192,7 +194,6 @@ contract Loans is DSMath {
         address[3] memory  usrs_,   // Borrower, Lender, Optional Automated Agent Addresses
         uint256[6] memory  vals_,   // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
         ERC20              tok_,    // Token contract
-        Vars               vars_,   // Variable contract
         bytes32            fundi_   // Optional Fund Index
     ) public returns (bytes32 loan) {
         loani = add(loani, 1);
@@ -209,7 +210,6 @@ contract Loans is DSMath {
         loans[loan].col    = vals_[4];
         loans[loan].rat    = vals_[5];
         tokes[loan]        = tok_;
-        vares[loan]        = vars_;
         fundi[loan]        = fundi_;
         sechs[loan].set    = false;
 
@@ -334,7 +334,7 @@ contract Loans is DSMath {
             require(now > sales.setex(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction after settlement expiration of pervious auction
             require(!sales.taken(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
 		}
-		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan], vares[loan]);
+		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'), tokes[loan]);
         if (bools[loan].sale == false) { require(tokes[loan].transfer(address(sales), back(loan))); }
 		bools[loan].sale = true;
     }

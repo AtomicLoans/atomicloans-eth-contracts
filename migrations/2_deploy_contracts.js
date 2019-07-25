@@ -1,6 +1,5 @@
 var ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 var Medianizer = artifacts.require('./MedianizerExample.sol');
-var Vars       = artifacts.require('./VarsExample.sol');
 var Funds = artifacts.require('./Funds.sol');
 var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
@@ -10,8 +9,6 @@ module.exports = function(deployer) {
     await deployer.deploy(ExampleCoin);
     await deployer.deploy(Medianizer);
     var medianizer = await Medianizer.deployed();
-    await deployer.deploy(Vars);
-    var vars = await Vars.deployed();
     await deployer.deploy(Funds);
     var funds = await Funds.deployed();
     await deployer.deploy(Loans, funds.address, medianizer.address);
