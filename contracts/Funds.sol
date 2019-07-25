@@ -21,10 +21,10 @@ contract Funds is DSMath {
 
     mapping (address => bool)      public tokas;  // Is ERC20 Token Approved
 
-    bool on; // Ensure that Loans contract is created
+    address own;
 
     struct Fund {
-        address  own;   // Loan Fund Owner (Lender)
+        address  lend;   // Loan Fund Owner (Lender)
         uint256  mila;  // Min Loan Amount
         uint256  mala;  // Max Loan Amount
         uint256  mild;  // Min Loan Duration
@@ -40,14 +40,18 @@ contract Funds is DSMath {
         Vars     vars;  // Variable contract
     }
 
-    function setLoans(address loans_) public {
-        require(!on);
-        loans = Loans(loans_);
-        on = true;
+    constructor() public {
+        own = msg.sender;
     }
 
-    function own(bytes32 fund)   public view returns (address) {
-        return funds[fund].own;
+    function setLoans(address loans_) public {
+        require(msg.sender == own);
+        require(address(loans) == address(0));
+        loans = Loans(loans_);
+    }
+
+    function lend(bytes32 fund)   public view returns (address) {
+        return funds[fund].lend;
     }
 
     function mila(bytes32 fund)  public view returns (uint256) {
@@ -118,7 +122,7 @@ contract Funds is DSMath {
     ) public returns (bytes32 fund) {
         fundi = add(fundi, 1);
         fund = bytes32(fundi);
-        funds[fund].own   = msg.sender;
+        funds[fund].lend  = msg.sender;
         funds[fund].mila  = mila_;
         funds[fund].mala  = mala_;
         funds[fund].mild  = mild_;
@@ -139,7 +143,7 @@ contract Funds is DSMath {
     }
 
     function push(bytes32 fund, uint256 amt) public { // Push funds to Loan Fund
-        // require(msg.sender == own(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
+        // require(msg.sender == lend(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         require(funds[fund].tok.transferFrom(msg.sender, address(this), amt));
         funds[fund].bal = add(funds[fund].bal, amt);
     }
@@ -166,7 +170,7 @@ contract Funds is DSMath {
         uint256  rat_,   // Liquidation Ratio in RAY
         address  agent_  // Optional Automator Agent)
     ) public {
-        require(msg.sender == own(fund));
+        require(msg.sender == lend(fund));
         funds[fund].mila  = mila_;
         funds[fund].mala  = mala_;
         funds[fund].mild  = mild_;
@@ -186,7 +190,7 @@ contract Funds is DSMath {
         bytes32[4] memory sechs_, // Secret Hash A1 & A2
         bytes      memory pubk_   // Pubkey
     ) public returns (bytes32 loani) {
-        require(msg.sender != own(fund));
+        require(msg.sender != lend(fund));
         require(amt_       <= bal(fund));
         require(amt_       >= mila(fund));
         require(amt_       <= mala(fund));
@@ -199,10 +203,10 @@ contract Funds is DSMath {
     }
 
     function pull(bytes32 fund, uint256 amt) public { // Pull funds from Loan Fund
-        require(msg.sender == own(fund));
+        require(msg.sender == lend(fund));
         require(bal(fund)  >= amt);
         funds[fund].bal = sub(funds[fund].bal, amt);
-        require(funds[fund].tok.transfer(own(fund), amt));
+        require(funds[fund].tok.transfer(lend(fund), amt));
     }
 
     function calc(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
@@ -217,7 +221,7 @@ contract Funds is DSMath {
     ) private returns (bytes32 loani) {
         loani = loans.open(
             now + lodu_,
-            [ msg.sender, own(fund), funds[fund].agent],
+            [ msg.sender, lend(fund), funds[fund].agent],
             [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, lfee(fund), lodu_), col_, funds[fund].rat],
             funds[fund].tok,
             funds[fund].cur,
@@ -235,10 +239,10 @@ contract Funds is DSMath {
         loans.setSechs(
             loan,
             sechs_,
-            gsech(own(fund)),
+            gsech(lend(fund)),
             gsech(agent(fund)),
             pubk_,
-            pubks[own(fund)]
+            pubks[lend(fund)]
         );
     }
 
