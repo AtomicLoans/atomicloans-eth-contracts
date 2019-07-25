@@ -2,7 +2,6 @@ import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 import './Loans.sol';
-import './Vars.sol';
 import './DSMath.sol';
 
 pragma solidity ^0.5.8;
@@ -35,7 +34,6 @@ contract Funds is DSMath {
         address  agent; // Optional Automator Agent
         uint256  bal;   // Locked amount in fund (in TOK)
         ERC20    tok;   // Debt Token
-        Vars     vars;  // Variable contract
     }
 
     constructor() public {
@@ -96,10 +94,6 @@ contract Funds is DSMath {
         return address(funds[fund].tok);
     }
 
-    function vars(bytes32 fund)  public view returns (address) {
-        return address(funds[fund].vars);
-    }
-
     function open(
         uint256  mila_,  // Min Loan Amount
         uint256  mala_,  // Max Loan Amount
@@ -110,8 +104,7 @@ contract Funds is DSMath {
         uint256  lpen_,  // Liquidation Penalty Rate
         uint256  lfee_,  // Optional Automation Fee Rate
         address  agent_, // Optional Address Automated Agent
-        ERC20    tok_,   // Debt Token
-        Vars     vars_   // Variable contract
+        ERC20    tok_   // Debt Token
     ) public returns (bytes32 fund) {
         fundi = add(fundi, 1);
         fund = bytes32(fundi);
@@ -125,7 +118,6 @@ contract Funds is DSMath {
         funds[fund].lfee  = lfee_;
         funds[fund].rat   = rat_;
         funds[fund].tok   = tok_;
-        funds[fund].vars  = vars_;
         funds[fund].agent = agent_;
 
         if (tokas[address(tok_)] == false) {
@@ -216,7 +208,6 @@ contract Funds is DSMath {
             [ msg.sender, lend(fund), funds[fund].agent],
             [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, lfee(fund), lodu_), col_, funds[fund].rat],
             funds[fund].tok,
-            funds[fund].vars,
             fund
         );
     }

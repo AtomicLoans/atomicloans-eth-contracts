@@ -4,7 +4,6 @@ import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import './Loans.sol';
 import './Medianizer.sol';
 import './DSMath.sol';
-import './Vars.sol';
 
 pragma solidity ^0.5.8;
 
@@ -12,11 +11,14 @@ contract Sales is DSMath { // Auctions
 	Loans loans;
 	Medianizer med;
 
+    uint256 public constant SALEX = 3600;                         // Sales Expiration
+    uint256 public constant SETEX = 14400;                        // Settlement Expiration
+    uint256 public constant MINBI = 1005000000000000000000000000; // Minimum Bid Increment in RAY
+
 	address public own; // Only the Loans contract can edit data
 
 	mapping (bytes32 => Sale)       public sales; // Auctions
 	mapping (bytes32 => ERC20)      public tokes; // Auction token
-    mapping (bytes32 => Vars)       public vares; // Vars contract
 	mapping (bytes32 => Bsig)       public bsigs; // Borrower Signatures
 	mapping (bytes32 => Lsig)       public lsigs; // Lender Signatures
 	mapping (bytes32 => Asig)       public asigs; // Lender Signatures
@@ -162,8 +164,7 @@ contract Sales is DSMath { // Auctions
     	bytes32 sechA, // Secret Hash A
     	bytes32 sechB, // Secret Hash B
     	bytes32 sechC, // Secret Hash C
-    	ERC20   tok,   // Debt Token
-        Vars    vars   // Variable contract
+	ERC20   tok    // Debt Token
 	) public returns(bytes32 sale) {
     	require(msg.sender == own);
     	salei = add(salei, 1);
@@ -172,10 +173,9 @@ contract Sales is DSMath { // Auctions
         sales[sale].bor   = bor;
         sales[sale].lend  = lend;
         sales[sale].agent = agent;
-        sales[sale].salex = now + vars.SALEX();
-        sales[sale].setex = now + vars.SALEX() + vars.SETEX();
+        sales[sale].salex = now + SALEX;
+        sales[sale].setex = now + SALEX + SETEX;
         tokes[sale]       = tok;
-        vares[sale]       = vars;
         sales[sale].set   = true;
         sechs[sale].sechA = sechA;
         sechs[sale].sechB = sechB;
@@ -195,7 +195,7 @@ contract Sales is DSMath { // Auctions
     	require(amt > sales[sale].bid);
     	require(tokes[sale].balanceOf(msg.sender) >= amt);
     	if (sales[sale].bid > 0) {
-    		require(amt > rmul(sales[sale].bid, vares[sale].MINBI())); // Make sure next bid is at least 0.5% more than the last bid
+		require(amt > rmul(sales[sale].bid, MINBI)); // Make sure next bid is at least 0.5% more than the last bid
     	}
 
     	require(tokes[sale].transferFrom(msg.sender, address(this), amt));
