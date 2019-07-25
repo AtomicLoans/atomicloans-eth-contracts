@@ -28,7 +28,7 @@ contract Loans is DSMath {
 
     mapping (address => bool)      public tokas;  // Is ERC20 Token Approved
 
-    bool on; // Ensure that Sales contract is created
+    address own;
 
     struct Loan {
     	address bor;        // Address Borrower
@@ -179,14 +179,15 @@ contract Loans is DSMath {
     }
 
     constructor (address funds_, address med_) public {
+        own = msg.sender;
     	funds = Funds(funds_);
     	med   = Medianizer(med_);
     }
 
     function setSales(address sales_) public {
-        require(!on);
+        require(msg.sender == own);
+        require(address(sales) == address(0));
         sales = Sales(sales_);
-        on = true;
     }
     
     function open(                  // Create new Loan
