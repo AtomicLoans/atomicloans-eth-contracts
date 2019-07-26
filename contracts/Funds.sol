@@ -128,8 +128,8 @@ contract Funds is DSMath {
 
     function push(bytes32 fund, uint256 amt) public { // Push funds to Loan Fund
         // require(msg.sender == lend(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
-        require(funds[fund].tok.transferFrom(msg.sender, address(this), amt));
         funds[fund].bal = add(funds[fund].bal, amt);
+        require(funds[fund].tok.transferFrom(msg.sender, address(this), amt));
     }
 
     function gen(bytes32[] memory sechs_) public { // Generate secret hashes for Loan Fund
