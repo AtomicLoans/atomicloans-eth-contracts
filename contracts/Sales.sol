@@ -261,17 +261,27 @@ contract Sales is DSMath { // Auctions
 		require(hasSecs(sale));
 		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
         sales[sale].taken = true;
-        if (sales[sale].bid > (loans.dedu(sales[sale].loani))) {
-            require(tokes[sale].transfer(sales[sale].lend, loans.lentb(sales[sale].loani)));
+
+        uint256 available = add(sales[sale].bid, loans.back(sales[sale].loani));
+        uint256 amount = min(available, loans.lent(sales[sale].loani));
+
+        require(tokes[sale].transfer(sales[sale].lend, amount));
+        available = sub(available, amount);
+
+        if (available >= add(loans.lfee(sales[sale].loani), loans.lpen(sales[sale].loani))) {
             if (agent(sale) != address(0)) {
                 require(tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani)));
             }
             require(tokes[sale].approve(address(med), loans.lpen(sales[sale].loani)));
             med.push(loans.lpen(sales[sale].loani), tokes[sale]);
-            require(tokes[sale].transfer(sales[sale].bor, add(sub(sales[sale].bid, loans.dedub(sales[sale].loani)), loans.back(sales[sale].loani))));
-        } else {
-            require(tokes[sale].transfer(sales[sale].lend, sales[sale].bid));
+            available = sub(available, add(loans.lfee(sales[sale].loani), loans.lpen(sales[sale].loani)));
+        } else if (available > 0) {
+            require(tokes[sale].approve(address(med), available));
+            med.push(available, tokes[sale]);
+            available = 0;
         }
+
+        if (available > 0) { require(tokes[sale].transfer(sales[sale].bor, available)); }
 	}
 
 	function unpush(bytes32 sale) public { // Refund Bid
