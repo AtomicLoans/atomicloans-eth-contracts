@@ -1,4 +1,4 @@
-const { time, shouldFail, balance } = require('openzeppelin-test-helpers');
+const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
 const { sha256 }    = require('@liquality/crypto')
@@ -238,7 +238,7 @@ contract("Loans", accounts => {
 
       await time.increase(toSecs({days: 1, hours: 23}))
 
-      await shouldFail.reverting(this.loans.sell(this.loan, { from: bidr }))
+      await expectRevert(this.loans.sell(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
     })
 
     it('should allow for liquidation to start if loan is defaulted', async function() {
@@ -258,7 +258,7 @@ contract("Loans", accounts => {
 
   describe('setSales', function() {
     it('should not allow setSales to be called twice', async function() {
-      await shouldFail.reverting(this.loans.setSales(this.loans.address))
+      await expectRevert(this.loans.setSales(this.loans.address), 'VM Exception while processing transaction: revert')
     })
   })
 })

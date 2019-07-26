@@ -1,4 +1,4 @@
-const { time, shouldFail, balance } = require('openzeppelin-test-helpers');
+const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
 const { sha256 }    = require('@liquality/crypto')
@@ -197,7 +197,7 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr2, toWei('100', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await shouldFail.reverting(this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 }))
+      await expectRevert(this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 }), 'VM Exception while processing transaction: revert')
     })
   })
 
@@ -247,7 +247,7 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
-      await shouldFail.reverting(this.loans.sell(this.loan, { from: lender }))
+      await expectRevert(this.loans.sell(this.loan, { from: lender }), 'VM Exception while processing transaction: revert')
     })
 
     it('should fail if auction called before previous auction is finished', async function() {
@@ -273,7 +273,7 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await shouldFail.reverting(this.loans.sell(this.loan, { from: bidr }))
+      await expectRevert(this.loans.sell(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
     })
   })
 

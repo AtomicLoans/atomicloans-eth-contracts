@@ -3819,16 +3819,17 @@ openzeppelin-solidity@^2.2.0:
   resolved "https://registry.yarnpkg.com/openzeppelin-solidity/-/openzeppelin-solidity-2.3.0.tgz#1ab7b4cc3782a5472ed61eb740c56a8bfdd74119"
   integrity sha512-QYeiPLvB1oSbDt6lDQvvpx7k8ODczvE474hb2kLXZBPKMsxKT1WxTCHBYrCU7kS7hfAku4DcJ0jqOyL+jvjwQw==
 
-openzeppelin-test-helpers@^0.3.2:
-  version "0.3.2"
-  resolved "https://registry.yarnpkg.com/openzeppelin-test-helpers/-/openzeppelin-test-helpers-0.3.2.tgz#87552090a36751428be513afa349e3a59a40ee1e"
-  integrity sha512-PFTIzyYswBt5IiZu/qayIjnS1HJ+Mr0ekVzLfube/qcUGvoA4Ru5SJdit2FYKljaPdiyvLD1jYJJecA50A2RtA==
+openzeppelin-test-helpers@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/openzeppelin-test-helpers/-/openzeppelin-test-helpers-0.4.1.tgz#ca4affac40878c278a3753b8cfb44886cd725954"
+  integrity sha512-LiteY53kpWLHMBFse9Rxv4K0p3jWb/VX+Mkryvo5gkjOFFeMm6nNYwSxZUd0Fw854Kpes37iVKgaf33+ZvGweQ==
   dependencies:
     ansi-colors "^3.2.3"
     chai-bn "^0.1.1"
     ethjs-abi "^0.2.1"
     semver "^5.6.0"
     truffle-contract "^4.0.8"
+    web3-utils "1.0.0-beta.37"
 
 optimist@^0.6.1:
   version "0.6.1"
