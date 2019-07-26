@@ -255,4 +255,10 @@ contract("Loans", accounts => {
       assert.equal(sale, true)
     })
   })
+
+  describe('setSales', function() {
+    it('should not allow setSales to be called twice', async function() {
+      await shouldFail.reverting(this.loans.setSales(this.loans.address))
+    })
+  })
 })
