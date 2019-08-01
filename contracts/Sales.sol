@@ -19,9 +19,9 @@ contract Sales is DSMath { // Auctions
 
 	mapping (bytes32 => Sale)       public sales; // Auctions
 	mapping (bytes32 => ERC20)      public tokes; // Auction token
-	mapping (bytes32 => Bsig)       public bsigs; // Borrower Signatures
-	mapping (bytes32 => Lsig)       public lsigs; // Lender Signatures
-	mapping (bytes32 => Asig)       public asigs; // Lender Signatures
+	mapping (bytes32 => Sig)        public bsigs; // Borrower Signatures
+	mapping (bytes32 => Sig)        public lsigs; // Lender Signatures
+	mapping (bytes32 => Sig)        public asigs; // Lender Signatures
 	mapping (bytes32 => Sech)       public sechs; // Auction Secret Hashes
     uint256                         public salei; // Auction Index
 
@@ -42,25 +42,11 @@ contract Sales is DSMath { // Auctions
         bool       off;
     }
 
-    struct Bsig {
-    	bytes      rsig;  // Borrower Refundable Signature
+    struct Sig {
+        bytes      rsig;  // Borrower Refundable Signature
         bytes      ssig;  // Borrower Seizable Signature
         bytes      rbsig; // Borrower Refundable Back Signature
         bytes      sbsig; // Borrower Seizable Back Signature
-    }
-
-    struct Lsig {
-    	bytes      rsig;  // Lender Refundable Signature
-        bytes      ssig;  // Lender Seizable Signature
-        bytes      rbsig; // Lender Refundable Back Signature
-        bytes      sbsig; // Lender Seizable Back Signature
-    }
-
-    struct Asig {
-    	bytes      rsig;  // Agent Refundable Signature
-        bytes      ssig;  // Agent Seizable Signature
-        bytes      rbsig; // Agent Refundable Back Signature
-        bytes      sbsig; // Agent Seizable Back Signature
     }
 
     struct Sech {
