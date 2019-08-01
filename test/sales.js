@@ -32,6 +32,19 @@ contract("Sales", accounts => {
   const bidr     = accounts[3]
   const bidr2    = accounts[4]
 
+  const sig1  = '0x3045022100acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig2  = '0x3045022101acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig3  = '0x3045022102acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig4  = '0x3045022103acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig5  = '0x3045022104acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig6  = '0x3045022105acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig7  = '0x3045022106acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig8  = '0x3045022107acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig9  = '0x3045022108acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig10 = '0x3045022109acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig11 = '0x304502210aacb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+  const sig12 = '0x304502210bacb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
+
   let currentTime
   let btcPrice
 
@@ -453,6 +466,64 @@ contract("Sales", accounts => {
       assert.equal(borBalBefore.toString(), borBalAfter.toString())
       assert.equal(agentBalBefore.toString(), agentBalAfter.toString())
       assert.equal(BigNumber(medBalBefore).plus(BigNumber(bid).plus(back).minus(lent)).toString(), medBalAfter.toString())
+
+      const taken = await this.sales.taken.call(this.sale)
+      assert.equal(taken, true)
+    })
+  })
+
+  describe('sign', function() {
+    it('should allow parties to sign and retrieve their signatures', async function() {
+      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
+      await this.loans.sell(this.loan, { from: bidr })
+
+      const colvWei = await this.loans.colv.call(this.loan)
+      const colv = fromWei(colvWei)
+
+      const col = await this.loans.col.call(this.loan)
+
+      await this.token.transfer(bidr, toWei('100', 'ether'))
+      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
+
+      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+
+      await time.increase(toSecs({minutes: 59}))
+
+      await this.token.transfer(bidr2, toWei('100', 'ether'))
+      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
+
+      await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+
+      await time.increase(toSecs({minutes: 2}))
+
+      await this.sales.sign(this.sale, sig1, sig2, sig3, sig4, { from: borrower })
+      await this.sales.sign(this.sale, sig5, sig6, sig7, sig8, { from: lender })
+      await this.sales.sign(this.sale, sig9, sig10, sig11, sig12, { from: agent })
+
+      const bsigs = await this.sales.bsigs.call(this.sale)
+      const lsigs = await this.sales.lsigs.call(this.sale)
+      const asigs = await this.sales.asigs.call(this.sale)
+
+      assert.equal(bsigs[0], sig1)
+      assert.equal(bsigs[1], sig2)
+      assert.equal(bsigs[2], sig3)
+      assert.equal(bsigs[3], sig4)
+
+      assert.equal(lsigs[0], sig5)
+      assert.equal(lsigs[1], sig6)
+      assert.equal(lsigs[2], sig7)
+      assert.equal(lsigs[3], sig8)
+
+      assert.equal(asigs[0], sig9)
+      assert.equal(asigs[1], sig10)
+      assert.equal(asigs[2], sig11)
+      assert.equal(asigs[3], sig12)
+
+      await this.sales.sec(this.sale, lendSecs[1])
+      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
+      await this.sales.sec(this.sale, bidrSecs[1])
+
+      await this.sales.take(this.sale)
 
       const taken = await this.sales.taken.call(this.sale)
       assert.equal(taken, true)
