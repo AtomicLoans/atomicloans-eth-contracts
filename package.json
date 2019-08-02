@@ -22,10 +22,12 @@
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {
+    "@codechecks/client": "^0.1.5",
     "chai": "^4.2.0",
     "chai-bignumber": "^3.0.0",
     "chai-bn": "^0.1.1",
     "coveralls": "^3.0.5",
+    "eth-gas-reporter": "^0.2.9",
     "openzeppelin-test-helpers": "^0.4.1",
     "solidity-coverage": "^0.6.3"
   }
