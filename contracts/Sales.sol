@@ -12,6 +12,7 @@ contract Sales is DSMath { // Auctions
 	Medianizer med;
 
     uint256 public constant SALEX = 3600;                         // Sales Expiration
+    uint256 public constant SWAEX = 7200;                         // Swap Expiration
     uint256 public constant SETEX = 14400;                        // Settlement Expiration
     uint256 public constant MINBI = 1005000000000000000000000000; // Minimum Bid Increment in RAY
 
@@ -35,8 +36,7 @@ contract Sales is DSMath { // Auctions
         address    bor;    // Borrower
         address    lend;   // Lender
         address    agent;  // Optional Automated Agent
-        uint256    salex;  // Auction Bidding Expiration
-        uint256    setex;  // Auction Settlement Expiration
+        uint256    born;   // Created At
         bytes20    pbkh;   // Bidder PubKey Hash
         bool       set;    // Sale at index opened
         bool       taken;  // Winning bid accepted
@@ -82,11 +82,15 @@ contract Sales is DSMath { // Auctions
     }
 
     function salex(bytes32 sale) public returns (uint256) {
-        return sales[sale].salex;
+        return sales[sale].born + SALEX;
+    }
+
+    function swaex(bytes32 sale) public returns (uint256) {
+        return sales[sale].born + SALEX + SWAEX;
     }
 
     function setex(bytes32 sale) public returns (uint256) {
-        return sales[sale].setex;
+        return sales[sale].born + SALEX + SETEX;
     }
 
     function pbkh(bytes32 sale) public returns (bytes20) {
@@ -160,8 +164,7 @@ contract Sales is DSMath { // Auctions
         sales[sale].bor   = bor;
         sales[sale].lend  = lend;
         sales[sale].agent = agent;
-        sales[sale].salex = now + SALEX;
-        sales[sale].setex = now + SALEX + SETEX;
+        sales[sale].born  = now;
         sales[sale].set   = true;
         sechs[sale].sechA = sechA;
         sechs[sale].sechB = sechB;
@@ -177,7 +180,7 @@ contract Sales is DSMath { // Auctions
 	) public {
         require(msg.sender != bor(sale) && msg.sender != lend(sale));
 		require(sales[sale].set);
-    	require(now < sales[sale].salex);
+	require(now < salex(sale));
     	require(amt > sales[sale].bid);
     	require(token.balanceOf(msg.sender) >= amt);
     	if (sales[sale].bid > 0) {
@@ -202,7 +205,7 @@ contract Sales is DSMath { // Auctions
 		bytes memory sbsig   // Seizable Back Signataure
 	) public {
 		require(sales[sale].set);
-		require(now < sales[sale].setex);
+		require(now < setex(sale));
 		if (msg.sender == sales[sale].bor) {
 			bsigs[sale].rsig  = rsig;
 			bsigs[sale].ssig  = ssig;
@@ -243,7 +246,7 @@ contract Sales is DSMath { // Auctions
 	function take(bytes32 sale) public { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
         require(!taken(sale));
         require(!off(sale));
-		require(now > sales[sale].salex);
+		require(now > salex(sale));
 		require(hasSecs(sale));
 		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
         sales[sale].taken = true;
@@ -273,7 +276,7 @@ contract Sales is DSMath { // Auctions
 	function unpush(bytes32 sale) public { // Refund Bid
         require(!taken(sale));
         require(!off(sale));
-		require(now > sales[sale].setex);
+		require(now > setex(sale));
 		require(sales[sale].bid > 0);
         sales[sale].off = true;
 		require(token.transfer(sales[sale].bidr, sales[sale].bid));
