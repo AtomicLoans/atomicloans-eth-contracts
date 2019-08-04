@@ -53,7 +53,7 @@ Getters:
    balance         amount of unused funds deposited in loan fund
    fee             optional automation fee
    interest        interest rate
-   lpen            liquidation penalty
+   penalty         liquidation penalty
    mala            max loan amount
    mald            max loan duration
    mila            min loan amount
@@ -105,7 +105,7 @@ Getters:
    lent            amount lent by lender
    fee             optional fee paid to automator agent if address not 0x0
    interest        loan interest rate
-   lpen            liquidation penalty in case not safe or defaulted
+   penalty         liquidation penalty in case not safe or defaulted
    min             minimum collateral value to be safe
    off             loan repayment accepted or loan cancelled
    owed            prin + interest + fee

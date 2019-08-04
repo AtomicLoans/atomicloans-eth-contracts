@@ -336,7 +336,7 @@ contract("Sales", accounts => {
 
       const lent = await this.loans.lent.call(this.loan)
       const fee  = await this.loans.fee.call(this.loan)
-      const lpen = await this.loans.lpen.call(this.loan)
+      const penalty = await this.loans.penalty.call(this.loan)
       const back = await this.loans.back.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)
@@ -395,7 +395,7 @@ contract("Sales", accounts => {
 
       const lent = await this.loans.lent.call(this.loan)
       const fee  = await this.loans.fee.call(this.loan)
-      const lpen = await this.loans.lpen.call(this.loan)
+      const penalty = await this.loans.penalty.call(this.loan)
       const back = await this.loans.back.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)
@@ -456,7 +456,7 @@ contract("Sales", accounts => {
 
       const lent = await this.loans.lent.call(this.loan)
       const fee  = await this.loans.fee.call(this.loan)
-      const lpen = await this.loans.lpen.call(this.loan)
+      const penalty = await this.loans.penalty.call(this.loan)
       const back = await this.loans.back.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)

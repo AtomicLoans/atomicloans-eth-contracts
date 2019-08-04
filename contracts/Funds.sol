@@ -28,7 +28,7 @@ contract Funds is DSMath {
         uint256  mild;     // Min Loan Duration
         uint256  mald;     // Max Loan Duration
         uint256  interest; // Interest Rate in RAY
-        uint256  lpen;     // Liquidation Penalty Rate in RAY
+        uint256  penalty;  // Liquidation Penalty Rate in RAY
         uint256  fee;      // Optional Automation Fee in RAY
         uint256  rat;      // Liquidation Ratio in RAY
         address  agent;    // Optional Automator Agent
@@ -71,8 +71,8 @@ contract Funds is DSMath {
         return funds[fund].interest;
     }
 
-    function lpen(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].lpen;
+    function penalty(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].penalty;
     }
 
     function fee(bytes32 fund)    public view returns (uint256) {
@@ -98,7 +98,7 @@ contract Funds is DSMath {
         uint256  mald_,     // Max Loan Duration
         uint256  rat_,      // Liquidation Ratio
         uint256  interest_, // Interest Rate
-        uint256  lpen_,     // Liquidation Penalty Rate
+        uint256  penalty_,  // Liquidation Penalty Rate
         uint256  fee_,      // Optional Automation Fee Rate
         address  agent_     // Optional Address Automated Agent
     ) external returns (bytes32 fund) {
@@ -110,7 +110,7 @@ contract Funds is DSMath {
         funds[fund].mild     = mild_;
         funds[fund].mald     = mald_;
         funds[fund].interest = interest_;
-        funds[fund].lpen     = lpen_;
+        funds[fund].penalty  = penalty_;
         funds[fund].fee      = fee_;
         funds[fund].rat      = rat_;
         funds[fund].agent    = agent_;
@@ -139,7 +139,7 @@ contract Funds is DSMath {
         uint256  mild_,     // Min Loan Duration
         uint256  mald_,     // Max Loan Duration
         uint256  interest_, // Interest Rate in RAY
-        uint256  lpen_,     // Liquidation Penalty Rate in RAY
+        uint256  penalty_,  // Liquidation Penalty Rate in RAY
         uint256  fee_,      // Optional Automation Fee in RAY
         uint256  rat_,      // Liquidation Ratio in RAY
         address  agent_     // Optional Automator Agent)
@@ -150,7 +150,7 @@ contract Funds is DSMath {
         funds[fund].mild     = mild_;
         funds[fund].mald     = mald_;
         funds[fund].interest = interest_;
-        funds[fund].lpen     = lpen_;
+        funds[fund].penalty  = penalty_;
         funds[fund].fee      = fee_;
         funds[fund].rat      = rat_;
         funds[fund].agent    = agent_;
@@ -196,7 +196,7 @@ contract Funds is DSMath {
         loani = loans.create(
             now + lodu_,
             [ msg.sender, lend(fund), funds[fund].agent],
-            [ amt_, calc(amt_, interest(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, fee(fund), lodu_), col_, funds[fund].rat],
+            [ amt_, calc(amt_, interest(fund), lodu_), calc(amt_, penalty(fund), lodu_), calc(amt_, fee(fund), lodu_), col_, funds[fund].rat],
             fund
         );
     }

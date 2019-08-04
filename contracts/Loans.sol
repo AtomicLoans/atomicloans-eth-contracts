@@ -40,7 +40,7 @@ contract Loans is DSMath {
         uint256 loex;       // Loan Expiration
         uint256 prin;       // Principal
         uint256 interest;   // Interest
-        uint256 lpen;       // Liquidation Penalty
+        uint256 penalty;    // Liquidation Penalty
         uint256 fee;        // Optional fee paid to auto if address not 0x0
         uint256 col;        // Collateral
         uint256 rat;        // Liquidation Ratio
@@ -103,8 +103,8 @@ contract Loans is DSMath {
         return loans[loan].fee;
     }
 
-    function lpen(bytes32 loan)   public view returns (uint256) {
-        return loans[loan].lpen;
+    function penalty(bytes32 loan)   public view returns (uint256) {
+        return loans[loan].penalty;
     }
 
     function col(bytes32 loan)    public view returns (uint256) {
@@ -136,7 +136,7 @@ contract Loans is DSMath {
     }
 
     function dedu(bytes32 loan)   public view returns (uint256) { // Deductible amount from collateral
-        return add(owed(loan), lpen(loan));
+        return add(owed(loan), penalty(loan));
     }
 
     function dedub(bytes32 loan)  public view returns (uint256) { // Deductible amount from collateral minus amount paid back
@@ -209,7 +209,7 @@ contract Loans is DSMath {
         loans[loan].agent    = usrs_[2];
         loans[loan].prin     = vals_[0];
         loans[loan].interest = vals_[1];
-        loans[loan].lpen     = vals_[2];
+        loans[loan].penalty  = vals_[2];
         loans[loan].fee      = vals_[3];
         loans[loan].col      = vals_[4];
         loans[loan].rat      = vals_[5];

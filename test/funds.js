@@ -234,7 +234,7 @@ contract("Funds", accounts => {
       const mild = await this.funds.mild.call(this.fund)
       const mald = await this.funds.mald.call(this.fund)
       const interest = await this.funds.interest.call(this.fund)
-      const lpen = await this.funds.lpen.call(this.fund)
+      const penalty = await this.funds.penalty.call(this.fund)
       const fee  = await this.funds.fee.call(this.fund)
       const rat  = await this.funds.rat.call(this.fund)
 
@@ -243,7 +243,7 @@ contract("Funds", accounts => {
       assert.equal(mild, toSecs({days: 2}))
       assert.equal(mald, toSecs({days: 364}))
       assert.equal(interest, toWei(rateToSec('16'), 'gether'))
-      assert.equal(lpen, toWei(rateToSec('2.75'), 'gether'))
+      assert.equal(penalty, toWei(rateToSec('2.75'), 'gether'))
       assert.equal(fee, toWei(rateToSec('0.5'), 'gether'))
       assert.equal(rat, toWei('1.5', 'gether'))
     })
