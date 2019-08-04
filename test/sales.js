@@ -125,7 +125,7 @@ contract("Sales", accounts => {
     await this.funds.generate(agentSechs, { from: agent })
 
     // Set Lender PubKey
-    await this.funds.set(ensure0x(lendpubk))
+    await this.funds.update(ensure0x(lendpubk))
 
     // Push funds to loan fund
     await this.token.approve(this.funds.address, toWei('100', 'ether'))

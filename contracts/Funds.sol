@@ -128,11 +128,11 @@ contract Funds is DSMath {
         }
     }
 
-    function set(bytes calldata pubk) external { // Set PubKey for Fund
+    function update(bytes calldata pubk) external { // Set PubKey for Fund
         pubks[msg.sender] = pubk;
     }
 
-    function set(        // Set Loan Fund details
+    function update(     // Set Loan Fund details
         bytes32  fund,   // Loan Fund Index
         uint256  mila_,  // Min Loan Amount
         uint256  mala_,  // Max Loan Amount

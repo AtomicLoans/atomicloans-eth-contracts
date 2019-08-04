@@ -44,7 +44,7 @@ Actions:
    withdraw        withdraw unused funds from the loan fund
    push            post additional toks to fund
    request         request loan from fund
-   set             update loan fund request details
+   update          update loan fund request details
 
 
 Getters:
