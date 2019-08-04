@@ -91,7 +91,7 @@ contract Funds is DSMath {
         return funds[fund].bal;
     }
 
-    function open(
+    function create(
         uint256  mila_,  // Min Loan Amount
         uint256  mala_,  // Max Loan Amount
         uint256  mild_,  // Min Loan Duration
@@ -171,7 +171,7 @@ contract Funds is DSMath {
         require(lodu_      >= mild(fund));
         require(lodu_      <= mald(fund));
 
-        loani = lopen(fund, amt_, col_, lodu_);
+        loani = lcreate(fund, amt_, col_, lodu_);
         lsech(fund, loani, sechs_, pubk_);
         loans.push(loani);
     }
@@ -187,13 +187,13 @@ contract Funds is DSMath {
         return sub(rmul(amt, rpow(rate, lodu)), amt);
     }
 
-    function lopen(               // Private Open Loan
+    function lcreate(             // Private Open Loan
         bytes32           fund,   // Fund Index
         uint256           amt_,   // Loan Amount
         uint256           col_,   // Collateral Amount in satoshis
         uint256           lodu_   // Loan Duration in seconds
     ) private returns (bytes32 loani) {
-        loani = loans.open(
+        loani = loans.create(
             now + lodu_,
             [ msg.sender, lend(fund), funds[fund].agent],
             [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, lfee(fund), lodu_), col_, funds[fund].rat],

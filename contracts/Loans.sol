@@ -194,7 +194,7 @@ contract Loans is DSMath {
         sales = sales_;
     }
     
-    function open(                   // Create new Loan
+    function create(                   // Create new Loan
         uint256             loex_,   // Loan Expiration
         address[3] calldata usrs_,   // Borrower, Lender, Optional Automated Agent Addresses
         uint256[6] calldata vals_,   // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
@@ -327,7 +327,7 @@ contract Loans is DSMath {
 		}
         Sechs storage h = sechs[loan];
         uint256 i = sales.next(loan);
-		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, h.sechAS[i], h.sechBS[i], h.sechCS[i]);
+		sale = sales.create(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, h.sechAS[i], h.sechBS[i], h.sechCS[i]);
         if (bools[loan].sale == false) { require(token.transfer(address(sales), back(loan))); }
 		bools[loan].sale = true;
     }

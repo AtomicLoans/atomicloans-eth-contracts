@@ -148,7 +148,7 @@ contract Sales is DSMath { // Auctions
     	return salel[loan].length;
     }
 
-    function open(
+    function create(
     	bytes32 loani, // Loan Index
     	address bor,   // Address Borrower
     	address lend,  // Address Lender

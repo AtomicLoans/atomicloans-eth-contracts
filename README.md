@@ -40,7 +40,7 @@ MIT
 Actions:
 
    generate        generate secret hashes for loan fund
-   open            create new loan fund
+   create          create new loan fund
    pull            remove excess toks from fund
    push            post additional toks to fund
    req             request loan from fund
@@ -80,7 +80,7 @@ Vars:
 Actions:
 
    mark            mark collateral as locked
-   open            create new loan
+   create          create new loan
    pay             repay debt
    pull            accept or cancel loan and remove funds
    push            fund loan
@@ -129,7 +129,7 @@ Vars:
 ```
 Actions:
 
-   open            create new auction (can only be called by loan)
+   create          create new auction (can only be called by loan)
    push            bid on collateral
    sec             provide secret
    sign            provide signature to move collateral to collateral swap

@@ -115,8 +115,8 @@ contract("Sales", accounts => {
       agent
     ]
 
-    this.fund = await this.funds.open.call(...fundParams)
-    await this.funds.open(...fundParams)
+    this.fund = await this.funds.create.call(...fundParams)
+    await this.funds.create(...fundParams)
 
     // Generate lender secret hashes
     await this.funds.generate(lendSechs)
