@@ -41,7 +41,7 @@ Actions:
 
    generate        generate secret hashes for loan fund
    create          create new loan fund
-   pull            remove excess toks from fund
+   withdraw        withdraw unused funds from the loan fund
    push            post additional toks to fund
    req             request loan from fund
    set             update loan fund request details

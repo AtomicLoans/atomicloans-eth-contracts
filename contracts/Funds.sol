@@ -176,7 +176,7 @@ contract Funds is DSMath {
         loans.push(loani);
     }
 
-    function pull(bytes32 fund, uint256 amt) external { // Pull funds from Loan Fund
+    function withdraw(bytes32 fund, uint256 amt) external { // Withdraw funds from Loan Fund
         require(msg.sender == lend(fund));
         require(bal(fund)  >= amt);
         funds[fund].bal = sub(funds[fund].bal, amt);

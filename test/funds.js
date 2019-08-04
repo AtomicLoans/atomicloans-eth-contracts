@@ -249,8 +249,8 @@ contract("Funds", accounts => {
     })
   })
 
-  describe('pull funds', function() {
-    it('should pull funds successfully if called by owner', async function() {
+  describe('withdraw funds', function() {
+    it('should withdraw funds successfully if called by owner', async function() {
       // Generate lender secret hashes
       await this.funds.generate(lendSechs)
 
@@ -267,7 +267,7 @@ contract("Funds", accounts => {
       const oldBal = await this.token.balanceOf.call(this.funds.address)
 
       // Pull funds from loan fund
-      await this.funds.pull(this.fund, toWei('50', 'ether'))
+      await this.funds.withdraw(this.fund, toWei('50', 'ether'))
 
       const newBal = await this.token.balanceOf.call(this.funds.address)
 
@@ -289,7 +289,7 @@ contract("Funds", accounts => {
       await this.funds.push(this.fund, toWei('100', 'ether'))
 
       // Pull funds from loan fund
-      await expectRevert(this.funds.pull(this.fund, toWei('50', 'ether'), { from: agent }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.funds.withdraw(this.fund, toWei('50', 'ether'), { from: agent }), 'VM Exception while processing transaction: revert')
     })
   })
 
