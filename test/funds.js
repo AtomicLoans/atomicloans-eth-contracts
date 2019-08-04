@@ -236,7 +236,7 @@ contract("Funds", accounts => {
       const interest = await this.funds.interest.call(this.fund)
       const penalty = await this.funds.penalty.call(this.fund)
       const fee  = await this.funds.fee.call(this.fund)
-      const rat  = await this.funds.rat.call(this.fund)
+      const liquidationRatio = await this.funds.liquidationRatio.call(this.fund)
 
       assert.equal(minLoanAmt, toWei('2', 'ether'))
       assert.equal(maxLoanAmt, toWei('99', 'ether'))
@@ -245,7 +245,7 @@ contract("Funds", accounts => {
       assert.equal(interest, toWei(rateToSec('16'), 'gether'))
       assert.equal(penalty, toWei(rateToSec('2.75'), 'gether'))
       assert.equal(fee, toWei(rateToSec('0.5'), 'gether'))
-      assert.equal(rat, toWei('1.5', 'gether'))
+      assert.equal(liquidationRatio, toWei('1.5', 'gether'))
     })
   })
 

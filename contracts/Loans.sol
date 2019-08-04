@@ -33,19 +33,19 @@ contract Loans is DSMath {
     address deployer;
 
     struct Loan {
-    	address bor;        // Address Borrower
-        address lend;       // Address Lender
-        address agent;      // Optional Address automated agent
-        uint256 born;       // Created At
-        uint256 loex;       // Loan Expiration
-        uint256 prin;       // Principal
-        uint256 interest;   // Interest
-        uint256 penalty;    // Liquidation Penalty
-        uint256 fee;        // Optional fee paid to auto if address not 0x0
-        uint256 col;        // Collateral
-        uint256 rat;        // Liquidation Ratio
-        bytes   bpubk;      // Borrower PubKey
-        bytes   lpubk;      // Lender PubKey
+    	address bor;              // Address Borrower
+        address lend;             // Address Lender
+        address agent;            // Optional Address automated agent
+        uint256 born;             // Created At
+        uint256 loex;             // Loan Expiration
+        uint256 prin;             // Principal
+        uint256 interest;         // Interest
+        uint256 penalty;          // Liquidation Penalty
+        uint256 fee;              // Optional fee paid to auto if address not 0x0
+        uint256 col;              // Collateral
+        uint256 liquidationRatio; // Liquidation Ratio
+        bytes   bpubk;            // Borrower PubKey
+        bytes   lpubk;            // Lender PubKey
     }
 
     struct Sechs {
@@ -115,8 +115,8 @@ contract Loans is DSMath {
         return backs[loan];
     }
 
-    function rat(bytes32 loan)    public view returns (uint256) {
-        return loans[loan].rat;
+    function liquidationRatio(bytes32 loan)    public view returns (uint256) {
+        return loans[loan].liquidationRatio;
     }
 
     function lent(bytes32 loan)   public view returns (uint256) { // Amount lent by Lender
@@ -173,7 +173,7 @@ contract Loans is DSMath {
     }
 
     function min(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
-        return rmul(sub(prin(loan), back(loan)), rat(loan));
+        return rmul(sub(prin(loan), back(loan)), liquidationRatio(loan));
     }
 
     function safe(bytes32 loan) public returns (bool) { // Loan is safe from Liquidation
@@ -202,28 +202,28 @@ contract Loans is DSMath {
     ) external returns (bytes32 loan) {
         loani = add(loani, 1);
         loan = bytes32(loani);
-        loans[loan].born     = now;
-        loans[loan].loex     = loex_;
-        loans[loan].bor      = usrs_[0];
-        loans[loan].lend     = usrs_[1];
-        loans[loan].agent    = usrs_[2];
-        loans[loan].prin     = vals_[0];
-        loans[loan].interest = vals_[1];
-        loans[loan].penalty  = vals_[2];
-        loans[loan].fee      = vals_[3];
-        loans[loan].col      = vals_[4];
-        loans[loan].rat      = vals_[5];
-        fundi[loan]          = fundi_;
-        sechs[loan].set      = false;
+        loans[loan].born             = now;
+        loans[loan].loex             = loex_;
+        loans[loan].bor              = usrs_[0];
+        loans[loan].lend             = usrs_[1];
+        loans[loan].agent            = usrs_[2];
+        loans[loan].prin             = vals_[0];
+        loans[loan].interest         = vals_[1];
+        loans[loan].penalty          = vals_[2];
+        loans[loan].fee              = vals_[3];
+        loans[loan].col              = vals_[4];
+        loans[loan].liquidationRatio = vals_[5];
+        fundi[loan]                  = fundi_;
+        sechs[loan].set              = false;
     }
 
-    function setSechs(             // Set Secret Hashes for Loan
-    	bytes32           loan,    // Loan index
-	bytes32[4] calldata bsechs,  // Borrower Secret Hashes
-	bytes32[4] calldata lsechs,  // Lender Secret Hashes
-	bytes32[4] calldata asechs,  // Agent Secret Hashes
-		bytes      calldata bpubk_,  // Borrower Pubkey
-        bytes      calldata lpubk_   // Lender Pubkey
+    function setSechs(              // Set Secret Hashes for Loan
+    	bytes32             loan,   // Loan index
+        bytes32[4] calldata bsechs, // Borrower Secret Hashes
+        bytes32[4] calldata lsechs, // Lender Secret Hashes
+        bytes32[4] calldata asechs, // Agent Secret Hashes
+		bytes      calldata bpubk_, // Borrower Pubkey
+        bytes      calldata lpubk_  // Lender Pubkey
 	) external returns (bool) {
 		require(!sechs[loan].set);
 		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend || msg.sender == address(funds));
