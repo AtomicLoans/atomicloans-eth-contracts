@@ -22,17 +22,17 @@ contract Funds is DSMath {
     address deployer;
 
     struct Fund {
-        address  lend;     // Loan Fund Owner (Lender)
-        uint256  mila;     // Min Loan Amount
-        uint256  mala;     // Max Loan Amount
-        uint256  mild;     // Min Loan Duration
-        uint256  mald;     // Max Loan Duration
-        uint256  interest; // Interest Rate in RAY
-        uint256  penalty;  // Liquidation Penalty Rate in RAY
-        uint256  fee;      // Optional Automation Fee in RAY
-        uint256  rat;      // Liquidation Ratio in RAY
-        address  agent;    // Optional Automator Agent
-        uint256  balance;  // Locked amount in fund (in TOK)
+        address  lend;       // Loan Fund Owner (Lender)
+        uint256  minLoanAmt; // Min Loan Amount
+        uint256  maxLoanAmt; // Max Loan Amount
+        uint256  minLoanDur; // Min Loan Duration
+        uint256  maxLoanDur; // Max Loan Duration
+        uint256  interest;   // Interest Rate in RAY
+        uint256  penalty;    // Liquidation Penalty Rate in RAY
+        uint256  fee;        // Optional Automation Fee in RAY
+        uint256  rat;        // Liquidation Ratio in RAY
+        address  agent;      // Optional Automator Agent
+        uint256  balance;    // Locked amount in fund (in TOK)
     }
 
     constructor(ERC20 token_) public {
@@ -51,20 +51,20 @@ contract Funds is DSMath {
         return funds[fund].lend;
     }
 
-    function mila(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].mila;
+    function minLoanAmt(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].minLoanAmt;
     }
 
-    function mala(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].mala;
+    function maxLoanAmt(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].maxLoanAmt;
     }
 
-    function mild(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].mild;
+    function minLoanDur(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].minLoanDur;
     }
 
-    function mald(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].mald;
+    function maxLoanDur(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].maxLoanDur;
     }
 
     function interest(bytes32 fund)    public view returns (uint256) {
@@ -92,28 +92,28 @@ contract Funds is DSMath {
     }
 
     function create(
-        uint256  mila_,     // Min Loan Amount
-        uint256  mala_,     // Max Loan Amount
-        uint256  mild_,     // Min Loan Duration
-        uint256  mald_,     // Max Loan Duration
-        uint256  rat_,      // Liquidation Ratio
-        uint256  interest_, // Interest Rate
-        uint256  penalty_,  // Liquidation Penalty Rate
-        uint256  fee_,      // Optional Automation Fee Rate
-        address  agent_     // Optional Address Automated Agent
+        uint256  minLoanAmt_, // Min Loan Amount
+        uint256  maxLoanAmt_, // Max Loan Amount
+        uint256  minLoanDur_, // Min Loan Duration
+        uint256  maxLoanDur_, // Max Loan Duration
+        uint256  rat_,        // Liquidation Ratio
+        uint256  interest_,   // Interest Rate
+        uint256  penalty_,    // Liquidation Penalty Rate
+        uint256  fee_,        // Optional Automation Fee Rate
+        address  agent_       // Optional Address Automated Agent
     ) external returns (bytes32 fund) {
         fundi = add(fundi, 1);
         fund = bytes32(fundi);
-        funds[fund].lend     = msg.sender;
-        funds[fund].mila     = mila_;
-        funds[fund].mala     = mala_;
-        funds[fund].mild     = mild_;
-        funds[fund].mald     = mald_;
-        funds[fund].interest = interest_;
-        funds[fund].penalty  = penalty_;
-        funds[fund].fee      = fee_;
-        funds[fund].rat      = rat_;
-        funds[fund].agent    = agent_;
+        funds[fund].lend       = msg.sender;
+        funds[fund].minLoanAmt = minLoanAmt_;
+        funds[fund].maxLoanAmt = maxLoanAmt_;
+        funds[fund].minLoanDur = minLoanDur_;
+        funds[fund].maxLoanDur = maxLoanDur_;
+        funds[fund].interest   = interest_;
+        funds[fund].penalty    = penalty_;
+        funds[fund].fee        = fee_;
+        funds[fund].rat        = rat_;
+        funds[fund].agent      = agent_;
     }
 
     function deposit(bytes32 fund, uint256 amt) external { // Deposit funds to Loan Fund
@@ -132,28 +132,28 @@ contract Funds is DSMath {
         pubks[msg.sender] = pubk;
     }
 
-    function update(        // Set Loan Fund details
-        bytes32  fund,      // Loan Fund Index
-        uint256  mila_,     // Min Loan Amount
-        uint256  mala_,     // Max Loan Amount
-        uint256  mild_,     // Min Loan Duration
-        uint256  mald_,     // Max Loan Duration
-        uint256  interest_, // Interest Rate in RAY
-        uint256  penalty_,  // Liquidation Penalty Rate in RAY
-        uint256  fee_,      // Optional Automation Fee in RAY
-        uint256  rat_,      // Liquidation Ratio in RAY
-        address  agent_     // Optional Automator Agent)
+    function update(          // Set Loan Fund details
+        bytes32  fund,        // Loan Fund Index
+        uint256  minLoanAmt_, // Min Loan Amount
+        uint256  maxLoanAmt_, // Max Loan Amount
+        uint256  minLoanDur_, // Min Loan Duration
+        uint256  maxLoanDur_, // Max Loan Duration
+        uint256  interest_,   // Interest Rate in RAY
+        uint256  penalty_,    // Liquidation Penalty Rate in RAY
+        uint256  fee_,        // Optional Automation Fee in RAY
+        uint256  rat_,        // Liquidation Ratio in RAY
+        address  agent_       // Optional Automator Agent)
     ) external {
         require(msg.sender == lend(fund));
-        funds[fund].mila     = mila_;
-        funds[fund].mala     = mala_;
-        funds[fund].mild     = mild_;
-        funds[fund].mald     = mald_;
-        funds[fund].interest = interest_;
-        funds[fund].penalty  = penalty_;
-        funds[fund].fee      = fee_;
-        funds[fund].rat      = rat_;
-        funds[fund].agent    = agent_;
+        funds[fund].minLoanAmt = minLoanAmt_;
+        funds[fund].maxLoanAmt = maxLoanAmt_;
+        funds[fund].minLoanDur = minLoanDur_;
+        funds[fund].maxLoanDur = maxLoanDur_;
+        funds[fund].interest   = interest_;
+        funds[fund].penalty    = penalty_;
+        funds[fund].fee        = fee_;
+        funds[fund].rat        = rat_;
+        funds[fund].agent      = agent_;
     }
 
     function request(                 // Request Loan
@@ -166,10 +166,10 @@ contract Funds is DSMath {
     ) external returns (bytes32 loani) {
         require(msg.sender != lend(fund));
         require(amt_       <= balance(fund));
-        require(amt_       >= mila(fund));
-        require(amt_       <= mala(fund));
-        require(lodu_      >= mild(fund));
-        require(lodu_      <= mald(fund));
+        require(amt_       >= minLoanAmt(fund));
+        require(amt_       <= maxLoanAmt(fund));
+        require(lodu_      >= minLoanDur(fund));
+        require(lodu_      <= maxLoanDur(fund));
 
         loani = lcreate(fund, amt_, col_, lodu_);
         lsech(fund, loani, sechs_, pubk_);

@@ -54,10 +54,10 @@ Getters:
    fee             optional automation fee
    interest        interest rate
    penalty         liquidation penalty
-   mala            max loan amount
-   mald            max loan duration
-   mila            min loan amount
-   mild            min loan duration
+   maxLoanAmt      max loan amount
+   maxLoanDur      max loan duration
+   minLoanAmt      min loan amount
+   minLoanDur      min loan duration
    deployer        loan fund owner
    rat             liquidation ratio
    tok             debt token
