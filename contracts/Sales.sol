@@ -18,7 +18,6 @@ contract Sales is DSMath { // Auctions
 	address public own; // Only the Loans contract can edit data
 
 	mapping (bytes32 => Sale)       public sales; // Auctions
-	mapping (bytes32 => ERC20)      public tokes; // Auction token
 	mapping (bytes32 => Sig)        public bsigs; // Borrower Signatures
 	mapping (bytes32 => Sig)        public lsigs; // Lender Signatures
 	mapping (bytes32 => Sig)        public asigs; // Lender Signatures
@@ -26,6 +25,8 @@ contract Sales is DSMath { // Auctions
     uint256                         public salei; // Auction Index
 
     mapping (bytes32 => bytes32[])  public salel; // Loan Auctions (find by loani)
+
+    ERC20 public token;
 
     struct Sale {
         bytes32    loani;  // Loan Index
@@ -132,10 +133,11 @@ contract Sales is DSMath { // Auctions
         return sechs[sale].secD;
     }
 
-    constructor (address loans_, address med_) public {
-    	own   = loans_;
-    	loans = Loans(loans_);
-    	med   = Medianizer(med_);
+    constructor (Loans loans_, Medianizer med_, ERC20 token_) public {
+    	own   = address(loans_);
+    	loans = loans_;
+    	med   = med_;
+        token = token_;
     }
 
     function next(bytes32 loan) public view returns (uint256) {
@@ -149,8 +151,7 @@ contract Sales is DSMath { // Auctions
         address agent, // Optional Address automated agent
     	bytes32 sechA, // Secret Hash A
     	bytes32 sechB, // Secret Hash B
-    	bytes32 sechC, // Secret Hash C
-	ERC20   tok    // Debt Token
+    	bytes32 sechC  // Secret Hash C
 	) public returns(bytes32 sale) {
     	require(msg.sender == own);
     	salei = add(salei, 1);
@@ -161,7 +162,6 @@ contract Sales is DSMath { // Auctions
         sales[sale].agent = agent;
         sales[sale].salex = now + SALEX;
         sales[sale].setex = now + SALEX + SETEX;
-        tokes[sale]       = tok;
         sales[sale].set   = true;
         sechs[sale].sechA = sechA;
         sechs[sale].sechB = sechB;
@@ -179,14 +179,14 @@ contract Sales is DSMath { // Auctions
 		require(sales[sale].set);
     	require(now < sales[sale].salex);
     	require(amt > sales[sale].bid);
-    	require(tokes[sale].balanceOf(msg.sender) >= amt);
+    	require(token.balanceOf(msg.sender) >= amt);
     	if (sales[sale].bid > 0) {
 		require(amt > rmul(sales[sale].bid, MINBI)); // Make sure next bid is at least 0.5% more than the last bid
     	}
 
-    	require(tokes[sale].transferFrom(msg.sender, address(this), amt));
+    	require(token.transferFrom(msg.sender, address(this), amt));
     	if (sales[sale].bid > 0) {
-    		require(tokes[sale].transfer(sales[sale].bidr, sales[sale].bid));
+    		require(token.transfer(sales[sale].bidr, sales[sale].bid));
     	}
     	sales[sale].bidr = msg.sender;
     	sales[sale].bid  = amt;
@@ -251,23 +251,23 @@ contract Sales is DSMath { // Auctions
         uint256 available = add(sales[sale].bid, loans.back(sales[sale].loani));
         uint256 amount = min(available, loans.lent(sales[sale].loani));
 
-        require(tokes[sale].transfer(sales[sale].lend, amount));
+        require(token.transfer(sales[sale].lend, amount));
         available = sub(available, amount);
 
         if (available >= add(loans.lfee(sales[sale].loani), loans.lpen(sales[sale].loani))) {
             if (agent(sale) != address(0)) {
-                require(tokes[sale].transfer(sales[sale].agent, loans.lfee(sales[sale].loani)));
+                require(token.transfer(sales[sale].agent, loans.lfee(sales[sale].loani)));
             }
-            require(tokes[sale].approve(address(med), loans.lpen(sales[sale].loani)));
-            med.push(loans.lpen(sales[sale].loani), tokes[sale]);
+            require(token.approve(address(med), loans.lpen(sales[sale].loani)));
+            med.push(loans.lpen(sales[sale].loani), token);
             available = sub(available, add(loans.lfee(sales[sale].loani), loans.lpen(sales[sale].loani)));
         } else if (available > 0) {
-            require(tokes[sale].approve(address(med), available));
-            med.push(available, tokes[sale]);
+            require(token.approve(address(med), available));
+            med.push(available, token);
             available = 0;
         }
 
-        if (available > 0) { require(tokes[sale].transfer(sales[sale].bor, available)); }
+        if (available > 0) { require(token.transfer(sales[sale].bor, available)); }
 	}
 
 	function unpush(bytes32 sale) public { // Refund Bid
@@ -276,9 +276,9 @@ contract Sales is DSMath { // Auctions
 		require(now > sales[sale].setex);
 		require(sales[sale].bid > 0);
         sales[sale].off = true;
-		require(tokes[sale].transfer(sales[sale].bidr, sales[sale].bid));
+		require(token.transfer(sales[sale].bidr, sales[sale].bid));
         if (next(sales[sale].loani) == 3) {
-            require(tokes[sale].transfer(sales[sale].bor, loans.back(sales[sale].loani)));
+            require(token.transfer(sales[sale].bor, loans.back(sales[sale].loani)));
         }
 	}
 }

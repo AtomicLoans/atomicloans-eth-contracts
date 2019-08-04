@@ -17,7 +17,7 @@ contract Funds is DSMath {
     mapping (bytes32 => Fund)      public funds;  
     uint256                        public fundi;
 
-    mapping (address => bool)      public tokas;  // Is ERC20 Token Approved
+    ERC20 public token;
 
     address own;
 
@@ -33,17 +33,18 @@ contract Funds is DSMath {
         uint256  rat;   // Liquidation Ratio in RAY
         address  agent; // Optional Automator Agent
         uint256  bal;   // Locked amount in fund (in TOK)
-        ERC20    tok;   // Debt Token
     }
 
-    constructor() public {
+    constructor(ERC20 token_) public {
         own = msg.sender;
+        token = token_;
     }
 
-    function setLoans(address loans_) public {
+    function setLoans(Loans loans_) public {
         require(msg.sender == own);
         require(address(loans) == address(0));
-        loans = Loans(loans_);
+        loans = loans_;
+        require(token.approve(address(loans_), 2**256-1));
     }
 
     function lend(bytes32 fund)   public view returns (address) {
@@ -90,10 +91,6 @@ contract Funds is DSMath {
         return funds[fund].bal;
     }
 
-    function tok(bytes32 fund)   public view returns (address) {
-        return address(funds[fund].tok);
-    }
-
     function open(
         uint256  mila_,  // Min Loan Amount
         uint256  mala_,  // Max Loan Amount
@@ -103,8 +100,7 @@ contract Funds is DSMath {
         uint256  lint_,  // Interest Rate
         uint256  lpen_,  // Liquidation Penalty Rate
         uint256  lfee_,  // Optional Automation Fee Rate
-        address  agent_, // Optional Address Automated Agent
-        ERC20    tok_   // Debt Token
+        address  agent_  // Optional Address Automated Agent
     ) public returns (bytes32 fund) {
         fundi = add(fundi, 1);
         fund = bytes32(fundi);
@@ -117,19 +113,13 @@ contract Funds is DSMath {
         funds[fund].lpen  = lpen_;
         funds[fund].lfee  = lfee_;
         funds[fund].rat   = rat_;
-        funds[fund].tok   = tok_;
         funds[fund].agent = agent_;
-
-        if (tokas[address(tok_)] == false) {
-            require(tok_.approve(address(loans), 2**256-1));
-            tokas[address(tok_)] = true;
-        }
     }
 
     function push(bytes32 fund, uint256 amt) public { // Push funds to Loan Fund
         // require(msg.sender == lend(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         funds[fund].bal = add(funds[fund].bal, amt);
-        require(funds[fund].tok.transferFrom(msg.sender, address(this), amt));
+        require(token.transferFrom(msg.sender, address(this), amt));
     }
 
     function gen(bytes32[] memory sechs_) public { // Generate secret hashes for Loan Fund
@@ -190,7 +180,7 @@ contract Funds is DSMath {
         require(msg.sender == lend(fund));
         require(bal(fund)  >= amt);
         funds[fund].bal = sub(funds[fund].bal, amt);
-        require(funds[fund].tok.transfer(lend(fund), amt));
+        require(token.transfer(lend(fund), amt));
     }
 
     function calc(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
@@ -207,7 +197,6 @@ contract Funds is DSMath {
             now + lodu_,
             [ msg.sender, lend(fund), funds[fund].agent],
             [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, lfee(fund), lodu_), col_, funds[fund].rat],
-            funds[fund].tok,
             fund
         );
     }
