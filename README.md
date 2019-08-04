@@ -50,7 +50,7 @@ Actions:
 Getters:
 
    agent           optional automated agent
-   bal             locked amount of tok in fund
+   balance         amount of unused funds deposited in loan fund
    lfee            optional automation fee
    lint            interest rate
    lpen            liquidation penalty

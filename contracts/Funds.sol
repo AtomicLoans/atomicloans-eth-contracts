@@ -22,17 +22,17 @@ contract Funds is DSMath {
     address deployer;
 
     struct Fund {
-        address  lend;   // Loan Fund Owner (Lender)
-        uint256  mila;  // Min Loan Amount
-        uint256  mala;  // Max Loan Amount
-        uint256  mild;  // Min Loan Duration
-        uint256  mald;  // Max Loan Duration
-        uint256  lint;  // Interest Rate in RAY
-        uint256  lpen;  // Liquidation Penalty Rate in RAY
-        uint256  lfee;  // Optional Automation Fee in RAY
-        uint256  rat;   // Liquidation Ratio in RAY
-        address  agent; // Optional Automator Agent
-        uint256  bal;   // Locked amount in fund (in TOK)
+        address  lend;    // Loan Fund Owner (Lender)
+        uint256  mila;    // Min Loan Amount
+        uint256  mala;    // Max Loan Amount
+        uint256  mild;    // Min Loan Duration
+        uint256  mald;    // Max Loan Duration
+        uint256  lint;    // Interest Rate in RAY
+        uint256  lpen;    // Liquidation Penalty Rate in RAY
+        uint256  lfee;    // Optional Automation Fee in RAY
+        uint256  rat;     // Liquidation Ratio in RAY
+        address  agent;   // Optional Automator Agent
+        uint256  balance; // Locked amount in fund (in TOK)
     }
 
     constructor(ERC20 token_) public {
@@ -47,48 +47,48 @@ contract Funds is DSMath {
         require(token.approve(address(loans_), 2**256-1));
     }
 
-    function lend(bytes32 fund)   public view returns (address) {
+    function lend(bytes32 fund)    public view returns (address) {
         return funds[fund].lend;
     }
 
-    function mila(bytes32 fund)  public view returns (uint256) {
+    function mila(bytes32 fund)    public view returns (uint256) {
         return funds[fund].mila;
     }
 
-    function mala(bytes32 fund)  public view returns (uint256) {
+    function mala(bytes32 fund)    public view returns (uint256) {
         return funds[fund].mala;
     }
 
-    function mild(bytes32 fund)  public view returns (uint256) {
+    function mild(bytes32 fund)    public view returns (uint256) {
         return funds[fund].mild;
     }
 
-    function mald(bytes32 fund)  public view returns (uint256) {
+    function mald(bytes32 fund)    public view returns (uint256) {
         return funds[fund].mald;
     }
 
-    function lint(bytes32 fund)  public view returns (uint256) {
+    function lint(bytes32 fund)    public view returns (uint256) {
         return funds[fund].lint;
     }
 
-    function lpen(bytes32 fund)  public view returns (uint256) {
+    function lpen(bytes32 fund)    public view returns (uint256) {
         return funds[fund].lpen;
     }
 
-    function lfee(bytes32 fund)  public view returns (uint256) {
+    function lfee(bytes32 fund)    public view returns (uint256) {
         return funds[fund].lfee;
     }
 
-    function rat(bytes32 fund)   public view returns (uint256) {
+    function rat(bytes32 fund)     public view returns (uint256) {
         return funds[fund].rat;
     }
 
-    function agent(bytes32 fund) public view returns (address) {
+    function agent(bytes32 fund)   public view returns (address) {
         return funds[fund].agent;
     }
 
-    function bal(bytes32 fund)   public view returns (uint256) {
-        return funds[fund].bal;
+    function balance(bytes32 fund) public view returns (uint256) {
+        return funds[fund].balance;
     }
 
     function create(
@@ -118,7 +118,7 @@ contract Funds is DSMath {
 
     function deposit(bytes32 fund, uint256 amt) external { // Deposit funds to Loan Fund
         // require(msg.sender == lend(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
-        funds[fund].bal = add(funds[fund].bal, amt);
+        funds[fund].balance = add(funds[fund].balance, amt);
         require(token.transferFrom(msg.sender, address(this), amt));
     }
 
@@ -165,7 +165,7 @@ contract Funds is DSMath {
         bytes      calldata pubk_   // Pubkey
     ) external returns (bytes32 loani) {
         require(msg.sender != lend(fund));
-        require(amt_       <= bal(fund));
+        require(amt_       <= balance(fund));
         require(amt_       >= mila(fund));
         require(amt_       <= mala(fund));
         require(lodu_      >= mild(fund));
@@ -177,9 +177,9 @@ contract Funds is DSMath {
     }
 
     function withdraw(bytes32 fund, uint256 amt) external { // Withdraw funds from Loan Fund
-        require(msg.sender == lend(fund));
-        require(bal(fund)  >= amt);
-        funds[fund].bal = sub(funds[fund].bal, amt);
+        require(msg.sender     == lend(fund));
+        require(balance(fund)  >= amt);
+        funds[fund].balance = sub(funds[fund].balance, amt);
         require(token.transfer(lend(fund), amt));
     }
 
