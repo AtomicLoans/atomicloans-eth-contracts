@@ -310,13 +310,6 @@ contract Loans is DSMath {
         }
     }
 
-    function sechi(bytes32 loan, bytes32 usr) private view returns (bytes32 sech) { // Get Secret Hash for Sale Index
-    	if      (usr == 'A') { sech = sechs[loan].sechAS[sales.next(loan)]; }
-    	else if (usr == 'B') { sech = sechs[loan].sechBS[sales.next(loan)]; }
-    	else if (usr == 'C') { sech = sechs[loan].sechCS[sales.next(loan)]; }
-    	else revert();
-    }
-
     function sell(bytes32 loan) public returns (bytes32 sale) { // Start Auction
     	require(!off(loan));
         require(bools[loan].taken  == true);
@@ -332,7 +325,9 @@ contract Loans is DSMath {
             require(now > sales.setex(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction after settlement expiration of pervious auction
             require(!sales.taken(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
 		}
-		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, sechi(loan, 'A'), sechi(loan, 'B'), sechi(loan, 'C'));
+        Sechs storage h = sechs[loan];
+        uint256 i = sales.next(loan);
+		sale = sales.open(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, h.sechAS[i], h.sechBS[i], h.sechCS[i]);
         if (bools[loan].sale == false) { require(token.transfer(address(sales), back(loan))); }
 		bools[loan].sale = true;
     }
