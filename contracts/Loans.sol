@@ -39,7 +39,7 @@ contract Loans is DSMath {
         uint256 born;       // Created At
         uint256 loex;       // Loan Expiration
         uint256 prin;       // Principal
-        uint256 lint;       // Interest
+        uint256 interest;   // Interest
         uint256 lpen;       // Liquidation Penalty
         uint256 fee;        // Optional fee paid to auto if address not 0x0
         uint256 col;        // Collateral
@@ -95,8 +95,8 @@ contract Loans is DSMath {
         return loans[loan].prin;
     }
 
-    function lint(bytes32 loan)   public view returns (uint256) {
-        return loans[loan].lint;
+    function interest(bytes32 loan)   public view returns (uint256) {
+        return loans[loan].interest;
     }
 
     function fee(bytes32 loan)   public view returns (uint256) {
@@ -120,7 +120,7 @@ contract Loans is DSMath {
     }
 
     function lent(bytes32 loan)   public view returns (uint256) { // Amount lent by Lender
-        return add(prin(loan), lint(loan));
+        return add(prin(loan), interest(loan));
     }
 
     function lentb(bytes32 loan)  public view returns (uint256) { // Amount lent by lender minus amount paid back
@@ -202,19 +202,19 @@ contract Loans is DSMath {
     ) external returns (bytes32 loan) {
         loani = add(loani, 1);
         loan = bytes32(loani);
-        loans[loan].born   = now;
-        loans[loan].loex   = loex_;
-        loans[loan].bor    = usrs_[0];
-        loans[loan].lend   = usrs_[1];
-        loans[loan].agent  = usrs_[2];
-        loans[loan].prin   = vals_[0];
-        loans[loan].lint   = vals_[1];
-        loans[loan].lpen   = vals_[2];
-        loans[loan].fee    = vals_[3];
-        loans[loan].col    = vals_[4];
-        loans[loan].rat    = vals_[5];
-        fundi[loan]        = fundi_;
-        sechs[loan].set    = false;
+        loans[loan].born     = now;
+        loans[loan].loex     = loex_;
+        loans[loan].bor      = usrs_[0];
+        loans[loan].lend     = usrs_[1];
+        loans[loan].agent    = usrs_[2];
+        loans[loan].prin     = vals_[0];
+        loans[loan].interest = vals_[1];
+        loans[loan].lpen     = vals_[2];
+        loans[loan].fee      = vals_[3];
+        loans[loan].col      = vals_[4];
+        loans[loan].rat      = vals_[5];
+        fundi[loan]          = fundi_;
+        sechs[loan].set      = false;
     }
 
     function setSechs(             // Set Secret Hashes for Loan

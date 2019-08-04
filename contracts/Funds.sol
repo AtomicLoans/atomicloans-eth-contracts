@@ -22,17 +22,17 @@ contract Funds is DSMath {
     address deployer;
 
     struct Fund {
-        address  lend;    // Loan Fund Owner (Lender)
-        uint256  mila;    // Min Loan Amount
-        uint256  mala;    // Max Loan Amount
-        uint256  mild;    // Min Loan Duration
-        uint256  mald;    // Max Loan Duration
-        uint256  lint;    // Interest Rate in RAY
-        uint256  lpen;    // Liquidation Penalty Rate in RAY
-        uint256  fee;     // Optional Automation Fee in RAY
-        uint256  rat;     // Liquidation Ratio in RAY
-        address  agent;   // Optional Automator Agent
-        uint256  balance; // Locked amount in fund (in TOK)
+        address  lend;     // Loan Fund Owner (Lender)
+        uint256  mila;     // Min Loan Amount
+        uint256  mala;     // Max Loan Amount
+        uint256  mild;     // Min Loan Duration
+        uint256  mald;     // Max Loan Duration
+        uint256  interest; // Interest Rate in RAY
+        uint256  lpen;     // Liquidation Penalty Rate in RAY
+        uint256  fee;      // Optional Automation Fee in RAY
+        uint256  rat;      // Liquidation Ratio in RAY
+        address  agent;    // Optional Automator Agent
+        uint256  balance;  // Locked amount in fund (in TOK)
     }
 
     constructor(ERC20 token_) public {
@@ -67,8 +67,8 @@ contract Funds is DSMath {
         return funds[fund].mald;
     }
 
-    function lint(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].lint;
+    function interest(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].interest;
     }
 
     function lpen(bytes32 fund)    public view returns (uint256) {
@@ -92,28 +92,28 @@ contract Funds is DSMath {
     }
 
     function create(
-        uint256  mila_,  // Min Loan Amount
-        uint256  mala_,  // Max Loan Amount
-        uint256  mild_,  // Min Loan Duration
-        uint256  mald_,  // Max Loan Duration
-        uint256  rat_,   // Liquidation Ratio
-        uint256  lint_,  // Interest Rate
-        uint256  lpen_,  // Liquidation Penalty Rate
-        uint256  fee_,   // Optional Automation Fee Rate
-        address  agent_  // Optional Address Automated Agent
+        uint256  mila_,     // Min Loan Amount
+        uint256  mala_,     // Max Loan Amount
+        uint256  mild_,     // Min Loan Duration
+        uint256  mald_,     // Max Loan Duration
+        uint256  rat_,      // Liquidation Ratio
+        uint256  interest_, // Interest Rate
+        uint256  lpen_,     // Liquidation Penalty Rate
+        uint256  fee_,      // Optional Automation Fee Rate
+        address  agent_     // Optional Address Automated Agent
     ) external returns (bytes32 fund) {
         fundi = add(fundi, 1);
         fund = bytes32(fundi);
-        funds[fund].lend  = msg.sender;
-        funds[fund].mila  = mila_;
-        funds[fund].mala  = mala_;
-        funds[fund].mild  = mild_;
-        funds[fund].mald  = mald_;
-        funds[fund].lint  = lint_;
-        funds[fund].lpen  = lpen_;
-        funds[fund].fee   = fee_;
-        funds[fund].rat   = rat_;
-        funds[fund].agent = agent_;
+        funds[fund].lend     = msg.sender;
+        funds[fund].mila     = mila_;
+        funds[fund].mala     = mala_;
+        funds[fund].mild     = mild_;
+        funds[fund].mald     = mald_;
+        funds[fund].interest = interest_;
+        funds[fund].lpen     = lpen_;
+        funds[fund].fee      = fee_;
+        funds[fund].rat      = rat_;
+        funds[fund].agent    = agent_;
     }
 
     function deposit(bytes32 fund, uint256 amt) external { // Deposit funds to Loan Fund
@@ -132,28 +132,28 @@ contract Funds is DSMath {
         pubks[msg.sender] = pubk;
     }
 
-    function update(     // Set Loan Fund details
-        bytes32  fund,   // Loan Fund Index
-        uint256  mila_,  // Min Loan Amount
-        uint256  mala_,  // Max Loan Amount
-        uint256  mild_,  // Min Loan Duration
-        uint256  mald_,  // Max Loan Duration
-        uint256  lint_,  // Interest Rate in RAY
-        uint256  lpen_,  // Liquidation Penalty Rate in RAY
-        uint256  fee_,   // Optional Automation Fee in RAY
-        uint256  rat_,   // Liquidation Ratio in RAY
-        address  agent_  // Optional Automator Agent)
+    function update(        // Set Loan Fund details
+        bytes32  fund,      // Loan Fund Index
+        uint256  mila_,     // Min Loan Amount
+        uint256  mala_,     // Max Loan Amount
+        uint256  mild_,     // Min Loan Duration
+        uint256  mald_,     // Max Loan Duration
+        uint256  interest_, // Interest Rate in RAY
+        uint256  lpen_,     // Liquidation Penalty Rate in RAY
+        uint256  fee_,      // Optional Automation Fee in RAY
+        uint256  rat_,      // Liquidation Ratio in RAY
+        address  agent_     // Optional Automator Agent)
     ) external {
         require(msg.sender == lend(fund));
-        funds[fund].mila  = mila_;
-        funds[fund].mala  = mala_;
-        funds[fund].mild  = mild_;
-        funds[fund].mald  = mald_;
-        funds[fund].lint  = lint_;
-        funds[fund].lpen  = lpen_;
-        funds[fund].fee   = fee_;
-        funds[fund].rat   = rat_;
-        funds[fund].agent = agent_;
+        funds[fund].mila     = mila_;
+        funds[fund].mala     = mala_;
+        funds[fund].mild     = mild_;
+        funds[fund].mald     = mald_;
+        funds[fund].interest = interest_;
+        funds[fund].lpen     = lpen_;
+        funds[fund].fee      = fee_;
+        funds[fund].rat      = rat_;
+        funds[fund].agent    = agent_;
     }
 
     function request(                 // Request Loan
@@ -196,7 +196,7 @@ contract Funds is DSMath {
         loani = loans.create(
             now + lodu_,
             [ msg.sender, lend(fund), funds[fund].agent],
-            [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, fee(fund), lodu_), col_, funds[fund].rat],
+            [ amt_, calc(amt_, interest(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, fee(fund), lodu_), col_, funds[fund].rat],
             fund
         );
     }
