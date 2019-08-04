@@ -51,7 +51,7 @@ Getters:
 
    agent           optional automated agent
    balance         amount of unused funds deposited in loan fund
-   lfee            optional automation fee
+   fee             optional automation fee
    lint            interest rate
    lpen            liquidation penalty
    mala            max loan amount
@@ -103,12 +103,12 @@ Getters:
    dedu            deductible amount from collateral
    lend            lender address
    lent            amount lent by lender
-   lfee            optional fee paid to automator agent if address not 0x0
+   fee             optional fee paid to automator agent if address not 0x0
    lint            loan interest
    lpen            liquidation penalty in case not safe or defaulted
    min             minimum collateral value to be safe
    off             loan repayment accepted or loan cancelled
-   owed            prin + lint + lfee
+   owed            prin + lint + fee
    prin            loan principal
    pushed          loan funded
    rat             liquidation ratio

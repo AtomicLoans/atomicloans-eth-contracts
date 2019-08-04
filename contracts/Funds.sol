@@ -29,7 +29,7 @@ contract Funds is DSMath {
         uint256  mald;    // Max Loan Duration
         uint256  lint;    // Interest Rate in RAY
         uint256  lpen;    // Liquidation Penalty Rate in RAY
-        uint256  lfee;    // Optional Automation Fee in RAY
+        uint256  fee;     // Optional Automation Fee in RAY
         uint256  rat;     // Liquidation Ratio in RAY
         address  agent;   // Optional Automator Agent
         uint256  balance; // Locked amount in fund (in TOK)
@@ -75,8 +75,8 @@ contract Funds is DSMath {
         return funds[fund].lpen;
     }
 
-    function lfee(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].lfee;
+    function fee(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].fee;
     }
 
     function rat(bytes32 fund)     public view returns (uint256) {
@@ -99,7 +99,7 @@ contract Funds is DSMath {
         uint256  rat_,   // Liquidation Ratio
         uint256  lint_,  // Interest Rate
         uint256  lpen_,  // Liquidation Penalty Rate
-        uint256  lfee_,  // Optional Automation Fee Rate
+        uint256  fee_,   // Optional Automation Fee Rate
         address  agent_  // Optional Address Automated Agent
     ) external returns (bytes32 fund) {
         fundi = add(fundi, 1);
@@ -111,7 +111,7 @@ contract Funds is DSMath {
         funds[fund].mald  = mald_;
         funds[fund].lint  = lint_;
         funds[fund].lpen  = lpen_;
-        funds[fund].lfee  = lfee_;
+        funds[fund].fee   = fee_;
         funds[fund].rat   = rat_;
         funds[fund].agent = agent_;
     }
@@ -140,7 +140,7 @@ contract Funds is DSMath {
         uint256  mald_,  // Max Loan Duration
         uint256  lint_,  // Interest Rate in RAY
         uint256  lpen_,  // Liquidation Penalty Rate in RAY
-        uint256  lfee_,  // Optional Automation Fee in RAY
+        uint256  fee_,   // Optional Automation Fee in RAY
         uint256  rat_,   // Liquidation Ratio in RAY
         address  agent_  // Optional Automator Agent)
     ) external {
@@ -151,7 +151,7 @@ contract Funds is DSMath {
         funds[fund].mald  = mald_;
         funds[fund].lint  = lint_;
         funds[fund].lpen  = lpen_;
-        funds[fund].lfee  = lfee_;
+        funds[fund].fee   = fee_;
         funds[fund].rat   = rat_;
         funds[fund].agent = agent_;
     }
@@ -196,7 +196,7 @@ contract Funds is DSMath {
         loani = loans.create(
             now + lodu_,
             [ msg.sender, lend(fund), funds[fund].agent],
-            [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, lfee(fund), lodu_), col_, funds[fund].rat],
+            [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, fee(fund), lodu_), col_, funds[fund].rat],
             fund
         );
     }

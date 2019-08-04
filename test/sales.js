@@ -335,7 +335,7 @@ contract("Sales", accounts => {
       const agentBalAfter = await this.token.balanceOf.call(agent)
 
       const lent = await this.loans.lent.call(this.loan)
-      const lfee = await this.loans.lfee.call(this.loan)
+      const fee  = await this.loans.fee.call(this.loan)
       const lpen = await this.loans.lpen.call(this.loan)
       const back = await this.loans.back.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)
@@ -343,7 +343,7 @@ contract("Sales", accounts => {
 
       assert.equal(BigNumber(lendBalBefore).plus(lent).toFixed(), lendBalAfter.toString())
       assert.equal(BigNumber(borBalBefore).plus(BigNumber(bid).plus(back).minus(dedu)).toString(), borBalAfter.toString())
-      assert.equal(BigNumber(agentBalBefore).plus(lfee).toString(), agentBalAfter)
+      assert.equal(BigNumber(agentBalBefore).plus(fee).toString(), agentBalAfter)
 
       const taken = await this.sales.taken.call(this.sale)
       assert.equal(taken, true)
@@ -394,7 +394,7 @@ contract("Sales", accounts => {
       const agentBalAfter = await this.token.balanceOf.call(agent)
 
       const lent = await this.loans.lent.call(this.loan)
-      const lfee = await this.loans.lfee.call(this.loan)
+      const fee  = await this.loans.fee.call(this.loan)
       const lpen = await this.loans.lpen.call(this.loan)
       const back = await this.loans.back.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)
@@ -455,7 +455,7 @@ contract("Sales", accounts => {
       const medBalAfter   = await this.token.balanceOf.call(this.med.address)
 
       const lent = await this.loans.lent.call(this.loan)
-      const lfee = await this.loans.lfee.call(this.loan)
+      const fee  = await this.loans.fee.call(this.loan)
       const lpen = await this.loans.lpen.call(this.loan)
       const back = await this.loans.back.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)

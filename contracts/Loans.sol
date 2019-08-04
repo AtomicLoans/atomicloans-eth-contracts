@@ -41,7 +41,7 @@ contract Loans is DSMath {
         uint256 prin;       // Principal
         uint256 lint;       // Interest
         uint256 lpen;       // Liquidation Penalty
-        uint256 lfee;       // Optional fee paid to auto if address not 0x0
+        uint256 fee;        // Optional fee paid to auto if address not 0x0
         uint256 col;        // Collateral
         uint256 rat;        // Liquidation Ratio
         bytes   bpubk;      // Borrower PubKey
@@ -99,8 +99,8 @@ contract Loans is DSMath {
         return loans[loan].lint;
     }
 
-    function lfee(bytes32 loan)   public view returns (uint256) {
-        return loans[loan].lfee;
+    function fee(bytes32 loan)   public view returns (uint256) {
+        return loans[loan].fee;
     }
 
     function lpen(bytes32 loan)   public view returns (uint256) {
@@ -128,7 +128,7 @@ contract Loans is DSMath {
     }
 
     function owed(bytes32 loan)   public view returns (uint256) { // Amount owed
-        return add(lent(loan), lfee(loan));
+        return add(lent(loan), fee(loan));
     }
 
     function owedb(bytes32 loan)  public view returns (uint256) { // Amount owed minus amount paid back
@@ -210,7 +210,7 @@ contract Loans is DSMath {
         loans[loan].prin   = vals_[0];
         loans[loan].lint   = vals_[1];
         loans[loan].lpen   = vals_[2];
-        loans[loan].lfee   = vals_[3];
+        loans[loan].fee    = vals_[3];
         loans[loan].col    = vals_[4];
         loans[loan].rat    = vals_[5];
         fundi[loan]        = fundi_;
@@ -306,7 +306,7 @@ contract Loans is DSMath {
             } else {
                 funds.deposit(fundi[loan], lent(loan));
             }
-            require(token.transfer(loans[loan].agent, lfee(loan)));
+            require(token.transfer(loans[loan].agent, fee(loan)));
         }
     }
 

@@ -257,13 +257,13 @@ contract Sales is DSMath { // Auctions
         require(token.transfer(sales[sale].lend, amount));
         available = sub(available, amount);
 
-        if (available >= add(loans.lfee(sales[sale].loani), loans.lpen(sales[sale].loani))) {
+        if (available >= add(loans.fee(sales[sale].loani), loans.lpen(sales[sale].loani))) {
             if (agent(sale) != address(0)) {
-                require(token.transfer(sales[sale].agent, loans.lfee(sales[sale].loani)));
+                require(token.transfer(sales[sale].agent, loans.fee(sales[sale].loani)));
             }
             require(token.approve(address(med), loans.lpen(sales[sale].loani)));
             med.push(loans.lpen(sales[sale].loani), token);
-            available = sub(available, add(loans.lfee(sales[sale].loani), loans.lpen(sales[sale].loani)));
+            available = sub(available, add(loans.fee(sales[sale].loani), loans.lpen(sales[sale].loani)));
         } else if (available > 0) {
             require(token.approve(address(med), available));
             med.push(available, token);
