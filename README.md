@@ -58,7 +58,7 @@ Getters:
    mald            max loan duration
    mila            min loan amount
    mild            min loan duration
-   own             loan fund owner
+   deployer        loan fund owner
    rat             liquidation ratio
    tok             debt token
    vars            variable contract

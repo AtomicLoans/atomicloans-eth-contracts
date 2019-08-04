@@ -19,7 +19,7 @@ contract Funds is DSMath {
 
     ERC20 public token;
 
-    address own;
+    address deployer;
 
     struct Fund {
         address  lend;   // Loan Fund Owner (Lender)
@@ -36,12 +36,12 @@ contract Funds is DSMath {
     }
 
     constructor(ERC20 token_) public {
-        own = msg.sender;
+        deployer = msg.sender;
         token = token_;
     }
 
     function setLoans(Loans loans_) public {
-        require(msg.sender == own);
+        require(msg.sender == deployer);
         require(address(loans) == address(0));
         loans = loans_;
         require(token.approve(address(loans_), 2**256-1));

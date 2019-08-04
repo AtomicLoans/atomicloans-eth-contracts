@@ -16,7 +16,7 @@ contract Sales is DSMath { // Auctions
     uint256 public constant SETEX = 14400;                        // Settlement Expiration
     uint256 public constant MINBI = 1005000000000000000000000000; // Minimum Bid Increment in RAY
 
-	address public own; // Only the Loans contract can edit data
+	address public deployer; // Only the Loans contract can edit data
 
 	mapping (bytes32 => Sale)       public sales; // Auctions
 	mapping (bytes32 => Sig)        public bsigs; // Borrower Signatures
@@ -138,10 +138,10 @@ contract Sales is DSMath { // Auctions
     }
 
     constructor (Loans loans_, Medianizer med_, ERC20 token_) public {
-    	own   = address(loans_);
-    	loans = loans_;
-    	med   = med_;
-        token = token_;
+    	deployer = address(loans_);
+    	loans    = loans_;
+    	med      = med_;
+        token    = token_;
     }
 
     function next(bytes32 loan) public view returns (uint256) {
@@ -157,7 +157,7 @@ contract Sales is DSMath { // Auctions
     	bytes32 sechB, // Secret Hash B
     	bytes32 sechC // Secret Hash C
 	) external returns(bytes32 sale) {
-    	require(msg.sender == own);
+    	require(msg.sender == deployer);
     	salei = add(salei, 1);
         sale = bytes32(salei);
         sales[sale].loani = loani;

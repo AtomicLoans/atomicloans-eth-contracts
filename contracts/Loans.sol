@@ -30,7 +30,7 @@ contract Loans is DSMath {
 
     ERC20 public token; // ERC20 Debt Stablecoin
 
-    address own;
+    address deployer;
 
     struct Loan {
     	address bor;        // Address Borrower
@@ -181,15 +181,15 @@ contract Loans is DSMath {
     }
 
     constructor (Funds funds_, Medianizer med_, ERC20 token_) public {
-        own = msg.sender;
-    	funds = funds_;
-    	med   = med_;
-        token = token_;
+        deployer = msg.sender;
+    	funds    = funds_;
+    	med      = med_;
+        token    = token_;
         require(token.approve(address(funds), 2**256-1));
     }
 
     function setSales(Sales sales_) external {
-        require(msg.sender == own);
+        require(msg.sender == deployer);
         require(address(sales) == address(0));
         sales = sales_;
     }
