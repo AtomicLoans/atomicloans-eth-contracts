@@ -129,7 +129,7 @@ contract("Sales", accounts => {
 
     // Push funds to loan fund
     await this.token.approve(this.funds.address, toWei('100', 'ether'))
-    await this.funds.push(this.fund, toWei('100', 'ether'))
+    await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
     // Pull from loan
     const loanParams = [

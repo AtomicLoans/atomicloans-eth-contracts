@@ -116,7 +116,7 @@ contract Funds is DSMath {
         funds[fund].agent = agent_;
     }
 
-    function push(bytes32 fund, uint256 amt) external { // Push funds to Loan Fund
+    function deposit(bytes32 fund, uint256 amt) external { // Deposit funds to Loan Fund
         // require(msg.sender == lend(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         funds[fund].bal = add(funds[fund].bal, amt);
         require(token.transferFrom(msg.sender, address(this), amt));

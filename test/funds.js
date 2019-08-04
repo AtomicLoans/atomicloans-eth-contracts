@@ -119,7 +119,7 @@ contract("Funds", accounts => {
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'), { from: agent })
-      await this.funds.push(this.fund, toWei('100', 'ether'), { from: agent })
+      await this.funds.deposit(this.fund, toWei('100', 'ether'), { from: agent })
 
       const bal = await this.token.balanceOf.call(this.funds.address)
 
@@ -138,7 +138,7 @@ contract("Funds", accounts => {
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
-      await this.funds.push(this.fund, toWei('100', 'ether'))
+      await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
       // request collateralization ratio 2
       const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
@@ -262,7 +262,7 @@ contract("Funds", accounts => {
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
-      await this.funds.push(this.fund, toWei('100', 'ether'))
+      await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
       const oldBal = await this.token.balanceOf.call(this.funds.address)
 
@@ -286,7 +286,7 @@ contract("Funds", accounts => {
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
-      await this.funds.push(this.fund, toWei('100', 'ether'))
+      await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
       // Pull funds from loan fund
       await expectRevert(this.funds.withdraw(this.fund, toWei('50', 'ether'), { from: agent }), 'VM Exception while processing transaction: revert')

@@ -304,7 +304,7 @@ contract Loans is DSMath {
             if (fundi[loan] == bytes32(0) || !fund) {
                 require(token.transfer(loans[loan].lend, lent(loan)));
             } else {
-                funds.push(fundi[loan], lent(loan));
+                funds.deposit(fundi[loan], lent(loan));
             }
             require(token.transfer(loans[loan].agent, lfee(loan)));
         }
