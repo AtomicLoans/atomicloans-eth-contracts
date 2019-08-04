@@ -141,8 +141,8 @@ contract("Sales", accounts => {
       ensure0x(lendpubk)
     ]
 
-    this.loan = await this.funds.req.call(...loanParams, { from: borrower })
-    await this.funds.req(...loanParams, { from: borrower })
+    this.loan = await this.funds.request.call(...loanParams, { from: borrower })
+    await this.funds.request(...loanParams, { from: borrower })
 
     await this.loans.mark(this.loan)
 

@@ -43,7 +43,7 @@ Actions:
    create          create new loan fund
    withdraw        withdraw unused funds from the loan fund
    push            post additional toks to fund
-   req             request loan from fund
+   request         request loan from fund
    set             update loan fund request details
 
 

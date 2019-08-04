@@ -156,7 +156,7 @@ contract Funds is DSMath {
         funds[fund].agent = agent_;
     }
 
-    function req(                 // Request Loan
+    function request(                 // Request Loan
         bytes32           fund,   // Fund Index
         uint256           amt_,   // Loan Amount
         uint256           col_,   // Collateral Amount in satoshis
