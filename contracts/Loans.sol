@@ -188,18 +188,18 @@ contract Loans is DSMath {
         require(token.approve(address(funds), 2**256-1));
     }
 
-    function setSales(Sales sales_) public {
+    function setSales(Sales sales_) external {
         require(msg.sender == own);
         require(address(sales) == address(0));
         sales = sales_;
     }
     
-    function open(                  // Create new Loan
-        uint256            loex_,   // Loan Expiration
-        address[3] memory  usrs_,   // Borrower, Lender, Optional Automated Agent Addresses
-        uint256[6] memory  vals_,   // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
-        bytes32            fundi_   // Optional Fund Index
-    ) public returns (bytes32 loan) {
+    function open(                   // Create new Loan
+        uint256             loex_,   // Loan Expiration
+        address[3] calldata usrs_,   // Borrower, Lender, Optional Automated Agent Addresses
+        uint256[6] calldata vals_,   // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
+        bytes32             fundi_   // Optional Fund Index
+    ) external returns (bytes32 loan) {
         loani = add(loani, 1);
         loan = bytes32(loani);
         loans[loan].born   = now;
@@ -219,12 +219,12 @@ contract Loans is DSMath {
 
     function setSechs(             // Set Secret Hashes for Loan
     	bytes32           loan,    // Loan index
-    	bytes32[4] memory bsechs,  // Borrower Secret Hashes
-    	bytes32[4] memory lsechs,  // Lender Secret Hashes
-    	bytes32[4] memory asechs,  // Agent Secret Hashes
-		bytes      memory bpubk_,  // Borrower Pubkey
-        bytes      memory lpubk_   // Lender Pubkey
-	) public returns (bool) {
+	bytes32[4] calldata bsechs,  // Borrower Secret Hashes
+	bytes32[4] calldata lsechs,  // Lender Secret Hashes
+	bytes32[4] calldata asechs,  // Agent Secret Hashes
+		bytes      calldata bpubk_,  // Borrower Pubkey
+        bytes      calldata lpubk_   // Lender Pubkey
+	) external returns (bool) {
 		require(!sechs[loan].set);
 		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend || msg.sender == address(funds));
 		sechs[loan].sechA1 = bsechs[0];
@@ -238,21 +238,21 @@ contract Loans is DSMath {
         sechs[loan].set    = true;
 	}
 
-	function push(bytes32 loan) public { // Fund Loan
+	function push(bytes32 loan) external { // Fund Loan
 		require(sechs[loan].set);
     	require(bools[loan].pushed == false);
     	require(token.transferFrom(msg.sender, address(this), prin(loan)));
     	bools[loan].pushed = true;
     }
 
-    function mark(bytes32 loan) public { // Mark Collateral as locked
+    function mark(bytes32 loan) external { // Mark Collateral as locked
     	require(bools[loan].pushed == true);
     	require(loans[loan].lend   == msg.sender);
     	require(now                <= apex(loan));
     	bools[loan].marked = true;
     }
 
-    function take(bytes32 loan, bytes32 secA1) public { // Withdraw
+    function take(bytes32 loan, bytes32 secA1) external { // Withdraw
     	require(!off(loan));
     	require(bools[loan].pushed == true);
     	require(bools[loan].marked == true);
@@ -261,7 +261,7 @@ contract Loans is DSMath {
     	bools[loan].taken = true;
     }
 
-    function pay(bytes32 loan, uint256 amt) public { // Payback Loan
+    function pay(bytes32 loan, uint256 amt) external { // Payback Loan
         // require(msg.sender                == loans[loan].bor); // NOTE: this is not necessary. Anyone can pay off the loan
     	require(!off(loan));
         require(!sale(loan));
@@ -276,7 +276,7 @@ contract Loans is DSMath {
     	}
     }
 
-    function unpay(bytes32 loan) public { // Refund payback
+    function unpay(bytes32 loan) external { // Refund payback
     	require(!off(loan));
         require(!sale(loan));
     	require(now              >  acex(loan));
@@ -286,7 +286,7 @@ contract Loans is DSMath {
     	require(token.transfer(loans[loan].bor, owed(loan)));
     }
 
-    function pull(bytes32 loan, bytes32 sec) public {
+    function pull(bytes32 loan, bytes32 sec) external {
         pull(loan, sec, true); // Default to true for returning funds to Fund
     }
 
@@ -310,7 +310,7 @@ contract Loans is DSMath {
         }
     }
 
-    function sell(bytes32 loan) public returns (bytes32 sale) { // Start Auction
+    function sell(bytes32 loan) external returns (bytes32 sale) { // Start Auction
     	require(!off(loan));
         require(bools[loan].taken  == true);
     	if (sales.next(loan) == 0) {

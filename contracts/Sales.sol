@@ -155,8 +155,8 @@ contract Sales is DSMath { // Auctions
         address agent, // Optional Address automated agent
     	bytes32 sechA, // Secret Hash A
     	bytes32 sechB, // Secret Hash B
-    	bytes32 sechC  // Secret Hash C
-	) public returns(bytes32 sale) {
+    	bytes32 sechC // Secret Hash C
+	) external returns(bytes32 sale) {
     	require(msg.sender == own);
     	salei = add(salei, 1);
         sale = bytes32(salei);
@@ -177,7 +177,7 @@ contract Sales is DSMath { // Auctions
     	uint256 amt,   // Bid Amount
     	bytes32 sech,  // Secret Hash
     	bytes20 pbkh   // PubKeyHash
-	) public {
+	) external {
         require(msg.sender != bor(sale) && msg.sender != lend(sale));
 		require(sales[sale].set);
 	require(now < salex(sale));
@@ -199,11 +199,11 @@ contract Sales is DSMath { // Auctions
 
 	function sign(           // Provide Signature to move collateral to collateral swap
 		bytes32      sale,   // Auction Index
-		bytes memory rsig,   // Refundable Signature
-		bytes memory ssig,   // Seizable Signature
-		bytes memory rbsig,  // Refundable Back Signature
-		bytes memory sbsig   // Seizable Back Signataure
-	) public {
+		bytes calldata rsig,   // Refundable Signature
+		bytes calldata ssig,   // Seizable Signature
+		bytes calldata rbsig,  // Refundable Back Signature
+		bytes calldata sbsig   // Seizable Back Signataure
+	) external {
 		require(sales[sale].set);
 		require(now < setex(sale));
 		if (msg.sender == sales[sale].bor) {
@@ -226,7 +226,7 @@ contract Sales is DSMath { // Auctions
 		}
 	}
 
-	function sec(bytes32 sale, bytes32 sec_) public { // Provide Secret
+	function sec(bytes32 sale, bytes32 sec_) external { // Provide Secret
 		require(sales[sale].set);
 		if      (sha256(abi.encodePacked(sec_)) == sechs[sale].sechA) { sechs[sale].secA = sec_; }
         else if (sha256(abi.encodePacked(sec_)) == sechs[sale].sechB) { sechs[sale].secB = sec_; }
@@ -243,7 +243,7 @@ contract Sales is DSMath { // Auctions
 		return (secs >= 2);
 	}
 
-	function take(bytes32 sale) public { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
+	function take(bytes32 sale) external { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
         require(!taken(sale));
         require(!off(sale));
 		require(now > salex(sale));
@@ -273,7 +273,7 @@ contract Sales is DSMath { // Auctions
         if (available > 0) { require(token.transfer(sales[sale].bor, available)); }
 	}
 
-	function unpush(bytes32 sale) public { // Refund Bid
+	function unpush(bytes32 sale) external { // Refund Bid
         require(!taken(sale));
         require(!off(sale));
 		require(now > setex(sale));

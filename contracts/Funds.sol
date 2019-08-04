@@ -101,7 +101,7 @@ contract Funds is DSMath {
         uint256  lpen_,  // Liquidation Penalty Rate
         uint256  lfee_,  // Optional Automation Fee Rate
         address  agent_  // Optional Address Automated Agent
-    ) public returns (bytes32 fund) {
+    ) external returns (bytes32 fund) {
         fundi = add(fundi, 1);
         fund = bytes32(fundi);
         funds[fund].lend  = msg.sender;
@@ -116,19 +116,19 @@ contract Funds is DSMath {
         funds[fund].agent = agent_;
     }
 
-    function push(bytes32 fund, uint256 amt) public { // Push funds to Loan Fund
+    function push(bytes32 fund, uint256 amt) external { // Push funds to Loan Fund
         // require(msg.sender == lend(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         funds[fund].bal = add(funds[fund].bal, amt);
         require(token.transferFrom(msg.sender, address(this), amt));
     }
 
-    function gen(bytes32[] memory sechs_) public { // Generate secret hashes for Loan Fund
+    function gen(bytes32[] calldata sechs_) external { // Generate secret hashes for Loan Fund
         for (uint i = 0; i < sechs_.length; i++) {
             sechs[msg.sender].push(sechs_[i]);
         }
     }
 
-    function set(bytes memory pubk) public { // Set PubKey for Fund
+    function set(bytes calldata pubk) external { // Set PubKey for Fund
         pubks[msg.sender] = pubk;
     }
 
@@ -143,7 +143,7 @@ contract Funds is DSMath {
         uint256  lfee_,  // Optional Automation Fee in RAY
         uint256  rat_,   // Liquidation Ratio in RAY
         address  agent_  // Optional Automator Agent)
-    ) public {
+    ) external {
         require(msg.sender == lend(fund));
         funds[fund].mila  = mila_;
         funds[fund].mala  = mala_;
@@ -161,9 +161,9 @@ contract Funds is DSMath {
         uint256           amt_,   // Loan Amount
         uint256           col_,   // Collateral Amount in satoshis
         uint256           lodu_,  // Loan Duration in seconds
-        bytes32[4] memory sechs_, // Secret Hash A1 & A2
-        bytes      memory pubk_   // Pubkey
-    ) public returns (bytes32 loani) {
+        bytes32[4] calldata sechs_, // Secret Hash A1 & A2
+        bytes      calldata pubk_   // Pubkey
+    ) external returns (bytes32 loani) {
         require(msg.sender != lend(fund));
         require(amt_       <= bal(fund));
         require(amt_       >= mila(fund));
@@ -176,7 +176,7 @@ contract Funds is DSMath {
         loans.push(loani);
     }
 
-    function pull(bytes32 fund, uint256 amt) public { // Pull funds from Loan Fund
+    function pull(bytes32 fund, uint256 amt) external { // Pull funds from Loan Fund
         require(msg.sender == lend(fund));
         require(bal(fund)  >= amt);
         funds[fund].bal = sub(funds[fund].bal, amt);
