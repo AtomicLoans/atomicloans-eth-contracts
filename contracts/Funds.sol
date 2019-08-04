@@ -122,7 +122,7 @@ contract Funds is DSMath {
         require(token.transferFrom(msg.sender, address(this), amt));
     }
 
-    function gen(bytes32[] calldata sechs_) external { // Generate secret hashes for Loan Fund
+    function generate(bytes32[] calldata sechs_) external { // Generate secret hashes for Loan Fund
         for (uint i = 0; i < sechs_.length; i++) {
             sechs[msg.sender].push(sechs_[i]);
         }

@@ -90,7 +90,7 @@ contract("Funds", accounts => {
   describe('generate secret hashes', function() {
     it('should push secrets hashes to sechs for user address', async function() {
       // Generate lender secret hashes
-      await this.funds.gen(lendSechs)
+      await this.funds.generate(lendSechs)
 
       const sech0 = await this.funds.sechs.call(lender, 0)
       const sech1 = await this.funds.sechs.call(lender, 1)
@@ -128,10 +128,10 @@ contract("Funds", accounts => {
 
     it('should request and complete loan successfully if loan setup correctly', async function() {
       // Generate lender secret hashes
-      await this.funds.gen(lendSechs)
+      await this.funds.generate(lendSechs)
 
       // Generate agent secret hashes
-      await this.funds.gen(agentSechs, { from: agent })
+      await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
       await this.funds.set(ensure0x(lendpubk))
@@ -252,10 +252,10 @@ contract("Funds", accounts => {
   describe('pull funds', function() {
     it('should pull funds successfully if called by owner', async function() {
       // Generate lender secret hashes
-      await this.funds.gen(lendSechs)
+      await this.funds.generate(lendSechs)
 
       // Generate agent secret hashes
-      await this.funds.gen(agentSechs, { from: agent })
+      await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
       await this.funds.set(ensure0x(lendpubk))
@@ -276,10 +276,10 @@ contract("Funds", accounts => {
 
     it('should fail pulling funds if not called by owner', async function() {
       // Generate lender secret hashes
-      await this.funds.gen(lendSechs)
+      await this.funds.generate(lendSechs)
 
       // Generate agent secret hashes
-      await this.funds.gen(agentSechs, { from: agent })
+      await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
       await this.funds.set(ensure0x(lendpubk))

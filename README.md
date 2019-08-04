@@ -39,7 +39,7 @@ MIT
 ```
 Actions:
 
-   gen             generate secret hashes for loan fund
+   generate        generate secret hashes for loan fund
    open            create new loan fund
    pull            remove excess toks from fund
    push            post additional toks to fund

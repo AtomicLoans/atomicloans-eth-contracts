@@ -106,10 +106,10 @@ contract("Loans", accounts => {
     await this.funds.open(...fundParams)
 
     // Generate lender secret hashes
-    await this.funds.gen(lendSechs)
+    await this.funds.generate(lendSechs)
 
     // Generate agent secret hashes
-    await this.funds.gen(agentSechs, { from: agent })
+    await this.funds.generate(agentSechs, { from: agent })
 
     // Set Lender PubKey
     await this.funds.set(ensure0x(lendpubk))
