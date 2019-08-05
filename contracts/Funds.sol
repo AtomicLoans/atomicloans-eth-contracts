@@ -9,7 +9,7 @@ pragma solidity ^0.5.8;
 contract Funds is DSMath {
     Loans loans;
 
-    mapping (address => bytes32[]) public sechs;  // User secret hashes
+    mapping (address => bytes32[]) public secretHashes;  // User secret hashes
     mapping (address => uint256)   public sechi;  // User secret hash index
 
     mapping (address => bytes)     public pubKeys;  // User A Coin PubKeys
@@ -122,9 +122,9 @@ contract Funds is DSMath {
         require(token.transferFrom(msg.sender, address(this), amt));
     }
 
-    function generate(bytes32[] calldata sechs_) external { // Generate secret hashes for Loan Fund
-        for (uint i = 0; i < sechs_.length; i++) {
-            sechs[msg.sender].push(sechs_[i]);
+    function generate(bytes32[] calldata secretHashes_) external { // Generate secret hashes for Loan Fund
+        for (uint i = 0; i < secretHashes_.length; i++) {
+            secretHashes[msg.sender].push(secretHashes_[i]);
         }
     }
 
@@ -156,13 +156,13 @@ contract Funds is DSMath {
         funds[fund].agent            = agent_;
     }
 
-    function request(                 // Request Loan
-        bytes32           fund,   // Fund Index
-        uint256           amt_,   // Loan Amount
-        uint256           col_,   // Collateral Amount in satoshis
-        uint256           lodu_,  // Loan Duration in seconds
-        bytes32[4] calldata sechs_, // Secret Hash A1 & A2
-        bytes      calldata pubk_   // Pubkey
+    function request(                      // Request Loan
+        bytes32             fund,          // Fund Index
+        uint256             amt_,          // Loan Amount
+        uint256             col_,          // Collateral Amount in satoshis
+        uint256             lodu_,         // Loan Duration in seconds
+        bytes32[4] calldata secretHashes_, // Secret Hash A1 & A2
+        bytes      calldata pubk_          // Pubkey
     ) external returns (bytes32 loani) {
         require(msg.sender != lend(fund));
         require(amt_       <= balance(fund));
@@ -172,7 +172,7 @@ contract Funds is DSMath {
         require(lodu_      <= maxLoanDur(fund));
 
         loani = lcreate(fund, amt_, col_, lodu_);
-        lsech(fund, loani, sechs_, pubk_);
+        lsech(fund, loani, secretHashes_, pubk_);
         loans.push(loani);
     }
 
@@ -201,15 +201,15 @@ contract Funds is DSMath {
         );
     }
 
-    function lsech(                // Loan Set Secret Hashes
-        bytes32 fund,              // Fund Index
-        bytes32 loan,              // Loan Index
-        bytes32[4] memory sechs_,  // 4 Secret Hashes
-        bytes memory pubk_         // Public Key
+    function lsech(                      // Loan Set Secret Hashes
+        bytes32 fund,                    // Fund Index
+        bytes32 loan,                    // Loan Index
+        bytes32[4] memory secretHashes_, // 4 Secret Hashes
+        bytes memory pubk_               // Public Key
     ) private { // Loan set Secret Hash and PubKey
-        loans.setSechs(
+        loans.setSecretHashes(
             loan,
-            sechs_,
+            secretHashes_,
             gsech(lend(fund)),
             gsech(agent(fund)),
             pubk_,
@@ -219,6 +219,6 @@ contract Funds is DSMath {
 
     function gsech(address addr) private returns (bytes32[4] memory) { // Get 4 secrethashes for loan
         sechi[addr] = add(sechi[addr], 4);
-        return [ sechs[addr][sub(sechi[addr], 4)], sechs[addr][sub(sechi[addr], 3)], sechs[addr][sub(sechi[addr], 2)], sechs[addr][sub(sechi[addr], 1)] ];
+        return [ secretHashes[addr][sub(sechi[addr], 4)], secretHashes[addr][sub(sechi[addr], 3)], secretHashes[addr][sub(sechi[addr], 2)], secretHashes[addr][sub(sechi[addr], 1)] ];
     }
 }

@@ -68,7 +68,7 @@ Vars:
 
    fundIndex       get the last fund id
    pubKeys         address pubkeys
-   sechs           address secret hashes
+   secretHashes    address secret hashes
    sechi           address secret hash index
 
 ```

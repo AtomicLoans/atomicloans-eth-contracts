@@ -88,14 +88,14 @@ contract("Funds", accounts => {
   })
 
   describe('generate secret hashes', function() {
-    it('should push secrets hashes to sechs for user address', async function() {
+    it('should push secrets hashes to secretHashes for user address', async function() {
       // Generate lender secret hashes
       await this.funds.generate(lendSechs)
 
-      const sech0 = await this.funds.sechs.call(lender, 0)
-      const sech1 = await this.funds.sechs.call(lender, 1)
-      const sech2 = await this.funds.sechs.call(lender, 2)
-      const sech3 = await this.funds.sechs.call(lender, 3)
+      const sech0 = await this.funds.secretHashes.call(lender, 0)
+      const sech1 = await this.funds.secretHashes.call(lender, 1)
+      const sech2 = await this.funds.secretHashes.call(lender, 2)
+      const sech3 = await this.funds.secretHashes.call(lender, 3)
 
       assert.equal(lendSechs[0], sech0);
       assert.equal(lendSechs[1], sech1);
@@ -103,9 +103,9 @@ contract("Funds", accounts => {
       assert.equal(lendSechs[3], sech3);
     })
 
-    it('should fail trying to return incorrect sechs index', async function() {
+    it('should fail trying to return incorrect secretHashes index', async function() {
       try {
-        await this.funds.sechs.call(lender, 20)
+        await this.funds.secretHashes.call(lender, 20)
       } catch (error) {
         return utils.ensureException(error);
       }

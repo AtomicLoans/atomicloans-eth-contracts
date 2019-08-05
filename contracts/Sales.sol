@@ -22,7 +22,7 @@ contract Sales is DSMath { // Auctions
 	mapping (bytes32 => Sig)        public bsigs; // Borrower Signatures
 	mapping (bytes32 => Sig)        public lsigs; // Lender Signatures
 	mapping (bytes32 => Sig)        public asigs; // Lender Signatures
-	mapping (bytes32 => Sech)       public sechs; // Auction Secret Hashes
+	mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
     uint256                         public salei; // Auction Index
 
     mapping (bytes32 => bytes32[])  public salel; // Loan Auctions (find by loani)
@@ -50,15 +50,15 @@ contract Sales is DSMath { // Auctions
         bytes      sbsig; // Borrower Seizable Back Signature
     }
 
-    struct Sech {
-        bytes32    sechA; // Secret Hash A
-        bytes32    secA;  // Secret A
-        bytes32    sechB; // Secret Hash B
-        bytes32    secB;  // Secret B
-        bytes32    sechC; // Secret Hash C
-        bytes32    secC;  // Secret C
-        bytes32    sechD; // Secret Hash D
-        bytes32    secD;  // Secret D
+    struct SecretHash {
+        bytes32 secretHashA; // Secret Hash A
+        bytes32 secretA;     // Secret A
+        bytes32 secretHashB; // Secret Hash B
+        bytes32 secretB;     // Secret B
+        bytes32 secretHashC; // Secret Hash C
+        bytes32 secretC;     // Secret C
+        bytes32 secretHashD; // Secret Hash D
+        bytes32 secretD;     // Secret D
     }
 
     function bid(bytes32 sale) public returns (uint256) {
@@ -105,36 +105,36 @@ contract Sales is DSMath { // Auctions
         return sales[sale].off;
     }
 
-    function sechA(bytes32 sale) public returns (bytes32) {
-        return sechs[sale].sechA;
+    function secretHashA(bytes32 sale) public returns (bytes32) {
+        return secretHashes[sale].secretHashA;
     }
 
-    function secA(bytes32 sale) public returns (bytes32) {
-        return sechs[sale].secA;
+    function secretA(bytes32 sale) public returns (bytes32) {
+        return secretHashes[sale].secretA;
     }
 
-    function sechB(bytes32 sale) public returns (bytes32) {
-        return sechs[sale].sechB;
+    function secretHashB(bytes32 sale) public returns (bytes32) {
+        return secretHashes[sale].secretHashB;
     }
 
-    function secB(bytes32 sale) public returns (bytes32) {
-        return sechs[sale].secB;
+    function secretB(bytes32 sale) public returns (bytes32) {
+        return secretHashes[sale].secretB;
     }
 
-    function sechC(bytes32 sale) public returns (bytes32) {
-        return sechs[sale].sechC;
+    function secretHashC(bytes32 sale) public returns (bytes32) {
+        return secretHashes[sale].secretHashC;
     }
 
-    function secC(bytes32 sale) public returns (bytes32) {
-        return sechs[sale].secC;
+    function secretC(bytes32 sale) public returns (bytes32) {
+        return secretHashes[sale].secretC;
     }
 
-    function sechD(bytes32 sale) public returns (bytes32) {
-        return sechs[sale].sechD;
+    function secretHashD(bytes32 sale) public returns (bytes32) {
+        return secretHashes[sale].secretHashD;
     }
 
-    function secD(bytes32 sale) public returns (bytes32) {
-        return sechs[sale].secD;
+    function secretD(bytes32 sale) public returns (bytes32) {
+        return secretHashes[sale].secretD;
     }
 
     constructor (Loans loans_, Medianizer med_, ERC20 token_) public {
@@ -149,13 +149,13 @@ contract Sales is DSMath { // Auctions
     }
 
     function create(
-    	bytes32 loani, // Loan Index
-    	address bor,   // Address Borrower
-    	address lend,  // Address Lender
-        address agent, // Optional Address automated agent
-    	bytes32 sechA, // Secret Hash A
-    	bytes32 sechB, // Secret Hash B
-    	bytes32 sechC // Secret Hash C
+    	bytes32 loani,       // Loan Index
+    	address bor,         // Address Borrower
+    	address lend,        // Address Lender
+        address agent,       // Optional Address automated agent
+    	bytes32 secretHashA, // Secret Hash A
+    	bytes32 secretHashB, // Secret Hash B
+    	bytes32 secretHashC  // Secret Hash C
 	) external returns(bytes32 sale) {
     	require(msg.sender == deployer);
     	salei = add(salei, 1);
@@ -166,17 +166,17 @@ contract Sales is DSMath { // Auctions
         sales[sale].agent = agent;
         sales[sale].born  = now;
         sales[sale].set   = true;
-        sechs[sale].sechA = sechA;
-        sechs[sale].sechB = sechB;
-        sechs[sale].sechC = sechC;
+        secretHashes[sale].secretHashA = secretHashA;
+        secretHashes[sale].secretHashB = secretHashB;
+        secretHashes[sale].secretHashC = secretHashC;
         salel[loani].push(sale);
     }
 
-    function push(     // Bid on Collateral
-    	bytes32 sale,  // Auction Index
-    	uint256 amt,   // Bid Amount
-    	bytes32 sech,  // Secret Hash
-    	bytes20 pbkh   // PubKeyHash
+    function push(          // Bid on Collateral
+    	bytes32 sale,       // Auction Index
+    	uint256 amt,        // Bid Amount
+    	bytes32 secretHash, // Secret Hash
+    	bytes20 pbkh        // PubKeyHash
 	) external {
         require(msg.sender != bor(sale) && msg.sender != lend(sale));
 		require(sales[sale].set);
@@ -193,7 +193,7 @@ contract Sales is DSMath { // Auctions
     	}
     	sales[sale].bidr = msg.sender;
     	sales[sale].bid  = amt;
-    	sechs[sale].sechD = sech;
+    	secretHashes[sale].secretHashD = secretHash;
     	sales[sale].pbkh = pbkh;
 	}
 
@@ -226,20 +226,20 @@ contract Sales is DSMath { // Auctions
 		}
 	}
 
-	function sec(bytes32 sale, bytes32 sec_) external { // Provide Secret
+	function sec(bytes32 sale, bytes32 secret_) external { // Provide Secret
 		require(sales[sale].set);
-		if      (sha256(abi.encodePacked(sec_)) == sechs[sale].sechA) { sechs[sale].secA = sec_; }
-        else if (sha256(abi.encodePacked(sec_)) == sechs[sale].sechB) { sechs[sale].secB = sec_; }
-        else if (sha256(abi.encodePacked(sec_)) == sechs[sale].sechC) { sechs[sale].secC = sec_; }
-        else if (sha256(abi.encodePacked(sec_)) == sechs[sale].sechD) { sechs[sale].secD = sec_; }
-        else                                                          { revert(); }
+		if      (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashA) { secretHashes[sale].secretA = secret_; }
+        else if (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashB) { secretHashes[sale].secretB = secret_; }
+        else if (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashC) { secretHashes[sale].secretC = secret_; }
+        else if (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashD) { secretHashes[sale].secretD = secret_; }
+        else                                                                          { revert(); }
 	}
 
 	function hasSecs(bytes32 sale) public view returns (bool) { // 2 of 3 secrets
 		uint8 secs = 0;
-		if (sha256(abi.encodePacked(sechs[sale].secA)) == sechs[sale].sechA) { secs = secs + 1; }
-		if (sha256(abi.encodePacked(sechs[sale].secB)) == sechs[sale].sechB) { secs = secs + 1; }
-		if (sha256(abi.encodePacked(sechs[sale].secC)) == sechs[sale].sechC) { secs = secs + 1; }
+		if (sha256(abi.encodePacked(secretHashes[sale].secretA)) == secretHashes[sale].secretHashA) { secs = secs + 1; }
+		if (sha256(abi.encodePacked(secretHashes[sale].secretB)) == secretHashes[sale].secretHashB) { secs = secs + 1; }
+		if (sha256(abi.encodePacked(secretHashes[sale].secretC)) == secretHashes[sale].secretHashC) { secs = secs + 1; }
 		return (secs >= 2);
 	}
 
@@ -248,7 +248,7 @@ contract Sales is DSMath { // Auctions
         require(!off(sale));
 		require(now > salex(sale));
 		require(hasSecs(sale));
-		require(sha256(abi.encodePacked(sechs[sale].secD)) == sechs[sale].sechD);
+		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
         sales[sale].taken = true;
 
         uint256 available = add(sales[sale].bid, loans.back(sales[sale].loani));
