@@ -24,7 +24,7 @@ contract Loans is DSMath {
     mapping (bytes32 => ERC20)        public tokes;        // Mapping of Loan index to Token contract
     mapping (bytes32 => uint256)      public repayments;   // Amount paid back in a Loan
     mapping (bytes32 => uint256)      public asaex;        // All Auction expiration
-    uint256                           public loani;        // Current Loan Index
+    uint256                           public loanIndex;    // Current Loan Index
 
     ERC20 public token; // ERC20 Debt Stablecoin
 
@@ -186,8 +186,8 @@ contract Loans is DSMath {
         uint256[6] calldata vals_,           // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
         bytes32             fundIndex_       // Optional Fund Index
     ) external returns (bytes32 loan) {
-        loani = add(loani, 1);
-        loan = bytes32(loani);
+        loanIndex = add(loanIndex, 1);
+        loan = bytes32(loanIndex);
         loans[loan].createdAt        = now;
         loans[loan].loanExpiration   = loanExpiration_;
         loans[loan].borrower         = usrs_[0];

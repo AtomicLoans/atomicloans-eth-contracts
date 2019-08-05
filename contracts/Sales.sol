@@ -25,21 +25,21 @@ contract Sales is DSMath { // Auctions
 	mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
     uint256                         public salei; // Auction Index
 
-    mapping (bytes32 => bytes32[])  public salel; // Loan Auctions (find by loani)
+    mapping (bytes32 => bytes32[])  public salel; // Loan Auctions (find by loanIndex)
 
     ERC20 public token;
 
     struct Sale {
-        bytes32    loani;    // Loan Index
-        uint256    bid;      // Current Bid
-        address    bidr;     // Bidder
-        address    borrower; // Borrower
-        address    lender;   // Lender
-        address    agent;    // Optional Automated Agent
-        uint256    born;     // Created At
-        bytes20    pbkh;     // Bidder PubKey Hash
-        bool       set;      // Sale at index opened
-        bool       taken;    // Winning bid accepted
+        bytes32    loanIndex; // Loan Index
+        uint256    bid;       // Current Bid
+        address    bidr;      // Bidder
+        address    borrower;  // Borrower
+        address    lender;    // Lender
+        address    agent;     // Optional Automated Agent
+        uint256    born;      // Created At
+        bytes20    pbkh;      // Bidder PubKey Hash
+        bool       set;       // Sale at index opened
+        bool       taken;     // Winning bid accepted
         bool       off;
     }
 
@@ -149,7 +149,7 @@ contract Sales is DSMath { // Auctions
     }
 
     function create(
-    	bytes32 loani,       // Loan Index
+    	bytes32 loanIndex,   // Loan Index
     	address borrower,    // Address Borrower
     	address lender,      // Address Lender
         address agent,       // Optional Address automated agent
@@ -160,16 +160,16 @@ contract Sales is DSMath { // Auctions
     	require(msg.sender == deployer);
     	salei = add(salei, 1);
         sale = bytes32(salei);
-        sales[sale].loani    = loani;
-        sales[sale].borrower = borrower;
-        sales[sale].lender   = lender;
-        sales[sale].agent    = agent;
-        sales[sale].born     = now;
-        sales[sale].set      = true;
+        sales[sale].loanIndex = loanIndex;
+        sales[sale].borrower  = borrower;
+        sales[sale].lender    = lender;
+        sales[sale].agent     = agent;
+        sales[sale].born      = now;
+        sales[sale].set       = true;
         secretHashes[sale].secretHashA = secretHashA;
         secretHashes[sale].secretHashB = secretHashB;
         secretHashes[sale].secretHashC = secretHashC;
-        salel[loani].push(sale);
+        salel[loanIndex].push(sale);
     }
 
     function push(          // Bid on Collateral
@@ -251,19 +251,19 @@ contract Sales is DSMath { // Auctions
 		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
         sales[sale].taken = true;
 
-        uint256 available = add(sales[sale].bid, loans.repaid(sales[sale].loani));
-        uint256 amount = min(available, loans.owedToLender(sales[sale].loani));
+        uint256 available = add(sales[sale].bid, loans.repaid(sales[sale].loanIndex));
+        uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
 
         require(token.transfer(sales[sale].lender, amount));
         available = sub(available, amount);
 
-        if (available >= add(loans.fee(sales[sale].loani), loans.penalty(sales[sale].loani))) {
+        if (available >= add(loans.fee(sales[sale].loanIndex), loans.penalty(sales[sale].loanIndex))) {
             if (agent(sale) != address(0)) {
-                require(token.transfer(sales[sale].agent, loans.fee(sales[sale].loani)));
+                require(token.transfer(sales[sale].agent, loans.fee(sales[sale].loanIndex)));
             }
-            require(token.approve(address(med), loans.penalty(sales[sale].loani)));
-            med.push(loans.penalty(sales[sale].loani), token);
-            available = sub(available, add(loans.fee(sales[sale].loani), loans.penalty(sales[sale].loani)));
+            require(token.approve(address(med), loans.penalty(sales[sale].loanIndex)));
+            med.push(loans.penalty(sales[sale].loanIndex), token);
+            available = sub(available, add(loans.fee(sales[sale].loanIndex), loans.penalty(sales[sale].loanIndex)));
         } else if (available > 0) {
             require(token.approve(address(med), available));
             med.push(available, token);
@@ -280,8 +280,8 @@ contract Sales is DSMath { // Auctions
 		require(sales[sale].bid > 0);
         sales[sale].off = true;
 		require(token.transfer(sales[sale].bidr, sales[sale].bid));
-        if (next(sales[sale].loani) == 3) {
-            require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loani)));
+        if (next(sales[sale].loanIndex) == 3) {
+            require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)));
         }
 	}
 }

@@ -163,7 +163,7 @@ contract Funds is DSMath {
         uint256             lodu_,         // Loan Duration in seconds
         bytes32[4] calldata secretHashes_, // Secret Hash A1 & A2
         bytes      calldata pubk_          // Pubkey
-    ) external returns (bytes32 loani) {
+    ) external returns (bytes32 loanIndex) {
         require(msg.sender != lend(fund));
         require(amt_       <= balance(fund));
         require(amt_       >= minLoanAmt(fund));
@@ -171,9 +171,9 @@ contract Funds is DSMath {
         require(lodu_      >= minLoanDur(fund));
         require(lodu_      <= maxLoanDur(fund));
 
-        loani = lcreate(fund, amt_, collateral_, lodu_);
-        lsech(fund, loani, secretHashes_, pubk_);
-        loans.fund(loani);
+        loanIndex = lcreate(fund, amt_, collateral_, lodu_);
+        lsech(fund, loanIndex, secretHashes_, pubk_);
+        loans.fund(loanIndex);
     }
 
     function withdraw(bytes32 fund, uint256 amt) external { // Withdraw funds from Loan Fund
@@ -192,8 +192,8 @@ contract Funds is DSMath {
         uint256           amt_,        // Loan Amount
         uint256           collateral_, // Collateral Amount in satoshis
         uint256           lodu_        // Loan Duration in seconds
-    ) private returns (bytes32 loani) {
-        loani = loans.create(
+    ) private returns (bytes32 loanIndex) {
+        loanIndex = loans.create(
             now + lodu_,
             [ msg.sender, lend(fund), funds[fund].agent],
             [ amt_, calc(amt_, interest(fund), lodu_), calc(amt_, penalty(fund), lodu_), calc(amt_, fee(fund), lodu_), collateral_, funds[fund].liquidationRatio],

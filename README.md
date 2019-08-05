@@ -120,7 +120,7 @@ Vars:
    fundIndex           loan fund index
    repayments          amount of loan paid back
    asaex               auction expirations by loan index
-   loani               get the last loan id
+   loanIndex           get the last loan id
 
 ```
 
@@ -173,7 +173,7 @@ Getters:
 
 Vars:
 
-   salel               loan auction (find by loani)
+   salel               loan auction (find by loanIndex)
 
 ```
 
