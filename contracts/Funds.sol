@@ -12,7 +12,7 @@ contract Funds is DSMath {
     mapping (address => bytes32[]) public sechs;  // User secret hashes
     mapping (address => uint256)   public sechi;  // User secret hash index
 
-    mapping (address => bytes)     public pubks;  // User A Coin PubKeys
+    mapping (address => bytes)     public pubKeys;  // User A Coin PubKeys
     
     mapping (bytes32 => Fund)      public funds;  
     uint256                        public fundIndex;
@@ -129,7 +129,7 @@ contract Funds is DSMath {
     }
 
     function update(bytes calldata pubk) external { // Set PubKey for Fund
-        pubks[msg.sender] = pubk;
+        pubKeys[msg.sender] = pubk;
     }
 
     function update(                // Set Loan Fund details
@@ -213,7 +213,7 @@ contract Funds is DSMath {
             gsech(lend(fund)),
             gsech(agent(fund)),
             pubk_,
-            pubks[lend(fund)]
+            pubKeys[lend(fund)]
         );
     }
 

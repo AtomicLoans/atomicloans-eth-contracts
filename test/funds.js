@@ -202,14 +202,14 @@ contract("Funds", accounts => {
 
   describe('set fund details', function() {
     it('should allow changing of pubk', async function() {
-      const oldPubk = await this.funds.pubks.call(lender)
+      const oldPubk = await this.funds.pubKeys.call(lender)
 
       const newLendpubk = '024f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'
 
       // Set Lender PubKey
       await this.funds.update(ensure0x(newLendpubk))
 
-      const newPubk = await this.funds.pubks.call(lender)
+      const newPubk = await this.funds.pubKeys.call(lender)
 
       assert.notEqual(oldPubk, newPubk)
     })
