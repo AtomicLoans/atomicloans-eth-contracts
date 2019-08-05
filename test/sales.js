@@ -294,7 +294,7 @@ contract("Sales", accounts => {
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
       const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, BigNumber(owed).dividedBy(2).toFixed(0), { from: borrower })
+      await this.loans.repay(this.loan, BigNumber(owed).dividedBy(2).toFixed(0), { from: borrower })
 
       await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
 
@@ -353,7 +353,7 @@ contract("Sales", accounts => {
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
       const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, BigNumber(owed).dividedBy(2).toFixed(0), { from: borrower })
+      await this.loans.repay(this.loan, BigNumber(owed).dividedBy(2).toFixed(0), { from: borrower })
 
       await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
 
@@ -412,7 +412,7 @@ contract("Sales", accounts => {
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
       const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, BigNumber(owed).dividedBy(2).toFixed(0), { from: borrower })
+      await this.loans.repay(this.loan, BigNumber(owed).dividedBy(2).toFixed(0), { from: borrower })
 
       await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
 

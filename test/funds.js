@@ -165,7 +165,7 @@ contract("Funds", accounts => {
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
       const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, owed, { from: borrower })
+      await this.loans.repay(this.loan, owed, { from: borrower })
 
       await this.loans.pull(this.loan, lendSecs[0]) // accept loan repayment
 

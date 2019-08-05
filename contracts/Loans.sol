@@ -259,7 +259,7 @@ contract Loans is DSMath {
     	bools[loan].taken = true;
     }
 
-    function pay(bytes32 loan, uint256 amt) external { // Payback Loan
+    function repay(bytes32 loan, uint256 amt) external { // Repay Loan
         // require(msg.sender                == loans[loan].bor); // NOTE: this is not necessary. Anyone can pay off the loan
     	require(!off(loan));
         require(!sale(loan));
@@ -274,7 +274,7 @@ contract Loans is DSMath {
     	}
     }
 
-    function unpay(bytes32 loan) external { // Refund payback
+    function refund(bytes32 loan) external { // Refund payback
     	require(!off(loan));
         require(!sale(loan));
     	require(now              >  acex(loan));
