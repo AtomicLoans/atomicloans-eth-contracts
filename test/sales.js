@@ -471,7 +471,7 @@ contract("Sales", accounts => {
     })
   })
 
-  describe('sign', function() {
+  describe('provideSig', function() {
     it('should allow parties to sign and retrieve their signatures', async function() {
       this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
       await this.loans.liquidate(this.loan, { from: bidr })
@@ -495,9 +495,9 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await this.sales.sign(this.sale, sig1, sig2, sig3, sig4, { from: borrower })
-      await this.sales.sign(this.sale, sig5, sig6, sig7, sig8, { from: lender })
-      await this.sales.sign(this.sale, sig9, sig10, sig11, sig12, { from: agent })
+      await this.sales.provideSig(this.sale, sig1, sig2, sig3, sig4, { from: borrower })
+      await this.sales.provideSig(this.sale, sig5, sig6, sig7, sig8, { from: lender })
+      await this.sales.provideSig(this.sale, sig9, sig10, sig11, sig12, { from: agent })
 
       const bsigs = await this.sales.bsigs.call(this.sale)
       const lsigs = await this.sales.lsigs.call(this.sale)

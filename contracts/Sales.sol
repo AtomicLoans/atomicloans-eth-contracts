@@ -197,8 +197,8 @@ contract Sales is DSMath { // Auctions
     	sales[sale].pbkh = pbkh;
 	}
 
-	function sign(           // Provide Signature to move collateral to collateral swap
-		bytes32      sale,   // Auction Index
+	function provideSig(       // Provide Signature to move collateral to collateral swap
+		bytes32      sale,     // Auction Index
 		bytes calldata rsig,   // Refundable Signature
 		bytes calldata ssig,   // Seizable Signature
 		bytes calldata rbsig,  // Refundable Back Signature
