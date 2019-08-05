@@ -22,7 +22,7 @@ contract Funds is DSMath {
     address deployer;
 
     struct Fund {
-        address  lend;             // Loan Fund Owner (Lender)
+        address  lender;             // Loan Fund Owner (Lender)
         uint256  minLoanAmt;       // Min Loan Amount
         uint256  maxLoanAmt;       // Max Loan Amount
         uint256  minLoanDur;       // Min Loan Duration
@@ -47,8 +47,8 @@ contract Funds is DSMath {
         require(token.approve(address(loans_), 2**256-1));
     }
 
-    function lend(bytes32 fund)    public view returns (address) {
-        return funds[fund].lend;
+    function lender(bytes32 fund)    public view returns (address) {
+        return funds[fund].lender;
     }
 
     function minLoanAmt(bytes32 fund)    public view returns (uint256) {
@@ -104,7 +104,7 @@ contract Funds is DSMath {
     ) external returns (bytes32 fund) {
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
-        funds[fund].lend             = msg.sender;
+        funds[fund].lender           = msg.sender;
         funds[fund].minLoanAmt       = minLoanAmt_;
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
@@ -116,10 +116,10 @@ contract Funds is DSMath {
         funds[fund].agent            = agent_;
     }
 
-    function deposit(bytes32 fund, uint256 amt) external { // Deposit funds to Loan Fund
-        // require(msg.sender == lend(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
-        funds[fund].balance = add(funds[fund].balance, amt);
-        require(token.transferFrom(msg.sender, address(this), amt));
+    function deposit(bytes32 fund, uint256 amount) external { // Deposit funds to Loan Fund
+        // require(msg.sender == lender(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
+        funds[fund].balance = add(funds[fund].balance, amount);
+        require(token.transferFrom(msg.sender, address(this), amount));
     }
 
     function generate(bytes32[] calldata secretHashes_) external { // Generate secret hashes for Loan Fund
@@ -128,8 +128,8 @@ contract Funds is DSMath {
         }
     }
 
-    function update(bytes calldata pubk) external { // Set PubKey for Fund
-        pubKeys[msg.sender] = pubk;
+    function update(bytes calldata pubKey) external { // Set PubKey for Fund
+        pubKeys[msg.sender] = pubKey;
     }
 
     function update(                // Set Loan Fund details
@@ -144,7 +144,7 @@ contract Funds is DSMath {
         uint256  liquidationRatio_, // Liquidation Ratio in RAY
         address  agent_             // Optional Automator Agent)
     ) external {
-        require(msg.sender == lend(fund));
+        require(msg.sender == lender(fund));
         funds[fund].minLoanAmt       = minLoanAmt_;
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
@@ -158,66 +158,66 @@ contract Funds is DSMath {
 
     function request(                      // Request Loan
         bytes32             fund,          // Fund Index
-        uint256             amt_,          // Loan Amount
+        uint256             amount_,       // Loan Amount
         uint256             collateral_,   // Collateral Amount in satoshis
-        uint256             lodu_,         // Loan Duration in seconds
+        uint256             loanDur,       // Loan Duration in seconds
         bytes32[4] calldata secretHashes_, // Secret Hash A1 & A2
-        bytes      calldata pubk_          // Pubkey
+        bytes      calldata pubKey_        // Pubkey
     ) external returns (bytes32 loanIndex) {
-        require(msg.sender != lend(fund));
-        require(amt_       <= balance(fund));
-        require(amt_       >= minLoanAmt(fund));
-        require(amt_       <= maxLoanAmt(fund));
-        require(lodu_      >= minLoanDur(fund));
-        require(lodu_      <= maxLoanDur(fund));
+        require(msg.sender != lender(fund));
+        require(amount_    <= balance(fund));
+        require(amount_    >= minLoanAmt(fund));
+        require(amount_    <= maxLoanAmt(fund));
+        require(loanDur    >= minLoanDur(fund));
+        require(loanDur    <= maxLoanDur(fund));
 
-        loanIndex = lcreate(fund, amt_, collateral_, lodu_);
-        lsech(fund, loanIndex, secretHashes_, pubk_);
+        loanIndex = createLoan(fund, amount_, collateral_, loanDur);
+        loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKey_);
         loans.fund(loanIndex);
     }
 
     function withdraw(bytes32 fund, uint256 amt) external { // Withdraw funds from Loan Fund
-        require(msg.sender     == lend(fund));
+        require(msg.sender     == lender(fund));
         require(balance(fund)  >= amt);
         funds[fund].balance = sub(funds[fund].balance, amt);
-        require(token.transfer(lend(fund), amt));
+        require(token.transfer(lender(fund), amt));
     }
 
-    function calc(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
+    function calcInterest(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
         return sub(rmul(amt, rpow(rate, lodu)), amt);
     }
 
-    function lcreate(                  // Private Open Loan
-        bytes32           fund,        // Fund Index
-        uint256           amt_,        // Loan Amount
-        uint256           collateral_, // Collateral Amount in satoshis
-        uint256           lodu_        // Loan Duration in seconds
+    function createLoan(      // Private Loan Create
+        bytes32  fund,        // Fund Index
+        uint256  amount_,     // Loan Amount
+        uint256  collateral_, // Collateral Amount in satoshis
+        uint256  loanDur_     // Loan Duration in seconds
     ) private returns (bytes32 loanIndex) {
         loanIndex = loans.create(
-            now + lodu_,
-            [ msg.sender, lend(fund), funds[fund].agent],
-            [ amt_, calc(amt_, interest(fund), lodu_), calc(amt_, penalty(fund), lodu_), calc(amt_, fee(fund), lodu_), collateral_, funds[fund].liquidationRatio],
+            now + loanDur_,
+            [ msg.sender, lender(fund), funds[fund].agent],
+            [ amount_, calcInterest(amount_, interest(fund), loanDur_), calcInterest(amount_, penalty(fund), loanDur_), calcInterest(amount_, fee(fund), loanDur_), collateral_, funds[fund].liquidationRatio],
             fund
         );
     }
 
-    function lsech(                      // Loan Set Secret Hashes
-        bytes32 fund,                    // Fund Index
-        bytes32 loan,                    // Loan Index
+    function loanSetSecretHashes(        // Loan Set Secret Hashes
+        bytes32           fund,          // Fund Index
+        bytes32           loan,          // Loan Index
         bytes32[4] memory secretHashes_, // 4 Secret Hashes
-        bytes memory pubk_               // Public Key
+        bytes      memory pubKey_        // Public Key
     ) private { // Loan set Secret Hash and PubKey
         loans.setSecretHashes(
             loan,
             secretHashes_,
-            gsech(lend(fund)),
-            gsech(agent(fund)),
-            pubk_,
-            pubKeys[lend(fund)]
+            getSecretHashesForLoan(lender(fund)),
+            getSecretHashesForLoan(agent(fund)),
+            pubKey_,
+            pubKeys[lender(fund)]
         );
     }
 
-    function gsech(address addr) private returns (bytes32[4] memory) { // Get 4 secrethashes for loan
+    function getSecretHashesForLoan(address addr) private returns (bytes32[4] memory) { // Get 4 secrethashes for loan
         secretHashIndex[addr] = add(secretHashIndex[addr], 4);
         return [
             secretHashes[addr][sub(secretHashIndex[addr], 4)],
