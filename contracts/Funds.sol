@@ -10,7 +10,7 @@ contract Funds is DSMath {
     Loans loans;
 
     mapping (address => bytes32[]) public secretHashes;  // User secret hashes
-    mapping (address => uint256)   public sechi;  // User secret hash index
+    mapping (address => uint256)   public secretHashIndex;  // User secret hash index
 
     mapping (address => bytes)     public pubKeys;  // User A Coin PubKeys
     
@@ -218,7 +218,12 @@ contract Funds is DSMath {
     }
 
     function gsech(address addr) private returns (bytes32[4] memory) { // Get 4 secrethashes for loan
-        sechi[addr] = add(sechi[addr], 4);
-        return [ secretHashes[addr][sub(sechi[addr], 4)], secretHashes[addr][sub(sechi[addr], 3)], secretHashes[addr][sub(sechi[addr], 2)], secretHashes[addr][sub(sechi[addr], 1)] ];
+        secretHashIndex[addr] = add(secretHashIndex[addr], 4);
+        return [
+            secretHashes[addr][sub(secretHashIndex[addr], 4)],
+            secretHashes[addr][sub(secretHashIndex[addr], 3)],
+            secretHashes[addr][sub(secretHashIndex[addr], 2)],
+            secretHashes[addr][sub(secretHashIndex[addr], 1)]
+        ];
     }
 }
