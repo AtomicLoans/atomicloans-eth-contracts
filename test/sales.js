@@ -180,9 +180,9 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await this.sales.sec(this.sale, lendSecs[1])
-      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
-      await this.sales.sec(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, lendSecs[1])
+      await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
+      await this.sales.provideSecret(this.sale, bidrSecs[1])
 
       await this.sales.take(this.sale)
 
@@ -320,9 +320,9 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await this.sales.sec(this.sale, lendSecs[1])
-      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
-      await this.sales.sec(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, lendSecs[1])
+      await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
+      await this.sales.provideSecret(this.sale, bidrSecs[1])
 
       const lendBalBefore  = await this.token.balanceOf.call(lender)
       const borBalBefore   = await this.token.balanceOf.call(borrower)
@@ -379,9 +379,9 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await this.sales.sec(this.sale, lendSecs[1])
-      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
-      await this.sales.sec(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, lendSecs[1])
+      await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
+      await this.sales.provideSecret(this.sale, bidrSecs[1])
 
       const lendBalBefore  = await this.token.balanceOf.call(lender)
       const borBalBefore   = await this.token.balanceOf.call(borrower)
@@ -438,9 +438,9 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await this.sales.sec(this.sale, lendSecs[1])
-      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
-      await this.sales.sec(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, lendSecs[1])
+      await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
+      await this.sales.provideSecret(this.sale, bidrSecs[1])
 
       const lendBalBefore  = await this.token.balanceOf.call(lender)
       const borBalBefore   = await this.token.balanceOf.call(borrower)
@@ -518,9 +518,9 @@ contract("Sales", accounts => {
       assert.equal(asigs[2], sig11)
       assert.equal(asigs[3], sig12)
 
-      await this.sales.sec(this.sale, lendSecs[1])
-      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
-      await this.sales.sec(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, lendSecs[1])
+      await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
+      await this.sales.provideSecret(this.sale, bidrSecs[1])
 
       await this.sales.take(this.sale)
 

@@ -226,7 +226,7 @@ contract Sales is DSMath { // Auctions
 		}
 	}
 
-	function sec(bytes32 sale, bytes32 secret_) external { // Provide Secret
+	function provideSecret(bytes32 sale, bytes32 secret_) external { // Provide Secret
 		require(sales[sale].set);
 		if      (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashA) { secretHashes[sale].secretA = secret_; }
         else if (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashB) { secretHashes[sale].secretB = secret_; }
