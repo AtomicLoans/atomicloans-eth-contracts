@@ -164,7 +164,7 @@ Getters:
 
 Vars:
 
-   salel                 loan auction (find by loanIndex)
+   saleIndexByLoan       loan auction (find by loanIndex)
 
 ```
 

@@ -25,7 +25,7 @@ contract Sales is DSMath { // Auctions
 	mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
     uint256                         public salei;        // Auction Index
 
-    mapping (bytes32 => bytes32[])  public salel; // Loan Auctions (find by loanIndex)
+    mapping (bytes32 => bytes32[])  public saleIndexByLoan; // Loan Auctions (find by loanIndex)
 
     ERC20 public token;
 
@@ -143,7 +143,7 @@ contract Sales is DSMath { // Auctions
     }
 
     function next(bytes32 loan) public view returns (uint256) {
-    	return salel[loan].length;
+    	return saleIndexByLoan[loan].length;
     }
 
     function create(
@@ -167,7 +167,7 @@ contract Sales is DSMath { // Auctions
         secretHashes[sale].secretHashA = secretHashA;
         secretHashes[sale].secretHashB = secretHashB;
         secretHashes[sale].secretHashC = secretHashC;
-        salel[loanIndex].push(sale);
+        saleIndexByLoan[loanIndex].push(sale);
     }
 
     function offer(         // Bid on Collateral
