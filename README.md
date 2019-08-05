@@ -83,7 +83,7 @@ Actions:
    repay           repay debt
    accept          accept loan and remove funds
    cancel          cancel loan and remove funds
-   push            fund loan
+   fund            fund loan
    sell            auction loan collateral in case of liquidation or default
    setSechs        set secret hashes for loan
    take            withdraw loan

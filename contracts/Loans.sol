@@ -57,7 +57,7 @@ contract Loans is DSMath {
     }
 
     struct Bools {
-    	bool pushed;        // Loan Funded
+    	bool funded;        // Loan Funded
     	bool approved;      // Approve locking of collateral
     	bool taken;         // Loan Withdrawn
     	bool sale;          // Collateral Liquidation Started
@@ -141,8 +141,8 @@ contract Loans is DSMath {
         return sub(dedu(loan), back(loan));
     }
 
-    function pushed(bytes32 loan) public view returns (bool) {
-        return bools[loan].pushed;
+    function funded(bytes32 loan) public view returns (bool) {
+        return bools[loan].funded;
     }
 
     function approved(bytes32 loan) public view returns (bool) {
@@ -236,15 +236,15 @@ contract Loans is DSMath {
         secretHashes[loan].set          = true;
 	}
 
-	function push(bytes32 loan) external { // Fund Loan
+	function fund(bytes32 loan) external { // Fund Loan
 		require(secretHashes[loan].set);
-    	require(bools[loan].pushed == false);
+    	require(bools[loan].funded == false);
     	require(token.transferFrom(msg.sender, address(this), prin(loan)));
-    	bools[loan].pushed = true;
+    	bools[loan].funded = true;
     }
 
     function approve(bytes32 loan) external { // Approve locking of collateral
-    	require(bools[loan].pushed == true);
+    	require(bools[loan].funded == true);
     	require(loans[loan].lend   == msg.sender);
     	require(now                <= apex(loan));
     	bools[loan].approved = true;
@@ -252,7 +252,7 @@ contract Loans is DSMath {
 
     function take(bytes32 loan, bytes32 secretA1) external { // Withdraw
     	require(!off(loan));
-    	require(bools[loan].pushed == true);
+    	require(bools[loan].funded == true);
     	require(bools[loan].approved == true);
     	require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
     	require(token.transfer(loans[loan].bor, prin(loan)));

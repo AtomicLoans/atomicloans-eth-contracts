@@ -173,7 +173,7 @@ contract Funds is DSMath {
 
         loani = lcreate(fund, amt_, col_, lodu_);
         lsech(fund, loani, secretHashes_, pubk_);
-        loans.push(loani);
+        loans.fund(loani);
     }
 
     function withdraw(bytes32 fund, uint256 amt) external { // Withdraw funds from Loan Fund
