@@ -23,7 +23,7 @@ contract Sales is DSMath { // Auctions
 	mapping (bytes32 => Sig)        public lenderSigs;   // Lender Signatures
 	mapping (bytes32 => Sig)        public agentSigs;    // Lender Signatures
 	mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
-    uint256                         public salei;        // Auction Index
+    uint256                         public saleIndex;    // Auction Index
 
     mapping (bytes32 => bytes32[])  public saleIndexByLoan; // Loan Auctions (find by loanIndex)
 
@@ -156,8 +156,8 @@ contract Sales is DSMath { // Auctions
     	bytes32 secretHashC  // Secret Hash C
 	) external returns(bytes32 sale) {
     	require(msg.sender == deployer);
-    	salei = add(salei, 1);
-        sale = bytes32(salei);
+    	saleIndex = add(saleIndex, 1);
+        sale = bytes32(saleIndex);
         sales[sale].loanIndex = loanIndex;
         sales[sale].borrower  = borrower;
         sales[sale].lender    = lender;
