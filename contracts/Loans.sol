@@ -129,6 +129,10 @@ contract Loans is DSMath {
         return add(owedForLoan(loan), penalty(loan));
     }
 
+    function owing(bytes32 loan) public view returns (uint256) {
+        return sub(owedForLoan(loan), repaid(loan));
+    }
+
     function funded(bytes32 loan) public view returns (bool) {
         return bools[loan].funded;
     }
