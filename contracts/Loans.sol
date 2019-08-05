@@ -40,7 +40,7 @@ contract Loans is DSMath {
         uint256 interest;         // Interest
         uint256 penalty;          // Liquidation Penalty
         uint256 fee;              // Optional fee paid to auto if address not 0x0
-        uint256 col;              // Collateral
+        uint256 collateral;       // Collateral
         uint256 liquidationRatio; // Liquidation Ratio
         bytes   borrowerPubKey;   // Borrower PubKey
         bytes   lenderPubKey;     // Lender PubKey
@@ -105,8 +105,8 @@ contract Loans is DSMath {
         return loans[loan].penalty;
     }
 
-    function col(bytes32 loan)    public view returns (uint256) {
-        return loans[loan].col;
+    function collateral(bytes32 loan)    public view returns (uint256) {
+        return loans[loan].collateral;
     }
 
     function repaid(bytes32 loan)   public view returns (uint256) { // Amount paid back for loan
@@ -165,17 +165,17 @@ contract Loans is DSMath {
         return bools[loan].off;
     }
 
-    function colv(bytes32 loan) public returns (uint256) { // Current Collateral Value
+    function collateralValue(bytes32 loan) public returns (uint256) { // Current Collateral Value
         uint256 val = uint(med.read());
-        return cmul(val, col(loan)); // Multiply value dependent on number of decimals with currency
+        return cmul(val, collateral(loan)); // Multiply value dependent on number of decimals with currency
     }
 
-    function min(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
+    function minCollateralValue(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
         return rmul(sub(prin(loan), repaid(loan)), liquidationRatio(loan));
     }
 
     function safe(bytes32 loan) public returns (bool) { // Loan is safe from Liquidation
-        return colv(loan) >= min(loan);
+        return collateralValue(loan) >= minCollateralValue(loan);
     }
 
     constructor (Funds funds_, Medianizer med_, ERC20 token_) public {
@@ -209,7 +209,7 @@ contract Loans is DSMath {
         loans[loan].interest         = vals_[1];
         loans[loan].penalty          = vals_[2];
         loans[loan].fee              = vals_[3];
-        loans[loan].col              = vals_[4];
+        loans[loan].collateral       = vals_[4];
         loans[loan].liquidationRatio = vals_[5];
         fundIndex[loan]              = fundIndex_;
         secretHashes[loan].set       = false;

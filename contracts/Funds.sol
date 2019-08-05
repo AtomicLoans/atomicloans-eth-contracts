@@ -159,7 +159,7 @@ contract Funds is DSMath {
     function request(                      // Request Loan
         bytes32             fund,          // Fund Index
         uint256             amt_,          // Loan Amount
-        uint256             col_,          // Collateral Amount in satoshis
+        uint256             collateral_,   // Collateral Amount in satoshis
         uint256             lodu_,         // Loan Duration in seconds
         bytes32[4] calldata secretHashes_, // Secret Hash A1 & A2
         bytes      calldata pubk_          // Pubkey
@@ -171,7 +171,7 @@ contract Funds is DSMath {
         require(lodu_      >= minLoanDur(fund));
         require(lodu_      <= maxLoanDur(fund));
 
-        loani = lcreate(fund, amt_, col_, lodu_);
+        loani = lcreate(fund, amt_, collateral_, lodu_);
         lsech(fund, loani, secretHashes_, pubk_);
         loans.fund(loani);
     }
@@ -187,16 +187,16 @@ contract Funds is DSMath {
         return sub(rmul(amt, rpow(rate, lodu)), amt);
     }
 
-    function lcreate(             // Private Open Loan
-        bytes32           fund,   // Fund Index
-        uint256           amt_,   // Loan Amount
-        uint256           col_,   // Collateral Amount in satoshis
-        uint256           lodu_   // Loan Duration in seconds
+    function lcreate(                  // Private Open Loan
+        bytes32           fund,        // Fund Index
+        uint256           amt_,        // Loan Amount
+        uint256           collateral_, // Collateral Amount in satoshis
+        uint256           lodu_        // Loan Duration in seconds
     ) private returns (bytes32 loani) {
         loani = loans.create(
             now + lodu_,
             [ msg.sender, lend(fund), funds[fund].agent],
-            [ amt_, calc(amt_, interest(fund), lodu_), calc(amt_, penalty(fund), lodu_), calc(amt_, fee(fund), lodu_), col_, funds[fund].liquidationRatio],
+            [ amt_, calc(amt_, interest(fund), lodu_), calc(amt_, penalty(fund), lodu_), calc(amt_, fee(fund), lodu_), collateral_, funds[fund].liquidationRatio],
             fund
         );
     }

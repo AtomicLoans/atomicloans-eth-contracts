@@ -199,10 +199,10 @@ contract("Loans", accounts => {
       this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
       await this.loans.liquidate(this.loan, { from: bidr })
 
-      const colvWei = await this.loans.colv.call(this.loan)
+      const colvWei = await this.loans.collateralValue.call(this.loan)
       const colv = fromWei(colvWei)
 
-      const col = await this.loans.col.call(this.loan)
+      const col = await this.loans.collateral.call(this.loan)
 
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
