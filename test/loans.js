@@ -102,21 +102,21 @@ contract("Loans", accounts => {
       agent
     ]
 
-    this.fund = await this.funds.open.call(...fundParams)
-    await this.funds.open(...fundParams)
+    this.fund = await this.funds.create.call(...fundParams)
+    await this.funds.create(...fundParams)
 
     // Generate lender secret hashes
-    await this.funds.gen(lendSechs)
+    await this.funds.generate(lendSechs)
 
     // Generate agent secret hashes
-    await this.funds.gen(agentSechs, { from: agent })
+    await this.funds.generate(agentSechs, { from: agent })
 
     // Set Lender PubKey
-    await this.funds.set(ensure0x(lendpubk))
+    await this.funds.update(ensure0x(lendpubk))
 
     // Push funds to loan fund
     await this.token.approve(this.funds.address, toWei('100', 'ether'))
-    await this.funds.push(this.fund, toWei('100', 'ether'))
+    await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
     // Pull from loan
     const loanParams = [
@@ -128,55 +128,55 @@ contract("Loans", accounts => {
       ensure0x(lendpubk)
     ]
 
-    this.loan = await this.funds.req.call(...loanParams, { from: borrower })
-    await this.funds.req(...loanParams, { from: borrower })
+    this.loan = await this.funds.request.call(...loanParams, { from: borrower })
+    await this.funds.request(...loanParams, { from: borrower })
   })
 
-  describe('pull', function() {
-    it('should pull successfully if lender secret provided', async function() {
-      await this.loans.mark(this.loan)
+  describe('accept', function() {
+    it('should accept successfully if lender secret provided', async function() {
+      await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       // Send funds to borrower so they can repay full
       await this.token.transfer(borrower, toWei('1', 'ether'))
 
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
-      const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, owed, { from: borrower })
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, owedForLoan, { from: borrower })
 
-      await this.loans.pull(this.loan, lendSecs[0]) // accept loan repayment
+      await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
 
       const off = await this.loans.off.call(this.loan)
       assert.equal(off, true);
     })
 
-    it('should pull successfully if agent secret provided', async function() {
-      await this.loans.mark(this.loan)
+    it('should accept successfully if agent secret provided', async function() {
+      await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       // Send funds to borrower so they can repay full
       await this.token.transfer(borrower, toWei('1', 'ether'))
 
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
-      const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, owed, { from: borrower })
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, owedForLoan, { from: borrower })
 
-      await this.loans.pull(this.loan, agentSecs[0]) // accept loan repayment
+      await this.loans.accept(this.loan, agentSecs[0]) // accept loan repayment
 
       const off = await this.loans.off.call(this.loan)
       assert.equal(off, true);
     })
   })
 
-  describe('sell', function() {
+  describe('liquidate', function() {
     it('should be safe if above liquidation ratio', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       const bal = await this.token.balanceOf.call(borrower)
 
@@ -185,9 +185,9 @@ contract("Loans", accounts => {
     })
 
     it('should succeed at creating a sale if below liquidation ratio', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       const bal = await this.token.balanceOf.call(borrower)
 
@@ -196,59 +196,59 @@ contract("Loans", accounts => {
       const safe = await this.loans.safe.call(this.loan)
       assert.equal(safe, false)
 
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
-      const colvWei = await this.loans.colv.call(this.loan)
+      const colvWei = await this.loans.collateralValue.call(this.loan)
       const colv = fromWei(colvWei)
 
-      const col = await this.loans.col.call(this.loan)
+      const col = await this.loans.collateral.call(this.loan)
 
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(1800)
 
       await this.token.transfer(bidr2, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(1800 + 1)
 
-      await this.sales.sec(this.sale, lendSecs[1])
-      await this.sales.sec(this.sale, borSecs[1], { from: borrower })
-      await this.sales.sec(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, lendSecs[1])
+      await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
+      await this.sales.provideSecret(this.sale, bidrSecs[1])
 
-      await this.sales.take(this.sale)
+      await this.sales.accept(this.sale)
 
-      const taken = await this.sales.taken.call(this.sale)
+      const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
     })
   })
 
   describe('default', function() {
     it('should fail liquidation if current time before loan expiration', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       await time.increase(toSecs({days: 1, hours: 23}))
 
-      await expectRevert(this.loans.sell(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.loans.liquidate(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
     })
 
     it('should allow for liquidation to start if loan is defaulted', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       await time.increase(toSecs({days: 2, minutes: 1}))
 
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const sale = await this.loans.sale.call(this.loan)
       assert.equal(sale, true)

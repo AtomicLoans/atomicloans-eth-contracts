@@ -9,177 +9,177 @@ pragma solidity ^0.5.8;
 contract Funds is DSMath {
     Loans loans;
 
-    mapping (address => bytes32[]) public sechs;  // User secret hashes
-    mapping (address => uint256)   public sechi;  // User secret hash index
+    mapping (address => bytes32[]) public secretHashes;    // User secret hashes
+    mapping (address => uint256)   public secretHashIndex; // User secret hash index
 
-    mapping (address => bytes)     public pubks;  // User A Coin PubKeys
+    mapping (address => bytes)     public pubKeys;  // User A Coin PubKeys
     
     mapping (bytes32 => Fund)      public funds;  
-    uint256                        public fundi;
+    uint256                        public fundIndex;
 
     ERC20 public token;
 
-    address own;
+    address deployer;
 
     struct Fund {
-        address  lend;   // Loan Fund Owner (Lender)
-        uint256  mila;  // Min Loan Amount
-        uint256  mala;  // Max Loan Amount
-        uint256  mild;  // Min Loan Duration
-        uint256  mald;  // Max Loan Duration
-        uint256  lint;  // Interest Rate in RAY
-        uint256  lpen;  // Liquidation Penalty Rate in RAY
-        uint256  lfee;  // Optional Automation Fee in RAY
-        uint256  rat;   // Liquidation Ratio in RAY
-        address  agent; // Optional Automator Agent
-        uint256  bal;   // Locked amount in fund (in TOK)
+        address  lend;             // Loan Fund Owner (Lender)
+        uint256  minLoanAmt;       // Min Loan Amount
+        uint256  maxLoanAmt;       // Max Loan Amount
+        uint256  minLoanDur;       // Min Loan Duration
+        uint256  maxLoanDur;       // Max Loan Duration
+        uint256  interest;         // Interest Rate in RAY
+        uint256  penalty;          // Liquidation Penalty Rate in RAY
+        uint256  fee;              // Optional Automation Fee in RAY
+        uint256  liquidationRatio; // Liquidation Ratio in RAY
+        address  agent;            // Optional Automator Agent
+        uint256  balance;          // Locked amount in fund (in TOK)
     }
 
     constructor(ERC20 token_) public {
-        own = msg.sender;
+        deployer = msg.sender;
         token = token_;
     }
 
     function setLoans(Loans loans_) public {
-        require(msg.sender == own);
+        require(msg.sender == deployer);
         require(address(loans) == address(0));
         loans = loans_;
         require(token.approve(address(loans_), 2**256-1));
     }
 
-    function lend(bytes32 fund)   public view returns (address) {
+    function lend(bytes32 fund)    public view returns (address) {
         return funds[fund].lend;
     }
 
-    function mila(bytes32 fund)  public view returns (uint256) {
-        return funds[fund].mila;
+    function minLoanAmt(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].minLoanAmt;
     }
 
-    function mala(bytes32 fund)  public view returns (uint256) {
-        return funds[fund].mala;
+    function maxLoanAmt(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].maxLoanAmt;
     }
 
-    function mild(bytes32 fund)  public view returns (uint256) {
-        return funds[fund].mild;
+    function minLoanDur(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].minLoanDur;
     }
 
-    function mald(bytes32 fund)  public view returns (uint256) {
-        return funds[fund].mald;
+    function maxLoanDur(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].maxLoanDur;
     }
 
-    function lint(bytes32 fund)  public view returns (uint256) {
-        return funds[fund].lint;
+    function interest(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].interest;
     }
 
-    function lpen(bytes32 fund)  public view returns (uint256) {
-        return funds[fund].lpen;
+    function penalty(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].penalty;
     }
 
-    function lfee(bytes32 fund)  public view returns (uint256) {
-        return funds[fund].lfee;
+    function fee(bytes32 fund)    public view returns (uint256) {
+        return funds[fund].fee;
     }
 
-    function rat(bytes32 fund)   public view returns (uint256) {
-        return funds[fund].rat;
+    function liquidationRatio(bytes32 fund)     public view returns (uint256) {
+        return funds[fund].liquidationRatio;
     }
 
-    function agent(bytes32 fund) public view returns (address) {
+    function agent(bytes32 fund)   public view returns (address) {
         return funds[fund].agent;
     }
 
-    function bal(bytes32 fund)   public view returns (uint256) {
-        return funds[fund].bal;
+    function balance(bytes32 fund) public view returns (uint256) {
+        return funds[fund].balance;
     }
 
-    function open(
-        uint256  mila_,  // Min Loan Amount
-        uint256  mala_,  // Max Loan Amount
-        uint256  mild_,  // Min Loan Duration
-        uint256  mald_,  // Max Loan Duration
-        uint256  rat_,   // Liquidation Ratio
-        uint256  lint_,  // Interest Rate
-        uint256  lpen_,  // Liquidation Penalty Rate
-        uint256  lfee_,  // Optional Automation Fee Rate
-        address  agent_  // Optional Address Automated Agent
+    function create(
+        uint256  minLoanAmt_,       // Min Loan Amount
+        uint256  maxLoanAmt_,       // Max Loan Amount
+        uint256  minLoanDur_,       // Min Loan Duration
+        uint256  maxLoanDur_,       // Max Loan Duration
+        uint256  liquidationRatio_, // Liquidation Ratio
+        uint256  interest_,         // Interest Rate
+        uint256  penalty_,          // Liquidation Penalty Rate
+        uint256  fee_,              // Optional Automation Fee Rate
+        address  agent_             // Optional Address Automated Agent
     ) external returns (bytes32 fund) {
-        fundi = add(fundi, 1);
-        fund = bytes32(fundi);
-        funds[fund].lend  = msg.sender;
-        funds[fund].mila  = mila_;
-        funds[fund].mala  = mala_;
-        funds[fund].mild  = mild_;
-        funds[fund].mald  = mald_;
-        funds[fund].lint  = lint_;
-        funds[fund].lpen  = lpen_;
-        funds[fund].lfee  = lfee_;
-        funds[fund].rat   = rat_;
-        funds[fund].agent = agent_;
+        fundIndex = add(fundIndex, 1);
+        fund = bytes32(fundIndex);
+        funds[fund].lend             = msg.sender;
+        funds[fund].minLoanAmt       = minLoanAmt_;
+        funds[fund].maxLoanAmt       = maxLoanAmt_;
+        funds[fund].minLoanDur       = minLoanDur_;
+        funds[fund].maxLoanDur       = maxLoanDur_;
+        funds[fund].interest         = interest_;
+        funds[fund].penalty          = penalty_;
+        funds[fund].fee              = fee_;
+        funds[fund].liquidationRatio = liquidationRatio_;
+        funds[fund].agent            = agent_;
     }
 
-    function push(bytes32 fund, uint256 amt) external { // Push funds to Loan Fund
+    function deposit(bytes32 fund, uint256 amt) external { // Deposit funds to Loan Fund
         // require(msg.sender == lend(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
-        funds[fund].bal = add(funds[fund].bal, amt);
+        funds[fund].balance = add(funds[fund].balance, amt);
         require(token.transferFrom(msg.sender, address(this), amt));
     }
 
-    function gen(bytes32[] calldata sechs_) external { // Generate secret hashes for Loan Fund
-        for (uint i = 0; i < sechs_.length; i++) {
-            sechs[msg.sender].push(sechs_[i]);
+    function generate(bytes32[] calldata secretHashes_) external { // Generate secret hashes for Loan Fund
+        for (uint i = 0; i < secretHashes_.length; i++) {
+            secretHashes[msg.sender].push(secretHashes_[i]);
         }
     }
 
-    function set(bytes calldata pubk) external { // Set PubKey for Fund
-        pubks[msg.sender] = pubk;
+    function update(bytes calldata pubk) external { // Set PubKey for Fund
+        pubKeys[msg.sender] = pubk;
     }
 
-    function set(        // Set Loan Fund details
-        bytes32  fund,   // Loan Fund Index
-        uint256  mila_,  // Min Loan Amount
-        uint256  mala_,  // Max Loan Amount
-        uint256  mild_,  // Min Loan Duration
-        uint256  mald_,  // Max Loan Duration
-        uint256  lint_,  // Interest Rate in RAY
-        uint256  lpen_,  // Liquidation Penalty Rate in RAY
-        uint256  lfee_,  // Optional Automation Fee in RAY
-        uint256  rat_,   // Liquidation Ratio in RAY
-        address  agent_  // Optional Automator Agent)
+    function update(                // Set Loan Fund details
+        bytes32  fund,              // Loan Fund Index
+        uint256  minLoanAmt_,       // Min Loan Amount
+        uint256  maxLoanAmt_,       // Max Loan Amount
+        uint256  minLoanDur_,       // Min Loan Duration
+        uint256  maxLoanDur_,       // Max Loan Duration
+        uint256  interest_,         // Interest Rate in RAY
+        uint256  penalty_,          // Liquidation Penalty Rate in RAY
+        uint256  fee_,              // Optional Automation Fee in RAY
+        uint256  liquidationRatio_, // Liquidation Ratio in RAY
+        address  agent_             // Optional Automator Agent)
     ) external {
         require(msg.sender == lend(fund));
-        funds[fund].mila  = mila_;
-        funds[fund].mala  = mala_;
-        funds[fund].mild  = mild_;
-        funds[fund].mald  = mald_;
-        funds[fund].lint  = lint_;
-        funds[fund].lpen  = lpen_;
-        funds[fund].lfee  = lfee_;
-        funds[fund].rat   = rat_;
-        funds[fund].agent = agent_;
+        funds[fund].minLoanAmt       = minLoanAmt_;
+        funds[fund].maxLoanAmt       = maxLoanAmt_;
+        funds[fund].minLoanDur       = minLoanDur_;
+        funds[fund].maxLoanDur       = maxLoanDur_;
+        funds[fund].interest         = interest_;
+        funds[fund].penalty          = penalty_;
+        funds[fund].fee              = fee_;
+        funds[fund].liquidationRatio = liquidationRatio_;
+        funds[fund].agent            = agent_;
     }
 
-    function req(                 // Request Loan
-        bytes32           fund,   // Fund Index
-        uint256           amt_,   // Loan Amount
-        uint256           col_,   // Collateral Amount in satoshis
-        uint256           lodu_,  // Loan Duration in seconds
-        bytes32[4] calldata sechs_, // Secret Hash A1 & A2
-        bytes      calldata pubk_   // Pubkey
-    ) external returns (bytes32 loani) {
+    function request(                      // Request Loan
+        bytes32             fund,          // Fund Index
+        uint256             amt_,          // Loan Amount
+        uint256             collateral_,   // Collateral Amount in satoshis
+        uint256             lodu_,         // Loan Duration in seconds
+        bytes32[4] calldata secretHashes_, // Secret Hash A1 & A2
+        bytes      calldata pubk_          // Pubkey
+    ) external returns (bytes32 loanIndex) {
         require(msg.sender != lend(fund));
-        require(amt_       <= bal(fund));
-        require(amt_       >= mila(fund));
-        require(amt_       <= mala(fund));
-        require(lodu_      >= mild(fund));
-        require(lodu_      <= mald(fund));
+        require(amt_       <= balance(fund));
+        require(amt_       >= minLoanAmt(fund));
+        require(amt_       <= maxLoanAmt(fund));
+        require(lodu_      >= minLoanDur(fund));
+        require(lodu_      <= maxLoanDur(fund));
 
-        loani = lopen(fund, amt_, col_, lodu_);
-        lsech(fund, loani, sechs_, pubk_);
-        loans.push(loani);
+        loanIndex = lcreate(fund, amt_, collateral_, lodu_);
+        lsech(fund, loanIndex, secretHashes_, pubk_);
+        loans.fund(loanIndex);
     }
 
-    function pull(bytes32 fund, uint256 amt) external { // Pull funds from Loan Fund
-        require(msg.sender == lend(fund));
-        require(bal(fund)  >= amt);
-        funds[fund].bal = sub(funds[fund].bal, amt);
+    function withdraw(bytes32 fund, uint256 amt) external { // Withdraw funds from Loan Fund
+        require(msg.sender     == lend(fund));
+        require(balance(fund)  >= amt);
+        funds[fund].balance = sub(funds[fund].balance, amt);
         require(token.transfer(lend(fund), amt));
     }
 
@@ -187,38 +187,43 @@ contract Funds is DSMath {
         return sub(rmul(amt, rpow(rate, lodu)), amt);
     }
 
-    function lopen(               // Private Open Loan
-        bytes32           fund,   // Fund Index
-        uint256           amt_,   // Loan Amount
-        uint256           col_,   // Collateral Amount in satoshis
-        uint256           lodu_   // Loan Duration in seconds
-    ) private returns (bytes32 loani) {
-        loani = loans.open(
+    function lcreate(                  // Private Open Loan
+        bytes32           fund,        // Fund Index
+        uint256           amt_,        // Loan Amount
+        uint256           collateral_, // Collateral Amount in satoshis
+        uint256           lodu_        // Loan Duration in seconds
+    ) private returns (bytes32 loanIndex) {
+        loanIndex = loans.create(
             now + lodu_,
             [ msg.sender, lend(fund), funds[fund].agent],
-            [ amt_, calc(amt_, lint(fund), lodu_), calc(amt_, lpen(fund), lodu_), calc(amt_, lfee(fund), lodu_), col_, funds[fund].rat],
+            [ amt_, calc(amt_, interest(fund), lodu_), calc(amt_, penalty(fund), lodu_), calc(amt_, fee(fund), lodu_), collateral_, funds[fund].liquidationRatio],
             fund
         );
     }
 
-    function lsech(                // Loan Set Secret Hashes
-        bytes32 fund,              // Fund Index
-        bytes32 loan,              // Loan Index
-        bytes32[4] memory sechs_,  // 4 Secret Hashes
-        bytes memory pubk_         // Public Key
+    function lsech(                      // Loan Set Secret Hashes
+        bytes32 fund,                    // Fund Index
+        bytes32 loan,                    // Loan Index
+        bytes32[4] memory secretHashes_, // 4 Secret Hashes
+        bytes memory pubk_               // Public Key
     ) private { // Loan set Secret Hash and PubKey
-        loans.setSechs(
+        loans.setSecretHashes(
             loan,
-            sechs_,
+            secretHashes_,
             gsech(lend(fund)),
             gsech(agent(fund)),
             pubk_,
-            pubks[lend(fund)]
+            pubKeys[lend(fund)]
         );
     }
 
     function gsech(address addr) private returns (bytes32[4] memory) { // Get 4 secrethashes for loan
-        sechi[addr] = add(sechi[addr], 4);
-        return [ sechs[addr][sub(sechi[addr], 4)], sechs[addr][sub(sechi[addr], 3)], sechs[addr][sub(sechi[addr], 2)], sechs[addr][sub(sechi[addr], 1)] ];
+        secretHashIndex[addr] = add(secretHashIndex[addr], 4);
+        return [
+            secretHashes[addr][sub(secretHashIndex[addr], 4)],
+            secretHashes[addr][sub(secretHashIndex[addr], 3)],
+            secretHashes[addr][sub(secretHashIndex[addr], 2)],
+            secretHashes[addr][sub(secretHashIndex[addr], 1)]
+        ];
     }
 }

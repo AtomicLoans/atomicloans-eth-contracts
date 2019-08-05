@@ -83,19 +83,19 @@ contract("Funds", accounts => {
       agent
     ]
 
-    this.fund = await this.funds.open.call(...fundParams)
-    await this.funds.open(...fundParams)
+    this.fund = await this.funds.create.call(...fundParams)
+    await this.funds.create(...fundParams)
   })
 
   describe('generate secret hashes', function() {
-    it('should push secrets hashes to sechs for user address', async function() {
+    it('should push secrets hashes to secretHashes for user address', async function() {
       // Generate lender secret hashes
-      await this.funds.gen(lendSechs)
+      await this.funds.generate(lendSechs)
 
-      const sech0 = await this.funds.sechs.call(lender, 0)
-      const sech1 = await this.funds.sechs.call(lender, 1)
-      const sech2 = await this.funds.sechs.call(lender, 2)
-      const sech3 = await this.funds.sechs.call(lender, 3)
+      const sech0 = await this.funds.secretHashes.call(lender, 0)
+      const sech1 = await this.funds.secretHashes.call(lender, 1)
+      const sech2 = await this.funds.secretHashes.call(lender, 2)
+      const sech3 = await this.funds.secretHashes.call(lender, 3)
 
       assert.equal(lendSechs[0], sech0);
       assert.equal(lendSechs[1], sech1);
@@ -103,9 +103,9 @@ contract("Funds", accounts => {
       assert.equal(lendSechs[3], sech3);
     })
 
-    it('should fail trying to return incorrect sechs index', async function() {
+    it('should fail trying to return incorrect secretHashes index', async function() {
       try {
-        await this.funds.sechs.call(lender, 20)
+        await this.funds.secretHashes.call(lender, 20)
       } catch (error) {
         return utils.ensureException(error);
       }
@@ -119,7 +119,7 @@ contract("Funds", accounts => {
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'), { from: agent })
-      await this.funds.push(this.fund, toWei('100', 'ether'), { from: agent })
+      await this.funds.deposit(this.fund, toWei('100', 'ether'), { from: agent })
 
       const bal = await this.token.balanceOf.call(this.funds.address)
 
@@ -128,17 +128,17 @@ contract("Funds", accounts => {
 
     it('should request and complete loan successfully if loan setup correctly', async function() {
       // Generate lender secret hashes
-      await this.funds.gen(lendSechs)
+      await this.funds.generate(lendSechs)
 
       // Generate agent secret hashes
-      await this.funds.gen(agentSechs, { from: agent })
+      await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
-      await this.funds.set(ensure0x(lendpubk))
+      await this.funds.update(ensure0x(lendpubk))
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
-      await this.funds.push(this.fund, toWei('100', 'ether'))
+      await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
       // request collateralization ratio 2
       const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
@@ -152,22 +152,22 @@ contract("Funds", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan = await this.funds.req.call(...loanParams, { from: borrower })
-      await this.funds.req(...loanParams, { from: borrower })
+      this.loan = await this.funds.request.call(...loanParams, { from: borrower })
+      await this.funds.request(...loanParams, { from: borrower })
 
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       // Send funds to borrower so they can repay full
       await this.token.transfer(borrower, toWei('1', 'ether'))
 
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
-      const owed = await this.loans.owed.call(this.loan)
-      await this.loans.pay(this.loan, owed, { from: borrower })
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, owedForLoan, { from: borrower })
 
-      await this.loans.pull(this.loan, lendSecs[0]) // accept loan repayment
+      await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
 
       const off = await this.loans.off.call(this.loan)
 
@@ -176,8 +176,8 @@ contract("Funds", accounts => {
   })
 
   describe('opening loan fund', function() {
-    it('should increment fundi', async function() {
-      const initFundi = await this.funds.fundi.call()
+    it('should increment fundIndex', async function() {
+      const initFundIndex = await this.funds.fundIndex.call()
 
       const fundParams = [
         toWei('1', 'ether'),
@@ -191,25 +191,25 @@ contract("Funds", accounts => {
         agent
       ]
 
-      this.fund = await this.funds.open.call(...fundParams)
-      await this.funds.open(...fundParams)
+      this.fund = await this.funds.create.call(...fundParams)
+      await this.funds.create(...fundParams)
 
-      const finalFundi = await this.funds.fundi.call()
+      const finalFundIndex = await this.funds.fundIndex.call()
 
-      assert.equal(finalFundi - initFundi, 1)
+      assert.equal(finalFundIndex - initFundIndex, 1)
     })
   })
 
   describe('set fund details', function() {
     it('should allow changing of pubk', async function() {
-      const oldPubk = await this.funds.pubks.call(lender)
+      const oldPubk = await this.funds.pubKeys.call(lender)
 
       const newLendpubk = '024f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'
 
       // Set Lender PubKey
-      await this.funds.set(ensure0x(newLendpubk))
+      await this.funds.update(ensure0x(newLendpubk))
 
-      const newPubk = await this.funds.pubks.call(lender)
+      const newPubk = await this.funds.pubKeys.call(lender)
 
       assert.notEqual(oldPubk, newPubk)
     })
@@ -227,69 +227,69 @@ contract("Funds", accounts => {
         agent
       ]
 
-      await this.funds.set(this.fund, ...fundParams)
+      await this.funds.update(this.fund, ...fundParams)
 
-      const mila = await this.funds.mila.call(this.fund)
-      const mala = await this.funds.mala.call(this.fund)
-      const mild = await this.funds.mild.call(this.fund)
-      const mald = await this.funds.mald.call(this.fund)
-      const lint = await this.funds.lint.call(this.fund)
-      const lpen = await this.funds.lpen.call(this.fund)
-      const lfee = await this.funds.lfee.call(this.fund)
-      const rat  = await this.funds.rat.call(this.fund)
+      const minLoanAmt = await this.funds.minLoanAmt.call(this.fund)
+      const maxLoanAmt = await this.funds.maxLoanAmt.call(this.fund)
+      const minLoanDur = await this.funds.minLoanDur.call(this.fund)
+      const maxLoanDur = await this.funds.maxLoanDur.call(this.fund)
+      const interest = await this.funds.interest.call(this.fund)
+      const penalty = await this.funds.penalty.call(this.fund)
+      const fee  = await this.funds.fee.call(this.fund)
+      const liquidationRatio = await this.funds.liquidationRatio.call(this.fund)
 
-      assert.equal(mila, toWei('2', 'ether'))
-      assert.equal(mala, toWei('99', 'ether'))
-      assert.equal(mild, toSecs({days: 2}))
-      assert.equal(mald, toSecs({days: 364}))
-      assert.equal(lint, toWei(rateToSec('16'), 'gether'))
-      assert.equal(lpen, toWei(rateToSec('2.75'), 'gether'))
-      assert.equal(lfee, toWei(rateToSec('0.5'), 'gether'))
-      assert.equal(rat, toWei('1.5', 'gether'))
+      assert.equal(minLoanAmt, toWei('2', 'ether'))
+      assert.equal(maxLoanAmt, toWei('99', 'ether'))
+      assert.equal(minLoanDur, toSecs({days: 2}))
+      assert.equal(maxLoanDur, toSecs({days: 364}))
+      assert.equal(interest, toWei(rateToSec('16'), 'gether'))
+      assert.equal(penalty, toWei(rateToSec('2.75'), 'gether'))
+      assert.equal(fee, toWei(rateToSec('0.5'), 'gether'))
+      assert.equal(liquidationRatio, toWei('1.5', 'gether'))
     })
   })
 
-  describe('pull funds', function() {
-    it('should pull funds successfully if called by owner', async function() {
+  describe('withdraw funds', function() {
+    it('should withdraw funds successfully if called by owner', async function() {
       // Generate lender secret hashes
-      await this.funds.gen(lendSechs)
+      await this.funds.generate(lendSechs)
 
       // Generate agent secret hashes
-      await this.funds.gen(agentSechs, { from: agent })
+      await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
-      await this.funds.set(ensure0x(lendpubk))
+      await this.funds.update(ensure0x(lendpubk))
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
-      await this.funds.push(this.fund, toWei('100', 'ether'))
+      await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
       const oldBal = await this.token.balanceOf.call(this.funds.address)
 
       // Pull funds from loan fund
-      await this.funds.pull(this.fund, toWei('50', 'ether'))
+      await this.funds.withdraw(this.fund, toWei('50', 'ether'))
 
       const newBal = await this.token.balanceOf.call(this.funds.address)
 
       assert.equal(oldBal - newBal, toWei('50', 'ether'))
     })
 
-    it('should fail pulling funds if not called by owner', async function() {
+    it('should fail withdrawing funds if not called by owner', async function() {
       // Generate lender secret hashes
-      await this.funds.gen(lendSechs)
+      await this.funds.generate(lendSechs)
 
       // Generate agent secret hashes
-      await this.funds.gen(agentSechs, { from: agent })
+      await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
-      await this.funds.set(ensure0x(lendpubk))
+      await this.funds.update(ensure0x(lendpubk))
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
-      await this.funds.push(this.fund, toWei('100', 'ether'))
+      await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
       // Pull funds from loan fund
-      await expectRevert(this.funds.pull(this.fund, toWei('50', 'ether'), { from: agent }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.funds.withdraw(this.fund, toWei('50', 'ether'), { from: agent }), 'VM Exception while processing transaction: revert')
     })
   })
 
