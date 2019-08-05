@@ -129,7 +129,7 @@ Vars:
 Actions:
 
    create              create new auction (can only be called by loan)
-   push                bid on collateral
+   offer               bid on collateral
    sec                 provide secret
    sign                provide signature to move collateral to collateral swap
    take                withdraw bid (accept bid and disperse funds to rightful parties)

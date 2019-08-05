@@ -61,7 +61,7 @@ contract Sales is DSMath { // Auctions
         bytes32 secretD;     // Secret D
     }
 
-    function bid(bytes32 sale) public returns (uint256) {
+    function bid(bytes32 sale) public view returns (uint256) {
         return sales[sale].bid;
     }
 
@@ -172,7 +172,7 @@ contract Sales is DSMath { // Auctions
         salel[loanIndex].push(sale);
     }
 
-    function push(          // Bid on Collateral
+    function offer(         // Bid on Collateral
     	bytes32 sale,       // Auction Index
     	uint256 amt,        // Bid Amount
     	bytes32 secretHash, // Secret Hash

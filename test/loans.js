@@ -207,14 +207,14 @@ contract("Loans", accounts => {
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(1800)
 
       await this.token.transfer(bidr2, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(1800 + 1)
 

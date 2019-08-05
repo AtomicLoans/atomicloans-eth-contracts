@@ -169,14 +169,14 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr, toWei('100', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
       await this.token.transfer(bidr2, toWei('100', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({minutes: 2}))
 
@@ -202,14 +202,14 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr, toWei('100', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 61}))
 
       await this.token.transfer(bidr2, toWei('100', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await expectRevert(this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 }), 'VM Exception while processing transaction: revert')
     })
   })
 
@@ -226,36 +226,36 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
       await this.token.transfer(bidr2, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
       this.sale2 = await this.loans.liquidate.call(this.loan, { from: lender })
       await this.loans.liquidate(this.loan, { from: lender })
 
-      await this.sales.push(this.sale2, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale2, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
-      await this.sales.push(this.sale2, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale2, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
       this.sale3 = await this.loans.liquidate.call(this.loan, { from: lender })
       await this.loans.liquidate(this.loan, { from: lender })
 
-      await this.sales.push(this.sale3, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale3, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
-      await this.sales.push(this.sale3, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale3, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
@@ -274,14 +274,14 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
       await this.token.transfer(bidr2, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({minutes: 2}))
 
@@ -309,14 +309,14 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
       await this.token.transfer(bidr2, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.75).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.75).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({minutes: 2}))
 
@@ -368,14 +368,14 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
       await this.token.transfer(bidr2, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.5).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.5).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({minutes: 2}))
 
@@ -427,14 +427,14 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
       await this.token.transfer(bidr2, toWei('5', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.715142637307).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.715142637307).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({minutes: 2}))
 
@@ -484,14 +484,14 @@ contract("Sales", accounts => {
       await this.token.transfer(bidr, toWei('100', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.push(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 59}))
 
       await this.token.transfer(bidr2, toWei('100', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
 
-      await this.sales.push(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({minutes: 2}))
 
