@@ -66,11 +66,10 @@ Getters:
 
 Vars:
 
-   fundi           get the last fund id
+   fundIndex       get the last fund id
    pubks           address pubkeys
    sechs           address secret hashes
    sechi           address secret hash index
-   tokas           loan contract approved for token
 
 ```
 
@@ -117,11 +116,10 @@ Getters:
 
 Vars:
 
-   fundi           loan fund index
+   fundIndex       loan fund index
    backs           amount of loan paid back
    asaex           auction expirations by loan index
    loani           get the last loan id
-   tokas           erc20 approved by address
 
 ```
 

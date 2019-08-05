@@ -176,8 +176,8 @@ contract("Funds", accounts => {
   })
 
   describe('opening loan fund', function() {
-    it('should increment fundi', async function() {
-      const initFundi = await this.funds.fundi.call()
+    it('should increment fundIndex', async function() {
+      const initFundIndex = await this.funds.fundIndex.call()
 
       const fundParams = [
         toWei('1', 'ether'),
@@ -194,9 +194,9 @@ contract("Funds", accounts => {
       this.fund = await this.funds.create.call(...fundParams)
       await this.funds.create(...fundParams)
 
-      const finalFundi = await this.funds.fundi.call()
+      const finalFundIndex = await this.funds.fundIndex.call()
 
-      assert.equal(finalFundi - initFundi, 1)
+      assert.equal(finalFundIndex - initFundIndex, 1)
     })
   })
 

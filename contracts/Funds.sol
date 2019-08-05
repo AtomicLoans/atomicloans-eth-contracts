@@ -15,7 +15,7 @@ contract Funds is DSMath {
     mapping (address => bytes)     public pubks;  // User A Coin PubKeys
     
     mapping (bytes32 => Fund)      public funds;  
-    uint256                        public fundi;
+    uint256                        public fundIndex;
 
     ERC20 public token;
 
@@ -102,8 +102,8 @@ contract Funds is DSMath {
         uint256  fee_,              // Optional Automation Fee Rate
         address  agent_             // Optional Address Automated Agent
     ) external returns (bytes32 fund) {
-        fundi = add(fundi, 1);
-        fund = bytes32(fundi);
+        fundIndex = add(fundIndex, 1);
+        fund = bytes32(fundIndex);
         funds[fund].lend             = msg.sender;
         funds[fund].minLoanAmt       = minLoanAmt_;
         funds[fund].maxLoanAmt       = maxLoanAmt_;

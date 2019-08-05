@@ -18,15 +18,13 @@ contract Loans is DSMath {
     uint256 public constant BIEXT = 604800;       // bidding expirataion threshold
 
     mapping (bytes32 => Loan)      public loans;
-    mapping (bytes32 => Sechs)     public sechs;  // Secret Hashes
-    mapping (bytes32 => Bools)     public bools;  // Boolean state of Loan
-    mapping (bytes32 => bytes32)   public fundi;  // Mapping of Loan Index to Fund Index
-    mapping (bytes32 => ERC20)     public tokes;  // Mapping of Loan index to Token contract
-    mapping (bytes32 => uint256)   public backs;  // Amount paid back in a Loan
-    mapping (bytes32 => uint256)   public asaex;  // All Auction expiration
-    uint256                        public loani;  // Current Loan Index
-
-    mapping (address => bool)      public tokas;  // Is ERC20 Token Approved
+    mapping (bytes32 => Sechs)     public sechs;     // Secret Hashes
+    mapping (bytes32 => Bools)     public bools;     // Boolean state of Loan
+    mapping (bytes32 => bytes32)   public fundIndex; // Mapping of Loan Index to Fund Index
+    mapping (bytes32 => ERC20)     public tokes;     // Mapping of Loan index to Token contract
+    mapping (bytes32 => uint256)   public backs;     // Amount paid back in a Loan
+    mapping (bytes32 => uint256)   public asaex;     // All Auction expiration
+    uint256                        public loani;     // Current Loan Index
 
     ERC20 public token; // ERC20 Debt Stablecoin
 
@@ -195,10 +193,10 @@ contract Loans is DSMath {
     }
     
     function create(                   // Create new Loan
-        uint256             loex_,   // Loan Expiration
-        address[3] calldata usrs_,   // Borrower, Lender, Optional Automated Agent Addresses
-        uint256[6] calldata vals_,   // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
-        bytes32             fundi_   // Optional Fund Index
+        uint256             loex_,     // Loan Expiration
+        address[3] calldata usrs_,     // Borrower, Lender, Optional Automated Agent Addresses
+        uint256[6] calldata vals_,     // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
+        bytes32             fundIndex_ // Optional Fund Index
     ) external returns (bytes32 loan) {
         loani = add(loani, 1);
         loan = bytes32(loani);
@@ -213,7 +211,7 @@ contract Loans is DSMath {
         loans[loan].fee              = vals_[3];
         loans[loan].col              = vals_[4];
         loans[loan].liquidationRatio = vals_[5];
-        fundi[loan]                  = fundi_;
+        fundIndex[loan]              = fundIndex_;
         sechs[loan].set              = false;
     }
 
@@ -301,10 +299,10 @@ contract Loans is DSMath {
         if (bools[loan].taken == false) {
             require(token.transfer(loans[loan].lend, loans[loan].prin));
         } else if (bools[loan].taken == true) {
-            if (fundi[loan] == bytes32(0) || !fund) {
+            if (fundIndex[loan] == bytes32(0) || !fund) {
                 require(token.transfer(loans[loan].lend, lent(loan)));
             } else {
-                funds.deposit(fundi[loan], lent(loan));
+                funds.deposit(fundIndex[loan], lent(loan));
             }
             require(token.transfer(loans[loan].agent, fee(loan)));
         }
