@@ -30,16 +30,16 @@ contract Sales is DSMath { // Auctions
     ERC20 public token;
 
     struct Sale {
-        bytes32    loanIndex; // Loan Index
-        uint256    bid;       // Current Bid
-        address    bidder;    // Bidder
-        address    borrower;  // Borrower
-        address    lender;    // Lender
-        address    agent;     // Optional Automated Agent
-        uint256    createdAt; // Created At
-        bytes20    pbkh;      // Bidder PubKey Hash
-        bool       set;       // Sale at index opened
-        bool       accepted;  // Winning bid accepted
+        bytes32    loanIndex;  // Loan Index
+        uint256    bid;        // Current Bid
+        address    bidder;     // Bidder
+        address    borrower;   // Borrower
+        address    lender;     // Lender
+        address    agent;      // Optional Automated Agent
+        uint256    createdAt;  // Created At
+        bytes20    pubKeyHash; // Bidder PubKey Hash
+        bool       set;        // Sale at index opened
+        bool       accepted;   // Winning bid accepted
         bool       off;
     }
 
@@ -91,8 +91,8 @@ contract Sales is DSMath { // Auctions
         return sales[sale].createdAt + SALES_EXP + SETTLEMENT_EXP;
     }
 
-    function pbkh(bytes32 sale) public returns (bytes20) {
-        return sales[sale].pbkh;
+    function pubKeyHash(bytes32 sale) public returns (bytes20) {
+        return sales[sale].pubKeyHash;
     }
 
     function accepted(bytes32 sale) public returns (bool) {
@@ -174,7 +174,7 @@ contract Sales is DSMath { // Auctions
     	bytes32 sale,       // Auction Index
     	uint256 amt,        // Bid Amount
     	bytes32 secretHash, // Secret Hash
-    	bytes20 pbkh        // PubKeyHash
+    	bytes20 pubKeyHash  // PubKeyHash
 	) external {
         require(msg.sender != borrower(sale) && msg.sender != lender(sale));
 		require(sales[sale].set);
@@ -182,7 +182,7 @@ contract Sales is DSMath { // Auctions
     	require(amt > sales[sale].bid);
     	require(token.balanceOf(msg.sender) >= amt);
     	if (sales[sale].bid > 0) {
-		require(amt > rmul(sales[sale].bid, MINBI)); // Make sure next bid is at least 0.5% more than the last bid
+    		require(amt > rmul(sales[sale].bid, MINBI)); // Make sure next bid is at least 0.5% more than the last bid
     	}
 
     	require(token.transferFrom(msg.sender, address(this), amt));
@@ -192,7 +192,7 @@ contract Sales is DSMath { // Auctions
     	sales[sale].bidder = msg.sender;
     	sales[sale].bid  = amt;
     	secretHashes[sale].secretHashD = secretHash;
-    	sales[sale].pbkh = pbkh;
+    	sales[sale].pubKeyHash = pubKeyHash;
 	}
 
 	function provideSig(              // Provide Signature to move collateral to collateral swap

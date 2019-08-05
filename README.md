@@ -148,7 +148,7 @@ Getters:
    lender              address lender
    lenderSigs          lender refundable and seizable signatures
    next                get the last auction id by loan
-   pbkh                bidder pubkeyhash
+   pubKeyHash          bidder pubkeyhash
    salex               auction bidding expiration
    secA                Secret A
    secB                Secret B
