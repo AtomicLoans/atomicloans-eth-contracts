@@ -11,9 +11,9 @@ contract Sales is DSMath { // Auctions
 	Loans loans;
 	Medianizer med;
 
-    uint256 public constant SALEX = 3600;                         // Sales Expiration
-    uint256 public constant SWAEX = 7200;                         // Swap Expiration
-    uint256 public constant SETEX = 14400;                        // Settlement Expiration
+    uint256 public constant SALES_EXP = 3600;                         // Sales Expiration
+    uint256 public constant SWAP_EXP = 7200;                         // Swap Expiration
+    uint256 public constant SETTLEMENT_EXP = 14400;                        // Settlement Expiration
     uint256 public constant MINBI = 1005000000000000000000000000; // Minimum Bid Increment in RAY
 
 	address public deployer; // Only the Loans contract can edit data
@@ -36,7 +36,7 @@ contract Sales is DSMath { // Auctions
         address    borrower;  // Borrower
         address    lender;    // Lender
         address    agent;     // Optional Automated Agent
-        uint256    born;      // Created At
+        uint256    createdAt; // Created At
         bytes20    pbkh;      // Bidder PubKey Hash
         bool       set;       // Sale at index opened
         bool       accepted;  // Winning bid accepted
@@ -80,15 +80,15 @@ contract Sales is DSMath { // Auctions
     }
 
     function salex(bytes32 sale) public returns (uint256) {
-        return sales[sale].born + SALEX;
+        return sales[sale].createdAt + SALES_EXP;
     }
 
     function swaex(bytes32 sale) public returns (uint256) {
-        return sales[sale].born + SALEX + SWAEX;
+        return sales[sale].createdAt + SALES_EXP + SWAP_EXP;
     }
 
     function setex(bytes32 sale) public returns (uint256) {
-        return sales[sale].born + SALEX + SETEX;
+        return sales[sale].createdAt + SALES_EXP + SETTLEMENT_EXP;
     }
 
     function pbkh(bytes32 sale) public returns (bytes20) {
@@ -162,7 +162,7 @@ contract Sales is DSMath { // Auctions
         sales[sale].borrower  = borrower;
         sales[sale].lender    = lender;
         sales[sale].agent     = agent;
-        sales[sale].born      = now;
+        sales[sale].createdAt = now;
         sales[sale].set       = true;
         secretHashes[sale].secretHashA = secretHashA;
         secretHashes[sale].secretHashB = secretHashB;
