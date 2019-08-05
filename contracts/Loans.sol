@@ -13,9 +13,9 @@ contract Loans is DSMath {
     Medianizer med;
     Sales sales;
 
-    uint256 public constant APPROVE_EXP_THRESHOLD = 7200;         // approval expiration threshold
-    uint256 public constant ACCEPT_EXP_THRESHOLD = 172800;       // acceptance expiration threshold
-    uint256 public constant BIDDING_EXP_THRESHOLD = 604800;       // bidding expiration threshold
+    uint256 public constant APPROVE_EXP_THRESHOLD = 7200;    // approval expiration threshold
+    uint256 public constant ACCEPT_EXP_THRESHOLD = 172800;   // acceptance expiration threshold
+    uint256 public constant BIDDING_EXP_THRESHOLD = 604800;  // bidding expiration threshold
 
     mapping (bytes32 => Loan)         public loans;
     mapping (bytes32 => SecretHashes) public secretHashes; // Secret Hashes
@@ -23,7 +23,6 @@ contract Loans is DSMath {
     mapping (bytes32 => bytes32)      public fundIndex;    // Mapping of Loan Index to Fund Index
     mapping (bytes32 => ERC20)        public tokes;        // Mapping of Loan index to Token contract
     mapping (bytes32 => uint256)      public repayments;   // Amount paid back in a Loan
-    mapping (bytes32 => uint256)      public asaex;        // All Auction expiration
     uint256                           public loanIndex;    // Current Loan Index
 
     ERC20 public token; // ERC20 Debt Stablecoin
@@ -36,7 +35,7 @@ contract Loans is DSMath {
         address agent;            // Optional Address automated agent
         uint256 createdAt;        // Created At
         uint256 loanExpiration;   // Loan Expiration
-        uint256 prin;             // Principal
+        uint256 principal;        // Principal
         uint256 interest;         // Interest
         uint256 penalty;          // Liquidation Penalty
         uint256 fee;              // Optional fee paid to auto if address not 0x0
@@ -65,11 +64,11 @@ contract Loans is DSMath {
     	bool off;           // Loan Finished (Repayment accepted or cancelled)
     }
 
-    function borrower(bytes32 loan)    public view returns (address) {
+    function borrower(bytes32 loan) public view returns (address) {
         return loans[loan].borrower;
     }
 
-    function lender(bytes32 loan)   public view returns (address) {
+    function lender(bytes32 loan) public view returns (address) {
         return loans[loan].lender;
     }
 
@@ -77,55 +76,55 @@ contract Loans is DSMath {
         return loans[loan].agent;
     }
 
-    function approveExpiration(bytes32 loan)   public returns (uint256) { // Approval Expiration
+    function approveExpiration(bytes32 loan) public view returns (uint256) { // Approval Expiration
         return add(loans[loan].createdAt, APPROVE_EXP_THRESHOLD);
     }
 
-    function acceptExpiration(bytes32 loan)   public returns (uint256) { // Acceptance Expiration
+    function acceptExpiration(bytes32 loan) public view returns (uint256) { // Acceptance Expiration
         return add(loans[loan].loanExpiration, ACCEPT_EXP_THRESHOLD);
     }
 
-    function biddingExpiration(bytes32 loan)   public returns (uint256) { // Bidding Expiration
+    function biddingExpiration(bytes32 loan) public view returns (uint256) { // Bidding Expiration
         return add(loans[loan].loanExpiration, BIDDING_EXP_THRESHOLD);
     }
 
-    function prin(bytes32 loan)   public view returns (uint256) {
-        return loans[loan].prin;
+    function principal(bytes32 loan) public view returns (uint256) {
+        return loans[loan].principal;
     }
 
-    function interest(bytes32 loan)   public view returns (uint256) {
+    function interest(bytes32 loan) public view returns (uint256) {
         return loans[loan].interest;
     }
 
-    function fee(bytes32 loan)   public view returns (uint256) {
+    function fee(bytes32 loan) public view returns (uint256) {
         return loans[loan].fee;
     }
 
-    function penalty(bytes32 loan)   public view returns (uint256) {
+    function penalty(bytes32 loan) public view returns (uint256) {
         return loans[loan].penalty;
     }
 
-    function collateral(bytes32 loan)    public view returns (uint256) {
+    function collateral(bytes32 loan) public view returns (uint256) {
         return loans[loan].collateral;
     }
 
-    function repaid(bytes32 loan)   public view returns (uint256) { // Amount paid back for loan
+    function repaid(bytes32 loan) public view returns (uint256) { // Amount paid back for loan
         return repayments[loan];
     }
 
-    function liquidationRatio(bytes32 loan)    public view returns (uint256) {
+    function liquidationRatio(bytes32 loan) public view returns (uint256) {
         return loans[loan].liquidationRatio;
     }
 
-    function owedToLender(bytes32 loan)   public view returns (uint256) { // Amount lent by Lender
-        return add(prin(loan), interest(loan));
+    function owedToLender(bytes32 loan) public view returns (uint256) { // Amount lent by Lender
+        return add(principal(loan), interest(loan));
     }
 
-    function owedForLoan(bytes32 loan)   public view returns (uint256) { // Amount owed
+    function owedForLoan(bytes32 loan) public view returns (uint256) { // Amount owed
         return add(owedToLender(loan), fee(loan));
     }
 
-    function owedForLiquidation(bytes32 loan)   public view returns (uint256) { // Deductible amount from collateral
+    function owedForLiquidation(bytes32 loan) public view returns (uint256) { // Deductible amount from collateral
         return add(owedForLoan(loan), penalty(loan));
     }
 
@@ -153,7 +152,7 @@ contract Loans is DSMath {
         return bools[loan].paid;
     }
 
-    function off(bytes32 loan)    public view returns (bool) {
+    function off(bytes32 loan) public view returns (bool) {
         return bools[loan].off;
     }
 
@@ -163,7 +162,7 @@ contract Loans is DSMath {
     }
 
     function minCollateralValue(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
-        return rmul(sub(prin(loan), repaid(loan)), liquidationRatio(loan));
+        return rmul(sub(principal(loan), repaid(loan)), liquidationRatio(loan));
     }
 
     function safe(bytes32 loan) public returns (bool) { // Loan is safe from Liquidation
@@ -197,7 +196,7 @@ contract Loans is DSMath {
         loans[loan].borrower         = usrs_[0];
         loans[loan].lender           = usrs_[1];
         loans[loan].agent            = usrs_[2];
-        loans[loan].prin             = vals_[0];
+        loans[loan].principal        = vals_[0];
         loans[loan].interest         = vals_[1];
         loans[loan].penalty          = vals_[2];
         loans[loan].fee              = vals_[3];
@@ -231,7 +230,7 @@ contract Loans is DSMath {
 	function fund(bytes32 loan) external { // Fund Loan
 		require(secretHashes[loan].set);
     	require(bools[loan].funded == false);
-    	require(token.transferFrom(msg.sender, address(this), prin(loan)));
+    	require(token.transferFrom(msg.sender, address(this), principal(loan)));
     	bools[loan].funded = true;
     }
 
@@ -247,20 +246,20 @@ contract Loans is DSMath {
     	require(bools[loan].funded == true);
     	require(bools[loan].approved == true);
     	require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
-    	require(token.transfer(loans[loan].borrower, prin(loan)));
+    	require(token.transfer(loans[loan].borrower, principal(loan)));
     	bools[loan].withdrawn = true;
     }
 
-    function repay(bytes32 loan, uint256 amt) external { // Repay Loan
+    function repay(bytes32 loan, uint256 amount) external { // Repay Loan
         // require(msg.sender                == loans[loan].borrower); // NOTE: this is not necessary. Anyone can pay off the loan
     	require(!off(loan));
         require(!sale(loan));
     	require(bools[loan].withdrawn     == true);
     	require(now                       <= loans[loan].loanExpiration);
-    	require(add(amt, repaid(loan))    <= owedForLoan(loan));
+    	require(add(amount, repaid(loan))    <= owedForLoan(loan));
 
-    	require(token.transferFrom(msg.sender, address(this), amt));
-    	repayments[loan] = add(amt, repayments[loan]);
+    	require(token.transferFrom(msg.sender, address(this), amount));
+    	repayments[loan] = add(amount, repayments[loan]);
     	if (repaid(loan) == owedForLoan(loan)) {
     		bools[loan].paid = true;
     	}
@@ -286,14 +285,14 @@ contract Loans is DSMath {
 
     function accept(bytes32 loan, bytes32 secret, bool fund) public { // Accept or Cancel // Bool fund set true if lender wants fund to return to fund
         require(!off(loan));
-        require(bools[loan].withdrawn == false || bools[loan].paid == true);
+        require(bools[loan].withdrawn == false   || bools[loan].paid == true);
         require(msg.sender == loans[loan].lender || msg.sender == loans[loan].agent);
         require(sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashB1 || sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashC1);
-        require(now                             <= acceptExpiration(loan));
-        require(bools[loan].sale                == false);
+        require(now                              <= acceptExpiration(loan));
+        require(bools[loan].sale                 == false);
         bools[loan].off = true;
         if (bools[loan].withdrawn == false) {
-            require(token.transfer(loans[loan].lender, loans[loan].prin));
+            require(token.transfer(loans[loan].lender, loans[loan].principal));
         } else if (bools[loan].withdrawn == true) {
             if (fundIndex[loan] == bytes32(0) || !fund) {
                 require(token.transfer(loans[loan].lender, owedToLender(loan)));

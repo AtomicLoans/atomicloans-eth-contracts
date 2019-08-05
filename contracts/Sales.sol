@@ -226,11 +226,11 @@ contract Sales is DSMath { // Auctions
 	}
 
 	function hasSecrets(bytes32 sale) public view returns (bool) { // 2 of 3 secrets
-		uint8 secs = 0;
-		if (sha256(abi.encodePacked(secretHashes[sale].secretA)) == secretHashes[sale].secretHashA) { secs = secs + 1; }
-		if (sha256(abi.encodePacked(secretHashes[sale].secretB)) == secretHashes[sale].secretHashB) { secs = secs + 1; }
-		if (sha256(abi.encodePacked(secretHashes[sale].secretC)) == secretHashes[sale].secretHashC) { secs = secs + 1; }
-		return (secs >= 2);
+		uint8 numCorrectSecrets = 0;
+		if (sha256(abi.encodePacked(secretHashes[sale].secretA)) == secretHashes[sale].secretHashA) { numCorrectSecrets = numCorrectSecrets + 1; }
+		if (sha256(abi.encodePacked(secretHashes[sale].secretB)) == secretHashes[sale].secretHashB) { numCorrectSecrets = numCorrectSecrets + 1; }
+		if (sha256(abi.encodePacked(secretHashes[sale].secretC)) == secretHashes[sale].secretHashC) { numCorrectSecrets = numCorrectSecrets + 1; }
+		return (numCorrectSecrets >= 2);
 	}
 
 	function accept(bytes32 sale) external { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
