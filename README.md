@@ -133,7 +133,7 @@ Actions:
    provideSecret       provide secret
    provideSig          provide signature to move collateral to collateral swap
    accept              withdraw bid (accept bid and disperse funds to rightful parties)
-   unpush              refund bid
+   refund              refund bid
 
 
 Getters:

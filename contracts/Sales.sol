@@ -273,7 +273,7 @@ contract Sales is DSMath { // Auctions
         if (available > 0) { require(token.transfer(sales[sale].borrower, available)); }
 	}
 
-	function unpush(bytes32 sale) external { // Refund Bid
+	function refund(bytes32 sale) external { // Refund Bid
         require(!accepted(sale));
         require(!off(sale));
 		require(now > setex(sale));
