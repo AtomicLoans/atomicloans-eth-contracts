@@ -39,11 +39,11 @@ MIT
 ```
 Actions:
 
-   generate          generate secret hashes for loan fund
    create            create new loan fund
-   withdraw          withdraw unused funds from the loan fund
-   push              post additional toks to fund
+   deposit           post additional toks to fund
+   generate          generate secret hashes for loan fund
    request           request loan from fund
+   withdraw          withdraw unused funds from the loan fund
    update            update loan fund request details
 
 
@@ -51,17 +51,16 @@ Getters:
 
    agent               optional automated agent
    balance             amount of unused funds deposited in loan fund
+   lender              loan fund owner
    fee                 optional automation fee
    interest            interest rate
-   penalty             liquidation penalty
+   liquidationRatio    liquidation ratio
    maxLoanAmt          max loan amount
    maxLoanDur          max loan duration
    minLoanAmt          min loan amount
    minLoanDur          min loan duration
-   deployer            loan fund owner
-   rat                 liquidation ratio
-   tok                 debt token
-   vars                variable contract
+   penalty             liquidation penalty
+   token               debt token
 
 
 Vars:
@@ -78,16 +77,16 @@ Vars:
 ```
 Actions:
 
-   approve               approve locking of collateral
-   create                create new loan
-   repay                 repay debt
    accept                accept loan and remove funds
+   approve               approve locking of collateral
    cancel                cancel loan and remove funds
+   create                create new loan
    fund                  fund loan
    liquidate             auction loan collateral in case of liquidation or default
+   refund                refund debt repayment 
+   repay                 repay debt
    setSecretHashes       set secret hashes for loan
    withdraw              withdraw loan
-   refund                refund debt repayment 
 
 
 Getters:
@@ -95,49 +94,49 @@ Getters:
    acceptExpiration      acceptance expirataion
    agent                 optional automation agent address
    approveExpiration     approval expiraation
-   repaid                amount paid back for loan
    biddingExpiration     bidding expiration
    borrower              borrower address
    collateral            collateral amount
    collateralValue       current collateral value
-   owedForLiquidation    deductible amount from collateral in the case of liquidation
-   lender                lender address
-   owedToLender          amount lent by lender
    fee                   optional fee paid to automator agent if address not 0x0
    interest              loan interest rate
-   penalty               liquidation penalty in case not safe or defaulted
+   lender                lender address
+   liquidationRatio      liquidation ratio
    minCollateralValue    minimum collateral value to be safe
    off                   loan repayment accepted or loan cancelled
+   owedForLiquidation    deductible amount from collateral in the case of liquidation
    owedForLoan           prin + interest + fee
-   prin                  loan principal
+   owedToLender          amount lent by lender
+   penalty               liquidation penalty in case not safe or defaulted
+   principal             loan principal
    pushed                loan funded
-   rat                   liquidation ratio
+   repaid                amount paid back for loan
    safe                  loan is safe from liquidation
 
 
 Vars:
 
    fundIndex             loan fund index
-   repayments            amount of loan paid back
-   asaex                 auction expirations by loan index
    loanIndex             get the last loan id
-
+   repayments            amount of loan paid back
+   
 ```
 
 ### `Sales`
 ```
 Actions:
 
+   accept                withdraw bid (accept bid and disperse funds to rightful parties)
    create                create new auction (can only be called by loan)
    offer                 bid on collateral
    provideSecret         provide secret
    provideSig            provide signature to move collateral to collateral swap
-   accept                withdraw bid (accept bid and disperse funds to rightful parties)
    refund                refund bid
 
 
 Getters:
 
+   accepted              winning bid accepted
    agent                 optional automated agent
    agentSigs             agent refundable and seizable signatures
    bid                   current bid
@@ -150,18 +149,17 @@ Getters:
    next                  get the last auction id by loan
    pubKeyHash            bidder pubkeyhash
    salesExpiration       sales expiration
-   secA                  Secret A
-   secB                  Secret B
-   secC                  Secret C
-   secD                  Secret D
-   sechA                 Secret Hash A
-   sechB                 Secret Hash B
-   sechC                 Secret Hash C
-   sechD                 Secret Hash D
+   secretA               Secret A
+   secretB               Secret B
+   secretC               Secret C
+   secretD               Secret D
+   secretHashA           Secret Hash A
+   secretHashB           Secret Hash B
+   secretHashC           Secret Hash C
+   secretHashD           Secret Hash D
    settlementExpiration  auction settlement expiration
-   accepted              winning bid accepted
-
-
+   
+   
 Vars:
 
    saleIndexByLoan       loan auction (find by loanIndex)

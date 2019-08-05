@@ -22,7 +22,7 @@ contract Funds is DSMath {
     address deployer;
 
     struct Fund {
-        address  lender;             // Loan Fund Owner (Lender)
+        address  lender;           // Loan Fund Owner (Lender)
         uint256  minLoanAmt;       // Min Loan Amount
         uint256  maxLoanAmt;       // Max Loan Amount
         uint256  minLoanDur;       // Min Loan Duration
