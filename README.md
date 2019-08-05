@@ -132,7 +132,7 @@ Actions:
    offer               bid on collateral
    provideSecret       provide secret
    provideSig          provide signature to move collateral to collateral swap
-   take                withdraw bid (accept bid and disperse funds to rightful parties)
+   accept              withdraw bid (accept bid and disperse funds to rightful parties)
    unpush              refund bid
 
 
@@ -168,7 +168,7 @@ Getters:
    sechC               Secret Hash C
    sechD               Secret Hash D
    setex               auction settlement expiration
-   taken               winning bid accepted
+   accepted            winning bid accepted
 
 
 Vars:

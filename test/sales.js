@@ -184,9 +184,9 @@ contract("Sales", accounts => {
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
       await this.sales.provideSecret(this.sale, bidrSecs[1])
 
-      await this.sales.take(this.sale)
+      await this.sales.accept(this.sale)
 
-      const taken = await this.sales.taken.call(this.sale)
+      const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
     })
 
@@ -328,7 +328,7 @@ contract("Sales", accounts => {
       const borBalBefore   = await this.token.balanceOf.call(borrower)
       const agentBalBefore = await this.token.balanceOf.call(agent)
 
-      await this.sales.take(this.sale)
+      await this.sales.accept(this.sale)
 
       const lendBalAfter  = await this.token.balanceOf.call(lender)
       const borBalAfter   = await this.token.balanceOf.call(borrower)
@@ -345,7 +345,7 @@ contract("Sales", accounts => {
       assert.equal(BigNumber(borBalBefore).plus(BigNumber(bid).plus(repaid).minus(owedForLiquidation)).toString(), borBalAfter.toString())
       assert.equal(BigNumber(agentBalBefore).plus(fee).toString(), agentBalAfter)
 
-      const taken = await this.sales.taken.call(this.sale)
+      const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
     })
 
@@ -387,7 +387,7 @@ contract("Sales", accounts => {
       const borBalBefore   = await this.token.balanceOf.call(borrower)
       const agentBalBefore = await this.token.balanceOf.call(agent)
 
-      await this.sales.take(this.sale)
+      await this.sales.accept(this.sale)
 
       const lendBalAfter  = await this.token.balanceOf.call(lender)
       const borBalAfter   = await this.token.balanceOf.call(borrower)
@@ -404,7 +404,7 @@ contract("Sales", accounts => {
       assert.equal(borBalBefore.toString(), borBalAfter.toString())
       assert.equal(agentBalBefore.toString(), agentBalAfter)
 
-      const taken = await this.sales.taken.call(this.sale)
+      const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
     })
 
@@ -447,7 +447,7 @@ contract("Sales", accounts => {
       const agentBalBefore = await this.token.balanceOf.call(agent)
       const medBalBefore   = await this.token.balanceOf.call(this.med.address)
 
-      await this.sales.take(this.sale)
+      await this.sales.accept(this.sale)
 
       const lendBalAfter  = await this.token.balanceOf.call(lender)
       const borBalAfter   = await this.token.balanceOf.call(borrower)
@@ -466,7 +466,7 @@ contract("Sales", accounts => {
       assert.equal(agentBalBefore.toString(), agentBalAfter.toString())
       assert.equal(BigNumber(medBalBefore).plus(BigNumber(bid).plus(repaid).minus(owedToLender)).toString(), medBalAfter.toString())
 
-      const taken = await this.sales.taken.call(this.sale)
+      const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
     })
   })
@@ -522,9 +522,9 @@ contract("Sales", accounts => {
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
       await this.sales.provideSecret(this.sale, bidrSecs[1])
 
-      await this.sales.take(this.sale)
+      await this.sales.accept(this.sale)
 
-      const taken = await this.sales.taken.call(this.sale)
+      const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
     })
   })

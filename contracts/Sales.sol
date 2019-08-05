@@ -39,7 +39,7 @@ contract Sales is DSMath { // Auctions
         uint256    born;      // Created At
         bytes20    pbkh;      // Bidder PubKey Hash
         bool       set;       // Sale at index opened
-        bool       taken;     // Winning bid accepted
+        bool       accepted;  // Winning bid accepted
         bool       off;
     }
 
@@ -97,8 +97,8 @@ contract Sales is DSMath { // Auctions
         return sales[sale].pbkh;
     }
 
-    function taken(bytes32 sale) public returns (bool) {
-        return sales[sale].taken;
+    function accepted(bytes32 sale) public returns (bool) {
+        return sales[sale].accepted;
     }
 
     function off(bytes32 sale) public returns (bool) {
@@ -243,13 +243,13 @@ contract Sales is DSMath { // Auctions
 		return (secs >= 2);
 	}
 
-	function take(bytes32 sale) external { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
-        require(!taken(sale));
+	function accept(bytes32 sale) external { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
+        require(!accepted(sale));
         require(!off(sale));
 		require(now > salex(sale));
 		require(hasSecs(sale));
 		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
-        sales[sale].taken = true;
+        sales[sale].accepted = true;
 
         uint256 available = add(sales[sale].bid, loans.repaid(sales[sale].loanIndex));
         uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
@@ -274,7 +274,7 @@ contract Sales is DSMath { // Auctions
 	}
 
 	function unpush(bytes32 sale) external { // Refund Bid
-        require(!taken(sale));
+        require(!accepted(sale));
         require(!off(sale));
 		require(now > setex(sale));
 		require(sales[sale].bid > 0);

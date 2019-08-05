@@ -222,9 +222,9 @@ contract("Loans", accounts => {
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
       await this.sales.provideSecret(this.sale, bidrSecs[1])
 
-      await this.sales.take(this.sale)
+      await this.sales.accept(this.sale)
 
-      const taken = await this.sales.taken.call(this.sale)
+      const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
     })
   })

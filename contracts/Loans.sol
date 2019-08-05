@@ -313,7 +313,7 @@ contract Loans is DSMath {
 			require(sales.next(loan) < 3);
 			require(msg.sender == loans[loan].borrower || msg.sender == loans[loan].lender);
             require(now > sales.setex(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction after settlement expiration of pervious auction
-            require(!sales.taken(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
+            require(!sales.accepted(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
 		}
         SecretHashes storage h = secretHashes[loan];
         uint256 i = sales.next(loan);
