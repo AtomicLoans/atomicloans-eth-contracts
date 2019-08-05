@@ -32,7 +32,7 @@ contract Sales is DSMath { // Auctions
     struct Sale {
         bytes32    loanIndex; // Loan Index
         uint256    bid;       // Current Bid
-        address    bidr;      // Bidder
+        address    bidder;    // Bidder
         address    borrower;  // Borrower
         address    lender;    // Lender
         address    agent;     // Optional Automated Agent
@@ -63,8 +63,8 @@ contract Sales is DSMath { // Auctions
         return sales[sale].bid;
     }
 
-    function bidr(bytes32 sale) public returns (address) {
-        return sales[sale].bidr;
+    function bidder(bytes32 sale) public returns (address) {
+        return sales[sale].bidder;
     }
 
     function borrower(bytes32 sale) public returns (address) {
@@ -187,9 +187,9 @@ contract Sales is DSMath { // Auctions
 
     	require(token.transferFrom(msg.sender, address(this), amt));
     	if (sales[sale].bid > 0) {
-    		require(token.transfer(sales[sale].bidr, sales[sale].bid));
+    		require(token.transfer(sales[sale].bidder, sales[sale].bid));
     	}
-    	sales[sale].bidr = msg.sender;
+    	sales[sale].bidder = msg.sender;
     	sales[sale].bid  = amt;
     	secretHashes[sale].secretHashD = secretHash;
     	sales[sale].pbkh = pbkh;
@@ -269,7 +269,7 @@ contract Sales is DSMath { // Auctions
 		require(now > setex(sale));
 		require(sales[sale].bid > 0);
         sales[sale].off = true;
-		require(token.transfer(sales[sale].bidr, sales[sale].bid));
+		require(token.transfer(sales[sale].bidder, sales[sale].bid));
         if (next(sales[sale].loanIndex) == 3) {
             require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)));
         }
