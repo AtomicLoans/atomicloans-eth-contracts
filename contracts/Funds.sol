@@ -9,8 +9,8 @@ pragma solidity ^0.5.8;
 contract Funds is DSMath {
     Loans loans;
 
-    mapping (address => bytes32[]) public secretHashes;  // User secret hashes
-    mapping (address => uint256)   public secretHashIndex;  // User secret hash index
+    mapping (address => bytes32[]) public secretHashes;    // User secret hashes
+    mapping (address => uint256)   public secretHashIndex; // User secret hash index
 
     mapping (address => bytes)     public pubKeys;  // User A Coin PubKeys
     

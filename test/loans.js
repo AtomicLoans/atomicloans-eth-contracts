@@ -134,7 +134,7 @@ contract("Loans", accounts => {
 
   describe('pull', function() {
     it('should pull successfully if lender secret provided', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
 
@@ -153,7 +153,7 @@ contract("Loans", accounts => {
     })
 
     it('should pull successfully if agent secret provided', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
 
@@ -174,7 +174,7 @@ contract("Loans", accounts => {
 
   describe('sell', function() {
     it('should be safe if above liquidation ratio', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
 
@@ -185,7 +185,7 @@ contract("Loans", accounts => {
     })
 
     it('should succeed at creating a sale if below liquidation ratio', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
 
@@ -231,7 +231,7 @@ contract("Loans", accounts => {
 
   describe('default', function() {
     it('should fail liquidation if current time before loan expiration', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
 
@@ -241,7 +241,7 @@ contract("Loans", accounts => {
     })
 
     it('should allow for liquidation to start if loan is defaulted', async function() {
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
 

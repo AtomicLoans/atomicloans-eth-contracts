@@ -78,7 +78,7 @@ Vars:
 ```
 Actions:
 
-   mark            mark collateral as locked
+   approve         approve locking of collateral
    create          create new loan
    pay             repay debt
    pull            accept or cancel loan and remove funds

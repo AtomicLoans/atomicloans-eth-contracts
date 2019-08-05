@@ -155,7 +155,7 @@ contract("Funds", accounts => {
       this.loan = await this.funds.request.call(...loanParams, { from: borrower })
       await this.funds.request(...loanParams, { from: borrower })
 
-      await this.loans.mark(this.loan)
+      await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
 
