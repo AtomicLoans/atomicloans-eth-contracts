@@ -97,18 +97,18 @@ Getters:
    approveExpiration   approval expiraation
    repaid              amount paid back for loan
    biddingExpiration   bidding expiration
-   bor                 borrower address
+   borrower            borrower address
    collateral          collateral amount
    collateralValue     current collateral value
-   dedu                deductible amount from collateral
-   lend                lender address
-   lent                amount lent by lender
+   owedForLiquidation  deductible amount from collateral in the case of liquidation
+   lender              lender address
+   owedToLender        amount lent by lender
    fee                 optional fee paid to automator agent if address not 0x0
    interest            loan interest rate
    penalty             liquidation penalty in case not safe or defaulted
    minCollateralValue  minimum collateral value to be safe
    off                 loan repayment accepted or loan cancelled
-   owed                prin + interest + fee
+   owedForLoan         prin + interest + fee
    prin                loan principal
    pushed              loan funded
    rat                 liquidation ratio

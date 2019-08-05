@@ -117,28 +117,16 @@ contract Loans is DSMath {
         return loans[loan].liquidationRatio;
     }
 
-    function lent(bytes32 loan)   public view returns (uint256) { // Amount lent by Lender
+    function owedToLender(bytes32 loan)   public view returns (uint256) { // Amount lent by Lender
         return add(prin(loan), interest(loan));
     }
 
-    function lentb(bytes32 loan)  public view returns (uint256) { // Amount lent by lender minus amount paid back
-        return sub(lent(loan), repaid(loan));
+    function owedForLoan(bytes32 loan)   public view returns (uint256) { // Amount owed
+        return add(owedToLender(loan), fee(loan));
     }
 
-    function owed(bytes32 loan)   public view returns (uint256) { // Amount owed
-        return add(lent(loan), fee(loan));
-    }
-
-    function owedb(bytes32 loan)  public view returns (uint256) { // Amount owed minus amount paid back
-        return sub(owed(loan), repaid(loan));
-    }
-
-    function dedu(bytes32 loan)   public view returns (uint256) { // Deductible amount from collateral
-        return add(owed(loan), penalty(loan));
-    }
-
-    function dedub(bytes32 loan)  public view returns (uint256) { // Deductible amount from collateral minus amount paid back
-        return sub(dedu(loan), repaid(loan));
+    function owedForLiquidation(bytes32 loan)   public view returns (uint256) { // Deductible amount from collateral
+        return add(owedForLoan(loan), penalty(loan));
     }
 
     function funded(bytes32 loan) public view returns (bool) {
@@ -265,11 +253,11 @@ contract Loans is DSMath {
         require(!sale(loan));
     	require(bools[loan].withdrawn     == true);
     	require(now                       <= loans[loan].loanExpiration);
-    	require(add(amt, repaid(loan))    <= owed(loan));
+    	require(add(amt, repaid(loan))    <= owedForLoan(loan));
 
     	require(token.transferFrom(msg.sender, address(this), amt));
     	repayments[loan] = add(amt, repayments[loan]);
-    	if (repaid(loan) == owed(loan)) {
+    	if (repaid(loan) == owedForLoan(loan)) {
     		bools[loan].paid = true;
     	}
     }
@@ -281,7 +269,7 @@ contract Loans is DSMath {
     	require(bools[loan].paid == true);
     	require(msg.sender       == loans[loan].borrower);
         bools[loan].off = true;
-    	require(token.transfer(loans[loan].borrower, owed(loan)));
+    	require(token.transfer(loans[loan].borrower, owedForLoan(loan)));
     }
 
     function cancel(bytes32 loan, bytes32 secret) external {
@@ -304,9 +292,9 @@ contract Loans is DSMath {
             require(token.transfer(loans[loan].lender, loans[loan].prin));
         } else if (bools[loan].withdrawn == true) {
             if (fundIndex[loan] == bytes32(0) || !fund) {
-                require(token.transfer(loans[loan].lender, lent(loan)));
+                require(token.transfer(loans[loan].lender, owedToLender(loan)));
             } else {
-                funds.deposit(fundIndex[loan], lent(loan));
+                funds.deposit(fundIndex[loan], owedToLender(loan));
             }
             require(token.transfer(loans[loan].agent, fee(loan)));
         }

@@ -252,7 +252,7 @@ contract Sales is DSMath { // Auctions
         sales[sale].taken = true;
 
         uint256 available = add(sales[sale].bid, loans.repaid(sales[sale].loani));
-        uint256 amount = min(available, loans.lent(sales[sale].loani));
+        uint256 amount = min(available, loans.owedToLender(sales[sale].loani));
 
         require(token.transfer(sales[sale].lender, amount));
         available = sub(available, amount);

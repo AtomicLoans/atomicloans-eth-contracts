@@ -143,8 +143,8 @@ contract("Loans", accounts => {
 
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
-      const owed = await this.loans.owed.call(this.loan)
-      await this.loans.repay(this.loan, owed, { from: borrower })
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, owedForLoan, { from: borrower })
 
       await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
 
@@ -162,8 +162,8 @@ contract("Loans", accounts => {
 
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
-      const owed = await this.loans.owed.call(this.loan)
-      await this.loans.repay(this.loan, owed, { from: borrower })
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, owedForLoan, { from: borrower })
 
       await this.loans.accept(this.loan, agentSecs[0]) // accept loan repayment
 
