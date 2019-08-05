@@ -22,7 +22,7 @@ contract Loans is DSMath {
     mapping (bytes32 => Bools)        public bools;        // Boolean state of Loan
     mapping (bytes32 => bytes32)      public fundIndex;    // Mapping of Loan Index to Fund Index
     mapping (bytes32 => ERC20)        public tokes;        // Mapping of Loan index to Token contract
-    mapping (bytes32 => uint256)      public backs;        // Amount paid back in a Loan
+    mapping (bytes32 => uint256)      public repayments;   // Amount paid back in a Loan
     mapping (bytes32 => uint256)      public asaex;        // All Auction expiration
     uint256                           public loani;        // Current Loan Index
 
@@ -109,8 +109,8 @@ contract Loans is DSMath {
         return loans[loan].col;
     }
 
-    function back(bytes32 loan)   public view returns (uint256) { // Amount paid back for loan
-        return backs[loan];
+    function repaid(bytes32 loan)   public view returns (uint256) { // Amount paid back for loan
+        return repayments[loan];
     }
 
     function liquidationRatio(bytes32 loan)    public view returns (uint256) {
@@ -122,7 +122,7 @@ contract Loans is DSMath {
     }
 
     function lentb(bytes32 loan)  public view returns (uint256) { // Amount lent by lender minus amount paid back
-        return sub(lent(loan), back(loan));
+        return sub(lent(loan), repaid(loan));
     }
 
     function owed(bytes32 loan)   public view returns (uint256) { // Amount owed
@@ -130,7 +130,7 @@ contract Loans is DSMath {
     }
 
     function owedb(bytes32 loan)  public view returns (uint256) { // Amount owed minus amount paid back
-        return sub(owed(loan), back(loan));
+        return sub(owed(loan), repaid(loan));
     }
 
     function dedu(bytes32 loan)   public view returns (uint256) { // Deductible amount from collateral
@@ -138,7 +138,7 @@ contract Loans is DSMath {
     }
 
     function dedub(bytes32 loan)  public view returns (uint256) { // Deductible amount from collateral minus amount paid back
-        return sub(dedu(loan), back(loan));
+        return sub(dedu(loan), repaid(loan));
     }
 
     function funded(bytes32 loan) public view returns (bool) {
@@ -171,7 +171,7 @@ contract Loans is DSMath {
     }
 
     function min(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
-        return rmul(sub(prin(loan), back(loan)), liquidationRatio(loan));
+        return rmul(sub(prin(loan), repaid(loan)), liquidationRatio(loan));
     }
 
     function safe(bytes32 loan) public returns (bool) { // Loan is safe from Liquidation
@@ -265,11 +265,11 @@ contract Loans is DSMath {
         require(!sale(loan));
     	require(bools[loan].withdrawn     == true);
     	require(now                       <= loans[loan].loanExpiration);
-    	require(add(amt, backs[loan])     <= owed(loan));
+    	require(add(amt, repaid(loan))    <= owed(loan));
 
     	require(token.transferFrom(msg.sender, address(this), amt));
-    	backs[loan] = add(amt, backs[loan]);
-    	if (backs[loan] == owed(loan)) {
+    	repayments[loan] = add(amt, repayments[loan]);
+    	if (repaid(loan) == owed(loan)) {
     		bools[loan].paid = true;
     	}
     }
@@ -330,7 +330,7 @@ contract Loans is DSMath {
         SecretHashes storage h = secretHashes[loan];
         uint256 i = sales.next(loan);
 		sale = sales.create(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i]);
-        if (bools[loan].sale == false) { require(token.transfer(address(sales), back(loan))); }
+        if (bools[loan].sale == false) { require(token.transfer(address(sales), repaid(loan))); }
 		bools[loan].sale = true;
     }
 }

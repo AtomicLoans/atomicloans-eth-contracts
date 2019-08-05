@@ -95,7 +95,7 @@ Getters:
    acceptExpiration  acceptance expirataion
    agent             optional automation agent address
    approveExpiration approval expiraation
-   back              amount paid back for loan
+   repaid            amount paid back for loan
    biddingExpiration bidding expiration
    bor               borrower address
    col               collateral amount
@@ -118,7 +118,7 @@ Getters:
 Vars:
 
    fundIndex         loan fund index
-   backs             amount of loan paid back
+   repayments        amount of loan paid back
    asaex             auction expirations by loan index
    loani             get the last loan id
 

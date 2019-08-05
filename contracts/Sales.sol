@@ -251,7 +251,7 @@ contract Sales is DSMath { // Auctions
 		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
         sales[sale].taken = true;
 
-        uint256 available = add(sales[sale].bid, loans.back(sales[sale].loani));
+        uint256 available = add(sales[sale].bid, loans.repaid(sales[sale].loani));
         uint256 amount = min(available, loans.lent(sales[sale].loani));
 
         require(token.transfer(sales[sale].lend, amount));
@@ -281,7 +281,7 @@ contract Sales is DSMath { // Auctions
         sales[sale].off = true;
 		require(token.transfer(sales[sale].bidr, sales[sale].bid));
         if (next(sales[sale].loani) == 3) {
-            require(token.transfer(sales[sale].bor, loans.back(sales[sale].loani)));
+            require(token.transfer(sales[sale].bor, loans.repaid(sales[sale].loani)));
         }
 	}
 }

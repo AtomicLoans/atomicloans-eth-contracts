@@ -337,19 +337,19 @@ contract("Sales", accounts => {
       const lent = await this.loans.lent.call(this.loan)
       const fee  = await this.loans.fee.call(this.loan)
       const penalty = await this.loans.penalty.call(this.loan)
-      const back = await this.loans.back.call(this.loan)
+      const repaid = await this.loans.repaid.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)
 
       assert.equal(BigNumber(lendBalBefore).plus(lent).toFixed(), lendBalAfter.toString())
-      assert.equal(BigNumber(borBalBefore).plus(BigNumber(bid).plus(back).minus(dedu)).toString(), borBalAfter.toString())
+      assert.equal(BigNumber(borBalBefore).plus(BigNumber(bid).plus(repaid).minus(dedu)).toString(), borBalAfter.toString())
       assert.equal(BigNumber(agentBalBefore).plus(fee).toString(), agentBalAfter)
 
       const taken = await this.sales.taken.call(this.sale)
       assert.equal(taken, true)
     })
 
-    it('should disperse all funds to lender if bid + back doesn\'t cover principal + interest', async function() {
+    it('should disperse all funds to lender if bid + repaid doesn\'t cover principal + interest', async function() {
       await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
 
       const owed = await this.loans.owed.call(this.loan)
@@ -396,11 +396,11 @@ contract("Sales", accounts => {
       const lent = await this.loans.lent.call(this.loan)
       const fee  = await this.loans.fee.call(this.loan)
       const penalty = await this.loans.penalty.call(this.loan)
-      const back = await this.loans.back.call(this.loan)
+      const repaid = await this.loans.repaid.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)
 
-      assert.equal(BigNumber(lendBalBefore).plus(BigNumber(bid).plus(back)).toFixed(), lendBalAfter.toString())
+      assert.equal(BigNumber(lendBalBefore).plus(BigNumber(bid).plus(repaid)).toFixed(), lendBalAfter.toString())
       assert.equal(borBalBefore.toString(), borBalAfter.toString())
       assert.equal(agentBalBefore.toString(), agentBalAfter)
 
@@ -457,14 +457,14 @@ contract("Sales", accounts => {
       const lent = await this.loans.lent.call(this.loan)
       const fee  = await this.loans.fee.call(this.loan)
       const penalty = await this.loans.penalty.call(this.loan)
-      const back = await this.loans.back.call(this.loan)
+      const repaid = await this.loans.repaid.call(this.loan)
       const dedu = await this.loans.dedu.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)
 
       assert.equal(BigNumber(lendBalBefore).plus(lent).toFixed(), lendBalAfter.toString())
       assert.equal(borBalBefore.toString(), borBalAfter.toString())
       assert.equal(agentBalBefore.toString(), agentBalAfter.toString())
-      assert.equal(BigNumber(medBalBefore).plus(BigNumber(bid).plus(back).minus(lent)).toString(), medBalAfter.toString())
+      assert.equal(BigNumber(medBalBefore).plus(BigNumber(bid).plus(repaid).minus(lent)).toString(), medBalAfter.toString())
 
       const taken = await this.sales.taken.call(this.sale)
       assert.equal(taken, true)
