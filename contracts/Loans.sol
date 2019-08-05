@@ -13,9 +13,9 @@ contract Loans is DSMath {
     Medianizer med;
     Sales sales;
 
-    uint256 public constant APEXT = 7200;         // approval expiration threshold
-    uint256 public constant ACEXT = 172800;       // acceptance expiration threshold
-    uint256 public constant BIEXT = 604800;       // bidding expirataion threshold
+    uint256 public constant APPROVE_EXP_THRESHOLD = 7200;         // approval expiration threshold
+    uint256 public constant ACCEPT_EXP_THRESHOLD = 172800;       // acceptance expiration threshold
+    uint256 public constant BIDDING_EXP_THRESHOLD = 604800;       // bidding expiration threshold
 
     mapping (bytes32 => Loan)         public loans;
     mapping (bytes32 => SecretHashes) public secretHashes; // Secret Hashes
@@ -34,8 +34,8 @@ contract Loans is DSMath {
     	address bor;              // Address Borrower
         address lend;             // Address Lender
         address agent;            // Optional Address automated agent
-        uint256 born;             // Created At
-        uint256 loex;             // Loan Expiration
+        uint256 createdAt;        // Created At
+        uint256 loanExpiration;   // Loan Expiration
         uint256 prin;             // Principal
         uint256 interest;         // Interest
         uint256 penalty;          // Liquidation Penalty
@@ -77,16 +77,16 @@ contract Loans is DSMath {
         return loans[loan].agent;
     }
 
-    function apex(bytes32 loan)   public returns (uint256) { // Approval Expiration
-        return add(loans[loan].born, APEXT);
+    function approveExpiration(bytes32 loan)   public returns (uint256) { // Approval Expiration
+        return add(loans[loan].createdAt, APPROVE_EXP_THRESHOLD);
     }
 
-    function acex(bytes32 loan)   public returns (uint256) { // Acceptance Expiration
-        return add(loans[loan].loex, ACEXT);
+    function acceptExpiration(bytes32 loan)   public returns (uint256) { // Acceptance Expiration
+        return add(loans[loan].loanExpiration, ACCEPT_EXP_THRESHOLD);
     }
 
-    function biex(bytes32 loan)   public returns (uint256) { // Bidding Expiration
-        return add(loans[loan].loex, BIEXT);
+    function biddingExpiration(bytes32 loan)   public returns (uint256) { // Bidding Expiration
+        return add(loans[loan].loanExpiration, BIDDING_EXP_THRESHOLD);
     }
 
     function prin(bytes32 loan)   public view returns (uint256) {
@@ -192,16 +192,16 @@ contract Loans is DSMath {
         sales = sales_;
     }
     
-    function create(                   // Create new Loan
-        uint256             loex_,     // Loan Expiration
-        address[3] calldata usrs_,     // Borrower, Lender, Optional Automated Agent Addresses
-        uint256[6] calldata vals_,     // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
-        bytes32             fundIndex_ // Optional Fund Index
+    function create(                         // Create new Loan
+        uint256             loanExpiration_, // Loan Expiration
+        address[3] calldata usrs_,           // Borrower, Lender, Optional Automated Agent Addresses
+        uint256[6] calldata vals_,           // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
+        bytes32             fundIndex_       // Optional Fund Index
     ) external returns (bytes32 loan) {
         loani = add(loani, 1);
         loan = bytes32(loani);
-        loans[loan].born             = now;
-        loans[loan].loex             = loex_;
+        loans[loan].createdAt        = now;
+        loans[loan].loanExpiration   = loanExpiration_;
         loans[loan].bor              = usrs_[0];
         loans[loan].lend             = usrs_[1];
         loans[loan].agent            = usrs_[2];
@@ -246,7 +246,7 @@ contract Loans is DSMath {
     function approve(bytes32 loan) external { // Approve locking of collateral
     	require(bools[loan].funded == true);
     	require(loans[loan].lend   == msg.sender);
-    	require(now                <= apex(loan));
+    	require(now                <= approveExpiration(loan));
     	bools[loan].approved = true;
     }
 
@@ -264,7 +264,7 @@ contract Loans is DSMath {
     	require(!off(loan));
         require(!sale(loan));
     	require(bools[loan].withdrawn     == true);
-    	require(now                       <= loans[loan].loex);
+    	require(now                       <= loans[loan].loanExpiration);
     	require(add(amt, backs[loan])     <= owed(loan));
 
     	require(token.transferFrom(msg.sender, address(this), amt));
@@ -277,7 +277,7 @@ contract Loans is DSMath {
     function refund(bytes32 loan) external { // Refund payback
     	require(!off(loan));
         require(!sale(loan));
-    	require(now              >  acex(loan));
+    	require(now              >  acceptExpiration(loan));
     	require(bools[loan].paid == true);
     	require(msg.sender       == loans[loan].bor);
         bools[loan].off = true;
@@ -297,7 +297,7 @@ contract Loans is DSMath {
         require(bools[loan].withdrawn == false || bools[loan].paid == true);
         require(msg.sender == loans[loan].lend || msg.sender == loans[loan].agent);
         require(sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashB1 || sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashC1);
-        require(now                             <= acex(loan));
+        require(now                             <= acceptExpiration(loan));
         require(bools[loan].sale                == false);
         bools[loan].off = true;
         if (bools[loan].withdrawn == false) {
@@ -316,7 +316,7 @@ contract Loans is DSMath {
     	require(!off(loan));
         require(bools[loan].withdrawn == true);
     	if (sales.next(loan) == 0) {
-    		if (now > loans[loan].loex) {
+    		if (now > loans[loan].loanExpiration) {
 	    		require(bools[loan].paid == false);
 			} else {
 				require(!safe(loan));
