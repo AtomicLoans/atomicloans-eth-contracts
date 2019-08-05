@@ -49,27 +49,27 @@ Actions:
 
 Getters:
 
-   agent             optional automated agent
-   balance           amount of unused funds deposited in loan fund
-   fee               optional automation fee
-   interest          interest rate
-   penalty           liquidation penalty
-   maxLoanAmt        max loan amount
-   maxLoanDur        max loan duration
-   minLoanAmt        min loan amount
-   minLoanDur        min loan duration
-   deployer          loan fund owner
-   rat               liquidation ratio
-   tok               debt token
-   vars              variable contract
+   agent               optional automated agent
+   balance             amount of unused funds deposited in loan fund
+   fee                 optional automation fee
+   interest            interest rate
+   penalty             liquidation penalty
+   maxLoanAmt          max loan amount
+   maxLoanDur          max loan duration
+   minLoanAmt          min loan amount
+   minLoanDur          min loan duration
+   deployer            loan fund owner
+   rat                 liquidation ratio
+   tok                 debt token
+   vars                variable contract
 
 
 Vars:
 
-   fundIndex         get the last fund id
-   pubKeys           address pubkeys
-   secretHashes      address secret hashes
-   secretHashIndex   address secret hash index
+   fundIndex           get the last fund id
+   pubKeys             address pubkeys
+   secretHashes        address secret hashes
+   secretHashIndex     address secret hash index
 
 ```
 
@@ -78,49 +78,49 @@ Vars:
 ```
 Actions:
 
-   approve             approve locking of collateral
-   create              create new loan
-   repay               repay debt
-   accept              accept loan and remove funds
-   cancel              cancel loan and remove funds
-   fund                fund loan
-   liquidate           auction loan collateral in case of liquidation or default
-   setSecretHashes     set secret hashes for loan
-   withdraw            withdraw loan
-   refund              refund debt repayment 
+   approve               approve locking of collateral
+   create                create new loan
+   repay                 repay debt
+   accept                accept loan and remove funds
+   cancel                cancel loan and remove funds
+   fund                  fund loan
+   liquidate             auction loan collateral in case of liquidation or default
+   setSecretHashes       set secret hashes for loan
+   withdraw              withdraw loan
+   refund                refund debt repayment 
 
 
 Getters:
 
-   acceptExpiration    acceptance expirataion
-   agent               optional automation agent address
-   approveExpiration   approval expiraation
-   repaid              amount paid back for loan
-   biddingExpiration   bidding expiration
-   borrower            borrower address
-   collateral          collateral amount
-   collateralValue     current collateral value
-   owedForLiquidation  deductible amount from collateral in the case of liquidation
-   lender              lender address
-   owedToLender        amount lent by lender
-   fee                 optional fee paid to automator agent if address not 0x0
-   interest            loan interest rate
-   penalty             liquidation penalty in case not safe or defaulted
-   minCollateralValue  minimum collateral value to be safe
-   off                 loan repayment accepted or loan cancelled
-   owedForLoan         prin + interest + fee
-   prin                loan principal
-   pushed              loan funded
-   rat                 liquidation ratio
-   safe                loan is safe from liquidation
+   acceptExpiration      acceptance expirataion
+   agent                 optional automation agent address
+   approveExpiration     approval expiraation
+   repaid                amount paid back for loan
+   biddingExpiration     bidding expiration
+   borrower              borrower address
+   collateral            collateral amount
+   collateralValue       current collateral value
+   owedForLiquidation    deductible amount from collateral in the case of liquidation
+   lender                lender address
+   owedToLender          amount lent by lender
+   fee                   optional fee paid to automator agent if address not 0x0
+   interest              loan interest rate
+   penalty               liquidation penalty in case not safe or defaulted
+   minCollateralValue    minimum collateral value to be safe
+   off                   loan repayment accepted or loan cancelled
+   owedForLoan           prin + interest + fee
+   prin                  loan principal
+   pushed                loan funded
+   rat                   liquidation ratio
+   safe                  loan is safe from liquidation
 
 
 Vars:
 
-   fundIndex           loan fund index
-   repayments          amount of loan paid back
-   asaex               auction expirations by loan index
-   loanIndex           get the last loan id
+   fundIndex             loan fund index
+   repayments            amount of loan paid back
+   asaex                 auction expirations by loan index
+   loanIndex             get the last loan id
 
 ```
 
@@ -128,43 +128,43 @@ Vars:
 ```
 Actions:
 
-   create              create new auction (can only be called by loan)
-   offer               bid on collateral
-   provideSecret       provide secret
-   provideSig          provide signature to move collateral to collateral swap
-   accept              withdraw bid (accept bid and disperse funds to rightful parties)
-   refund              refund bid
+   create                create new auction (can only be called by loan)
+   offer                 bid on collateral
+   provideSecret         provide secret
+   provideSig            provide signature to move collateral to collateral swap
+   accept                withdraw bid (accept bid and disperse funds to rightful parties)
+   refund                refund bid
 
 
 Getters:
 
-   agent               optional automated agent
-   agentSigs           agent refundable and seizable signatures
-   bid                 current bid
-   bidder              address current bidder
-   borrower            address borrower
-   borrowerSigs        borrower refundable and seizable signatures
-   hasSecrets          2 of 3 secrets from bor, lend, and agent are correct
-   lender              address lender
-   lenderSigs          lender refundable and seizable signatures
-   next                get the last auction id by loan
-   pubKeyHash          bidder pubkeyhash
-   salex               auction bidding expiration
-   secA                Secret A
-   secB                Secret B
-   secC                Secret C
-   secD                Secret D
-   sechA               Secret Hash A
-   sechB               Secret Hash B
-   sechC               Secret Hash C
-   sechD               Secret Hash D
-   setex               auction settlement expiration
-   accepted            winning bid accepted
+   agent                 optional automated agent
+   agentSigs             agent refundable and seizable signatures
+   bid                   current bid
+   bidder                address current bidder
+   borrower              address borrower
+   borrowerSigs          borrower refundable and seizable signatures
+   hasSecrets            2 of 3 secrets from bor, lend, and agent are correct
+   lender                address lender
+   lenderSigs            lender refundable and seizable signatures
+   next                  get the last auction id by loan
+   pubKeyHash            bidder pubkeyhash
+   salesExpiration       sales expiration
+   secA                  Secret A
+   secB                  Secret B
+   secC                  Secret C
+   secD                  Secret D
+   sechA                 Secret Hash A
+   sechB                 Secret Hash B
+   sechC                 Secret Hash C
+   sechD                 Secret Hash D
+   settlementExpiration  auction settlement expiration
+   accepted              winning bid accepted
 
 
 Vars:
 
-   salel               loan auction (find by loanIndex)
+   salel                 loan auction (find by loanIndex)
 
 ```
 

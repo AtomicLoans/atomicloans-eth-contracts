@@ -11,9 +11,9 @@ contract Sales is DSMath { // Auctions
 	Loans loans;
 	Medianizer med;
 
-    uint256 public constant SALES_EXP = 3600;                         // Sales Expiration
-    uint256 public constant SWAP_EXP = 7200;                         // Swap Expiration
-    uint256 public constant SETTLEMENT_EXP = 14400;                        // Settlement Expiration
+    uint256 public constant SALES_EXP = 3600;                     // Sales Expiration
+    uint256 public constant SWAP_EXP = 7200;                      // Swap Expiration
+    uint256 public constant SETTLEMENT_EXP = 14400;               // Settlement Expiration
     uint256 public constant MINBI = 1005000000000000000000000000; // Minimum Bid Increment in RAY
 
 	address public deployer; // Only the Loans contract can edit data
@@ -79,15 +79,15 @@ contract Sales is DSMath { // Auctions
         return sales[sale].agent;
     }
 
-    function salex(bytes32 sale) public returns (uint256) {
+    function salesExpiration(bytes32 sale) public returns (uint256) {
         return sales[sale].createdAt + SALES_EXP;
     }
 
-    function swaex(bytes32 sale) public returns (uint256) {
+    function swapExpiration(bytes32 sale) public returns (uint256) {
         return sales[sale].createdAt + SALES_EXP + SWAP_EXP;
     }
 
-    function setex(bytes32 sale) public returns (uint256) {
+    function settlementExpiration(bytes32 sale) public returns (uint256) {
         return sales[sale].createdAt + SALES_EXP + SETTLEMENT_EXP;
     }
 
@@ -178,7 +178,7 @@ contract Sales is DSMath { // Auctions
 	) external {
         require(msg.sender != borrower(sale) && msg.sender != lender(sale));
 		require(sales[sale].set);
-    	require(now < salex(sale));
+    	require(now < salesExpiration(sale));
     	require(amt > sales[sale].bid);
     	require(token.balanceOf(msg.sender) >= amt);
     	if (sales[sale].bid > 0) {
@@ -201,7 +201,7 @@ contract Sales is DSMath { // Auctions
 		bytes calldata seizableSig    // Seizable Signature
 	) external {
 		require(sales[sale].set);
-		require(now < setex(sale));
+		require(now < settlementExpiration(sale));
 		if (msg.sender == sales[sale].borrower) {
 			borrowerSigs[sale].refundableSig = refundableSig;
 			borrowerSigs[sale].seizableSig   = seizableSig;
@@ -236,7 +236,7 @@ contract Sales is DSMath { // Auctions
 	function accept(bytes32 sale) external { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
         require(!accepted(sale));
         require(!off(sale));
-		require(now > salex(sale));
+		require(now > salesExpiration(sale));
 		require(hasSecrets(sale));
 		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
         sales[sale].accepted = true;
@@ -266,7 +266,7 @@ contract Sales is DSMath { // Auctions
 	function refund(bytes32 sale) external { // Refund Bid
         require(!accepted(sale));
         require(!off(sale));
-		require(now > setex(sale));
+		require(now > settlementExpiration(sale));
 		require(sales[sale].bid > 0);
         sales[sale].off = true;
 		require(token.transfer(sales[sale].bidder, sales[sale].bid));
