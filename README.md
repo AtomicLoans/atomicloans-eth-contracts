@@ -139,23 +139,14 @@ Actions:
 Getters:
 
    agent               optional automated agent
-   asigRbsig           agent refundable back signature
-   asigRsig            agent refundable signature
-   asigSbsig           agent seizable back signature
-   asigSsig            agent seizable signature
+   agentSigs           agent refundable and seizable signatures
    bid                 current bid
-   bidr                address current bidder
-   bor                 address borrower
-   bsigRbsig           borrower refundable back signature
-   bsigRsig            borrower refundable signature
-   bsigSbsig           borrower seizable back signature
-   bsigSsig            borrower seizable signature
+   bidder              address current bidder
+   borrower            address borrower
+   borrowerSigs        borrower refundable and seizable signatures
    hasSecs             2 of 3 secrets from bor, lend, and agent are correct
-   lend                address lender
-   lsigRbsig           lender refundable back signature
-   lsigRsig            lender refundable signature
-   lsigSbsig           lender seizable back signature
-   lsigSsig            lender seizable signature
+   lender              address lender
+   lenderSigs          lender refundable and seizable signatures
    next                get the last auction id by loan
    pbkh                bidder pubkeyhash
    salex               auction bidding expiration
