@@ -31,8 +31,8 @@ contract Loans is DSMath {
     address deployer;
 
     struct Loan {
-    	address bor;              // Address Borrower
-        address lend;             // Address Lender
+    	address borrower;         // Address Borrower
+        address lender;           // Address Lender
         address agent;            // Optional Address automated agent
         uint256 createdAt;        // Created At
         uint256 loanExpiration;   // Loan Expiration
@@ -65,12 +65,12 @@ contract Loans is DSMath {
     	bool off;           // Loan Finished (Repayment accepted or cancelled)
     }
 
-    function bor(bytes32 loan)    public view returns (address) {
-        return loans[loan].bor;
+    function borrower(bytes32 loan)    public view returns (address) {
+        return loans[loan].borrower;
     }
 
-    function lend(bytes32 loan)   public view returns (address) {
-        return loans[loan].lend;
+    function lender(bytes32 loan)   public view returns (address) {
+        return loans[loan].lender;
     }
 
     function agent(bytes32 loan)  public view returns (address) {
@@ -202,8 +202,8 @@ contract Loans is DSMath {
         loan = bytes32(loani);
         loans[loan].createdAt        = now;
         loans[loan].loanExpiration   = loanExpiration_;
-        loans[loan].bor              = usrs_[0];
-        loans[loan].lend             = usrs_[1];
+        loans[loan].borrower         = usrs_[0];
+        loans[loan].lender           = usrs_[1];
         loans[loan].agent            = usrs_[2];
         loans[loan].prin             = vals_[0];
         loans[loan].interest         = vals_[1];
@@ -224,7 +224,7 @@ contract Loans is DSMath {
         bytes      calldata lenderPubKey_         // Lender Pubkey
 	) external returns (bool) {
 		require(!secretHashes[loan].set);
-		require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend || msg.sender == address(funds));
+		require(msg.sender == loans[loan].borrower || msg.sender == loans[loan].lender || msg.sender == address(funds));
 		secretHashes[loan].secretHashA1 = borrowerSecretHashes[0];
 		secretHashes[loan].secretHashAs = [ borrowerSecretHashes[1], borrowerSecretHashes[2], borrowerSecretHashes[3] ];
 		secretHashes[loan].secretHashB1 = lenderSecretHashes[0];
@@ -245,7 +245,7 @@ contract Loans is DSMath {
 
     function approve(bytes32 loan) external { // Approve locking of collateral
     	require(bools[loan].funded == true);
-    	require(loans[loan].lend   == msg.sender);
+    	require(loans[loan].lender == msg.sender);
     	require(now                <= approveExpiration(loan));
     	bools[loan].approved = true;
     }
@@ -255,12 +255,12 @@ contract Loans is DSMath {
     	require(bools[loan].funded == true);
     	require(bools[loan].approved == true);
     	require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
-    	require(token.transfer(loans[loan].bor, prin(loan)));
+    	require(token.transfer(loans[loan].borrower, prin(loan)));
     	bools[loan].withdrawn = true;
     }
 
     function repay(bytes32 loan, uint256 amt) external { // Repay Loan
-        // require(msg.sender                == loans[loan].bor); // NOTE: this is not necessary. Anyone can pay off the loan
+        // require(msg.sender                == loans[loan].borrower); // NOTE: this is not necessary. Anyone can pay off the loan
     	require(!off(loan));
         require(!sale(loan));
     	require(bools[loan].withdrawn     == true);
@@ -279,9 +279,9 @@ contract Loans is DSMath {
         require(!sale(loan));
     	require(now              >  acceptExpiration(loan));
     	require(bools[loan].paid == true);
-    	require(msg.sender       == loans[loan].bor);
+    	require(msg.sender       == loans[loan].borrower);
         bools[loan].off = true;
-    	require(token.transfer(loans[loan].bor, owed(loan)));
+    	require(token.transfer(loans[loan].borrower, owed(loan)));
     }
 
     function cancel(bytes32 loan, bytes32 secret) external {
@@ -295,16 +295,16 @@ contract Loans is DSMath {
     function accept(bytes32 loan, bytes32 secret, bool fund) public { // Accept or Cancel // Bool fund set true if lender wants fund to return to fund
         require(!off(loan));
         require(bools[loan].withdrawn == false || bools[loan].paid == true);
-        require(msg.sender == loans[loan].lend || msg.sender == loans[loan].agent);
+        require(msg.sender == loans[loan].lender || msg.sender == loans[loan].agent);
         require(sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashB1 || sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashC1);
         require(now                             <= acceptExpiration(loan));
         require(bools[loan].sale                == false);
         bools[loan].off = true;
         if (bools[loan].withdrawn == false) {
-            require(token.transfer(loans[loan].lend, loans[loan].prin));
+            require(token.transfer(loans[loan].lender, loans[loan].prin));
         } else if (bools[loan].withdrawn == true) {
             if (fundIndex[loan] == bytes32(0) || !fund) {
-                require(token.transfer(loans[loan].lend, lent(loan)));
+                require(token.transfer(loans[loan].lender, lent(loan)));
             } else {
                 funds.deposit(fundIndex[loan], lent(loan));
             }
@@ -323,13 +323,13 @@ contract Loans is DSMath {
 			}
 		} else {
 			require(sales.next(loan) < 3);
-			require(msg.sender == loans[loan].bor || msg.sender == loans[loan].lend);
+			require(msg.sender == loans[loan].borrower || msg.sender == loans[loan].lender);
             require(now > sales.setex(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction after settlement expiration of pervious auction
             require(!sales.taken(sales.salel(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
 		}
         SecretHashes storage h = secretHashes[loan];
         uint256 i = sales.next(loan);
-		sale = sales.create(loan, loans[loan].bor, loans[loan].lend, loans[loan].agent, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i]);
+		sale = sales.create(loan, loans[loan].borrower, loans[loan].lender, loans[loan].agent, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i]);
         if (bools[loan].sale == false) { require(token.transfer(address(sales), repaid(loan))); }
 		bools[loan].sale = true;
     }
