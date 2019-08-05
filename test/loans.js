@@ -172,7 +172,7 @@ contract("Loans", accounts => {
     })
   })
 
-  describe('sell', function() {
+  describe('liquidate', function() {
     it('should be safe if above liquidation ratio', async function() {
       await this.loans.approve(this.loan)
 
@@ -196,8 +196,8 @@ contract("Loans", accounts => {
       const safe = await this.loans.safe.call(this.loan)
       assert.equal(safe, false)
 
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
@@ -237,7 +237,7 @@ contract("Loans", accounts => {
 
       await time.increase(toSecs({days: 1, hours: 23}))
 
-      await expectRevert(this.loans.sell(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.loans.liquidate(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
     })
 
     it('should allow for liquidation to start if loan is defaulted', async function() {
@@ -247,8 +247,8 @@ contract("Loans", accounts => {
 
       await time.increase(toSecs({days: 2, minutes: 1}))
 
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const sale = await this.loans.sale.call(this.loan)
       assert.equal(sale, true)

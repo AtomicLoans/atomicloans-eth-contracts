@@ -312,7 +312,7 @@ contract Loans is DSMath {
         }
     }
 
-    function sell(bytes32 loan) external returns (bytes32 sale) { // Start Auction
+    function liquidate(bytes32 loan) external returns (bytes32 sale) { // Start Auction
     	require(!off(loan));
         require(bools[loan].taken  == true);
     	if (sales.next(loan) == 0) {

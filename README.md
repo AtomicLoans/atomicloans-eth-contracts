@@ -84,7 +84,7 @@ Actions:
    accept          accept loan and remove funds
    cancel          cancel loan and remove funds
    fund            fund loan
-   sell            auction loan collateral in case of liquidation or default
+   liquidate       auction loan collateral in case of liquidation or default
    setSechs        set secret hashes for loan
    take            withdraw loan
    refund          refund debt repayment 

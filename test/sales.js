@@ -158,8 +158,8 @@ contract("Sales", accounts => {
 
   describe('push', function() {
     it('should allow bidders to bid until end of auction period', async function() {
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
@@ -191,8 +191,8 @@ contract("Sales", accounts => {
     })
 
     it('should fail if bidders try to bid after end of auction period', async function() {
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
@@ -215,8 +215,8 @@ contract("Sales", accounts => {
 
   describe('3 auctions', function() {
     it('should allow for 3 auctions before considered failed', async function() {
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
@@ -237,8 +237,8 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
-      this.sale2 = await this.loans.sell.call(this.loan, { from: lender })
-      await this.loans.sell(this.loan, { from: lender })
+      this.sale2 = await this.loans.liquidate.call(this.loan, { from: lender })
+      await this.loans.liquidate(this.loan, { from: lender })
 
       await this.sales.push(this.sale2, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
@@ -248,8 +248,8 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
-      this.sale3 = await this.loans.sell.call(this.loan, { from: lender })
-      await this.loans.sell(this.loan, { from: lender })
+      this.sale3 = await this.loans.liquidate.call(this.loan, { from: lender })
+      await this.loans.liquidate(this.loan, { from: lender })
 
       await this.sales.push(this.sale3, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
@@ -259,12 +259,12 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
-      await expectRevert(this.loans.sell(this.loan, { from: lender }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.loans.liquidate(this.loan, { from: lender }), 'VM Exception while processing transaction: revert')
     })
 
     it('should fail if auction called before previous auction is finished', async function() {
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
@@ -285,7 +285,7 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await expectRevert(this.loans.sell(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.loans.liquidate(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
     })
   })
 
@@ -298,8 +298,8 @@ contract("Sales", accounts => {
 
       await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
 
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
@@ -357,8 +357,8 @@ contract("Sales", accounts => {
 
       await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
 
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
@@ -416,8 +416,8 @@ contract("Sales", accounts => {
 
       await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
 
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
@@ -473,8 +473,8 @@ contract("Sales", accounts => {
 
   describe('sign', function() {
     it('should allow parties to sign and retrieve their signatures', async function() {
-      this.sale = await this.loans.sell.call(this.loan, { from: bidr })
-      await this.loans.sell(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
+      await this.loans.liquidate(this.loan, { from: bidr })
 
       const colvWei = await this.loans.colv.call(this.loan)
       const colv = fromWei(colvWei)
