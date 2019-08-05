@@ -495,28 +495,22 @@ contract("Sales", accounts => {
 
       await time.increase(toSecs({minutes: 2}))
 
-      await this.sales.provideSig(this.sale, sig1, sig2, sig3, sig4, { from: borrower })
-      await this.sales.provideSig(this.sale, sig5, sig6, sig7, sig8, { from: lender })
-      await this.sales.provideSig(this.sale, sig9, sig10, sig11, sig12, { from: agent })
+      await this.sales.provideSig(this.sale, sig1, sig2, { from: borrower })
+      await this.sales.provideSig(this.sale, sig3, sig4, { from: lender })
+      await this.sales.provideSig(this.sale, sig5, sig6, { from: agent })
 
-      const bsigs = await this.sales.bsigs.call(this.sale)
-      const lsigs = await this.sales.lsigs.call(this.sale)
-      const asigs = await this.sales.asigs.call(this.sale)
+      const bsigs = await this.sales.borrowerSigs.call(this.sale)
+      const lsigs = await this.sales.lenderSigs.call(this.sale)
+      const asigs = await this.sales.agentSigs.call(this.sale)
 
       assert.equal(bsigs[0], sig1)
       assert.equal(bsigs[1], sig2)
-      assert.equal(bsigs[2], sig3)
-      assert.equal(bsigs[3], sig4)
 
-      assert.equal(lsigs[0], sig5)
-      assert.equal(lsigs[1], sig6)
-      assert.equal(lsigs[2], sig7)
-      assert.equal(lsigs[3], sig8)
+      assert.equal(lsigs[0], sig3)
+      assert.equal(lsigs[1], sig4)
 
-      assert.equal(asigs[0], sig9)
-      assert.equal(asigs[1], sig10)
-      assert.equal(asigs[2], sig11)
-      assert.equal(asigs[3], sig12)
+      assert.equal(asigs[0], sig5)
+      assert.equal(asigs[1], sig6)
 
       await this.sales.provideSecret(this.sale, lendSecs[1])
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })

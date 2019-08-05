@@ -18,12 +18,12 @@ contract Sales is DSMath { // Auctions
 
 	address public deployer; // Only the Loans contract can edit data
 
-	mapping (bytes32 => Sale)       public sales; // Auctions
-	mapping (bytes32 => Sig)        public bsigs; // Borrower Signatures
-	mapping (bytes32 => Sig)        public lsigs; // Lender Signatures
-	mapping (bytes32 => Sig)        public asigs; // Lender Signatures
+	mapping (bytes32 => Sale)       public sales;        // Auctions
+	mapping (bytes32 => Sig)        public borrowerSigs; // Borrower Signatures
+	mapping (bytes32 => Sig)        public lenderSigs;   // Lender Signatures
+	mapping (bytes32 => Sig)        public agentSigs;    // Lender Signatures
 	mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
-    uint256                         public salei; // Auction Index
+    uint256                         public salei;        // Auction Index
 
     mapping (bytes32 => bytes32[])  public salel; // Loan Auctions (find by loanIndex)
 
@@ -44,10 +44,8 @@ contract Sales is DSMath { // Auctions
     }
 
     struct Sig {
-        bytes      rsig;  // Borrower Refundable Signature
-        bytes      ssig;  // Borrower Seizable Signature
-        bytes      rbsig; // Borrower Refundable Back Signature
-        bytes      sbsig; // Borrower Seizable Back Signature
+        bytes refundableSig;  // Borrower Refundable Signature
+        bytes seizableSig;  // Borrower Seizable Signature
     }
 
     struct SecretHash {
@@ -180,7 +178,7 @@ contract Sales is DSMath { // Auctions
 	) external {
         require(msg.sender != borrower(sale) && msg.sender != lender(sale));
 		require(sales[sale].set);
-	require(now < salex(sale));
+    	require(now < salex(sale));
     	require(amt > sales[sale].bid);
     	require(token.balanceOf(msg.sender) >= amt);
     	if (sales[sale].bid > 0) {
@@ -197,30 +195,22 @@ contract Sales is DSMath { // Auctions
     	sales[sale].pbkh = pbkh;
 	}
 
-	function provideSig(       // Provide Signature to move collateral to collateral swap
-		bytes32      sale,     // Auction Index
-		bytes calldata rsig,   // Refundable Signature
-		bytes calldata ssig,   // Seizable Signature
-		bytes calldata rbsig,  // Refundable Back Signature
-		bytes calldata sbsig   // Seizable Back Signataure
+	function provideSig(              // Provide Signature to move collateral to collateral swap
+		bytes32        sale,          // Auction Index
+		bytes calldata refundableSig, // Refundable Signature
+		bytes calldata seizableSig    // Seizable Signature
 	) external {
 		require(sales[sale].set);
 		require(now < setex(sale));
 		if (msg.sender == sales[sale].borrower) {
-			bsigs[sale].rsig  = rsig;
-			bsigs[sale].ssig  = ssig;
-			bsigs[sale].rbsig = rbsig;
-			bsigs[sale].sbsig = sbsig;
+			borrowerSigs[sale].refundableSig = refundableSig;
+			borrowerSigs[sale].seizableSig   = seizableSig;
 		} else if (msg.sender == sales[sale].lender) {
-			lsigs[sale].rsig  = rsig;
-			lsigs[sale].ssig  = ssig;
-			lsigs[sale].rbsig = rbsig;
-			lsigs[sale].sbsig = sbsig;
+			lenderSigs[sale].refundableSig = refundableSig;
+			lenderSigs[sale].seizableSig   = seizableSig;
 		} else if (msg.sender == sales[sale].agent) {
-			asigs[sale].rsig  = rsig;
-			asigs[sale].ssig  = ssig;
-			asigs[sale].rbsig = rbsig;
-			asigs[sale].sbsig = sbsig;
+			agentSigs[sale].refundableSig = refundableSig;
+			agentSigs[sale].seizableSig   = seizableSig;
 		} else {
 			revert();
 		}
