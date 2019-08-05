@@ -225,7 +225,7 @@ contract Sales is DSMath { // Auctions
         else                                                                          { revert(); }
 	}
 
-	function hasSecs(bytes32 sale) public view returns (bool) { // 2 of 3 secrets
+	function hasSecrets(bytes32 sale) public view returns (bool) { // 2 of 3 secrets
 		uint8 secs = 0;
 		if (sha256(abi.encodePacked(secretHashes[sale].secretA)) == secretHashes[sale].secretHashA) { secs = secs + 1; }
 		if (sha256(abi.encodePacked(secretHashes[sale].secretB)) == secretHashes[sale].secretHashB) { secs = secs + 1; }
@@ -237,7 +237,7 @@ contract Sales is DSMath { // Auctions
         require(!accepted(sale));
         require(!off(sale));
 		require(now > salex(sale));
-		require(hasSecs(sale));
+		require(hasSecrets(sale));
 		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
         sales[sale].accepted = true;
 

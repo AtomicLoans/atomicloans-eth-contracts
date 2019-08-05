@@ -144,7 +144,7 @@ Getters:
    bidder              address current bidder
    borrower            address borrower
    borrowerSigs        borrower refundable and seizable signatures
-   hasSecs             2 of 3 secrets from bor, lend, and agent are correct
+   hasSecrets          2 of 3 secrets from bor, lend, and agent are correct
    lender              address lender
    lenderSigs          lender refundable and seizable signatures
    next                get the last auction id by loan
