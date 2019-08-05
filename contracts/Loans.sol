@@ -59,7 +59,7 @@ contract Loans is DSMath {
     struct Bools {
     	bool funded;        // Loan Funded
     	bool approved;      // Approve locking of collateral
-    	bool taken;         // Loan Withdrawn
+    	bool withdrawn;     // Loan Withdrawn
     	bool sale;          // Collateral Liquidation Started
     	bool paid;          // Loan Repaid
     	bool off;           // Loan Finished (Repayment accepted or cancelled)
@@ -149,8 +149,8 @@ contract Loans is DSMath {
         return bools[loan].approved;
     }
 
-    function taken(bytes32 loan) public view returns (bool) {
-        return bools[loan].taken;
+    function withdrawn(bytes32 loan) public view returns (bool) {
+        return bools[loan].withdrawn;
     }
 
     function sale(bytes32 loan) public view returns (bool) {
@@ -250,20 +250,20 @@ contract Loans is DSMath {
     	bools[loan].approved = true;
     }
 
-    function take(bytes32 loan, bytes32 secretA1) external { // Withdraw
+    function withdraw(bytes32 loan, bytes32 secretA1) external { // Withdraw
     	require(!off(loan));
     	require(bools[loan].funded == true);
     	require(bools[loan].approved == true);
     	require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
     	require(token.transfer(loans[loan].bor, prin(loan)));
-    	bools[loan].taken = true;
+    	bools[loan].withdrawn = true;
     }
 
     function repay(bytes32 loan, uint256 amt) external { // Repay Loan
         // require(msg.sender                == loans[loan].bor); // NOTE: this is not necessary. Anyone can pay off the loan
     	require(!off(loan));
         require(!sale(loan));
-    	require(bools[loan].taken         == true);
+    	require(bools[loan].withdrawn     == true);
     	require(now                       <= loans[loan].loex);
     	require(add(amt, backs[loan])     <= owed(loan));
 
@@ -294,15 +294,15 @@ contract Loans is DSMath {
 
     function accept(bytes32 loan, bytes32 secret, bool fund) public { // Accept or Cancel // Bool fund set true if lender wants fund to return to fund
         require(!off(loan));
-        require(bools[loan].taken == false || bools[loan].paid == true);
+        require(bools[loan].withdrawn == false || bools[loan].paid == true);
         require(msg.sender == loans[loan].lend || msg.sender == loans[loan].agent);
         require(sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashB1 || sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashC1);
         require(now                             <= acex(loan));
         require(bools[loan].sale                == false);
         bools[loan].off = true;
-        if (bools[loan].taken == false) {
+        if (bools[loan].withdrawn == false) {
             require(token.transfer(loans[loan].lend, loans[loan].prin));
-        } else if (bools[loan].taken == true) {
+        } else if (bools[loan].withdrawn == true) {
             if (fundIndex[loan] == bytes32(0) || !fund) {
                 require(token.transfer(loans[loan].lend, lent(loan)));
             } else {
@@ -314,7 +314,7 @@ contract Loans is DSMath {
 
     function liquidate(bytes32 loan) external returns (bytes32 sale) { // Start Auction
     	require(!off(loan));
-        require(bools[loan].taken  == true);
+        require(bools[loan].withdrawn == true);
     	if (sales.next(loan) == 0) {
     		if (now > loans[loan].loex) {
 	    		require(bools[loan].paid == false);

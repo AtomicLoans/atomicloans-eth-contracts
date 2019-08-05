@@ -157,7 +157,7 @@ contract("Funds", accounts => {
 
       await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       // Send funds to borrower so they can repay full
       await this.token.transfer(borrower, toWei('1', 'ether'))

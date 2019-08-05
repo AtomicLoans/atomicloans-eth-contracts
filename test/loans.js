@@ -136,7 +136,7 @@ contract("Loans", accounts => {
     it('should accept successfully if lender secret provided', async function() {
       await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       // Send funds to borrower so they can repay full
       await this.token.transfer(borrower, toWei('1', 'ether'))
@@ -155,7 +155,7 @@ contract("Loans", accounts => {
     it('should accept successfully if agent secret provided', async function() {
       await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       // Send funds to borrower so they can repay full
       await this.token.transfer(borrower, toWei('1', 'ether'))
@@ -176,7 +176,7 @@ contract("Loans", accounts => {
     it('should be safe if above liquidation ratio', async function() {
       await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       const bal = await this.token.balanceOf.call(borrower)
 
@@ -187,7 +187,7 @@ contract("Loans", accounts => {
     it('should succeed at creating a sale if below liquidation ratio', async function() {
       await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       const bal = await this.token.balanceOf.call(borrower)
 
@@ -233,7 +233,7 @@ contract("Loans", accounts => {
     it('should fail liquidation if current time before loan expiration', async function() {
       await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       await time.increase(toSecs({days: 1, hours: 23}))
 
@@ -243,7 +243,7 @@ contract("Loans", accounts => {
     it('should allow for liquidation to start if loan is defaulted', async function() {
       await this.loans.approve(this.loan)
 
-      await this.loans.take(this.loan, borSecs[0], { from: borrower })
+      await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       await time.increase(toSecs({days: 2, minutes: 1}))
 

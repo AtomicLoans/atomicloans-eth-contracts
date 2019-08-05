@@ -146,7 +146,7 @@ contract("Sales", accounts => {
 
     await this.loans.approve(this.loan)
 
-    await this.loans.take(this.loan, borSecs[0], { from: borrower })
+    await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
     const bal = await this.token.balanceOf.call(borrower)
 

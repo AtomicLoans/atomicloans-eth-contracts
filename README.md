@@ -86,7 +86,7 @@ Actions:
    fund            fund loan
    liquidate       auction loan collateral in case of liquidation or default
    setSecretHashes set secret hashes for loan
-   take            withdraw loan
+   withdraw        withdraw loan
    refund          refund debt repayment 
 
 
