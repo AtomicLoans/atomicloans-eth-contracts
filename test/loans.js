@@ -132,8 +132,8 @@ contract("Loans", accounts => {
     await this.funds.request(...loanParams, { from: borrower })
   })
 
-  describe('pull', function() {
-    it('should pull successfully if lender secret provided', async function() {
+  describe('accept', function() {
+    it('should accept successfully if lender secret provided', async function() {
       await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
@@ -146,13 +146,13 @@ contract("Loans", accounts => {
       const owed = await this.loans.owed.call(this.loan)
       await this.loans.repay(this.loan, owed, { from: borrower })
 
-      await this.loans.pull(this.loan, lendSecs[0]) // accept loan repayment
+      await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
 
       const off = await this.loans.off.call(this.loan)
       assert.equal(off, true);
     })
 
-    it('should pull successfully if agent secret provided', async function() {
+    it('should accept successfully if agent secret provided', async function() {
       await this.loans.approve(this.loan)
 
       await this.loans.take(this.loan, borSecs[0], { from: borrower })
@@ -165,7 +165,7 @@ contract("Loans", accounts => {
       const owed = await this.loans.owed.call(this.loan)
       await this.loans.repay(this.loan, owed, { from: borrower })
 
-      await this.loans.pull(this.loan, agentSecs[0]) // accept loan repayment
+      await this.loans.accept(this.loan, agentSecs[0]) // accept loan repayment
 
       const off = await this.loans.off.call(this.loan)
       assert.equal(off, true);

@@ -284,11 +284,15 @@ contract Loans is DSMath {
     	require(token.transfer(loans[loan].bor, owed(loan)));
     }
 
-    function pull(bytes32 loan, bytes32 secret) external {
-        pull(loan, secret, true); // Default to true for returning funds to Fund
+    function cancel(bytes32 loan, bytes32 secret) external {
+        accept(loan, secret, true); // Default to true for returning funds to Fund
     }
 
-    function pull(bytes32 loan, bytes32 secret, bool fund) public { // Accept or Cancel // Bool fund set true if lender wants fund to return to fund
+    function accept(bytes32 loan, bytes32 secret) external {
+        accept(loan, secret, true); // Default to true for returning funds to Fund
+    }
+
+    function accept(bytes32 loan, bytes32 secret, bool fund) public { // Accept or Cancel // Bool fund set true if lender wants fund to return to fund
         require(!off(loan));
         require(bools[loan].taken == false || bools[loan].paid == true);
         require(msg.sender == loans[loan].lend || msg.sender == loans[loan].agent);

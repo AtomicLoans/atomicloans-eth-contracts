@@ -81,7 +81,8 @@ Actions:
    approve         approve locking of collateral
    create          create new loan
    repay           repay debt
-   pull            accept or cancel loan and remove funds
+   accept          accept loan and remove funds
+   cancel          cancel loan and remove funds
    push            fund loan
    sell            auction loan collateral in case of liquidation or default
    setSechs        set secret hashes for loan

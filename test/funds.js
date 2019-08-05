@@ -167,7 +167,7 @@ contract("Funds", accounts => {
       const owed = await this.loans.owed.call(this.loan)
       await this.loans.repay(this.loan, owed, { from: borrower })
 
-      await this.loans.pull(this.loan, lendSecs[0]) // accept loan repayment
+      await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
 
       const off = await this.loans.off.call(this.loan)
 
@@ -274,7 +274,7 @@ contract("Funds", accounts => {
       assert.equal(oldBal - newBal, toWei('50', 'ether'))
     })
 
-    it('should fail pulling funds if not called by owner', async function() {
+    it('should fail withdrawing funds if not called by owner', async function() {
       // Generate lender secret hashes
       await this.funds.generate(lendSechs)
 
