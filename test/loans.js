@@ -196,31 +196,20 @@ contract("Loans", accounts => {
       const safe = await this.loans.safe.call(this.loan)
       assert.equal(safe, false)
 
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
+      await this.token.transfer(bidr, toWei('5', 'ether'))
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: bidr })
+
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       const colvWei = await this.loans.collateralValue.call(this.loan)
       const colv = fromWei(colvWei)
 
       const col = await this.loans.collateral.call(this.loan)
 
-      await this.token.transfer(bidr, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(1800)
-
-      await this.token.transfer(bidr2, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
-
-      await time.increase(1800 + 1)
-
       await this.sales.provideSecret(this.sale, lendSecs[1])
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
-      await this.sales.provideSecret(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, bidrSecs[0])
 
       await this.sales.accept(this.sale)
 
@@ -237,7 +226,7 @@ contract("Loans", accounts => {
 
       await time.increase(toSecs({days: 1, hours: 23}))
 
-      await expectRevert(this.loans.liquidate(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr }), 'VM Exception while processing transaction: revert')
     })
 
     it('should allow for liquidation to start if loan is defaulted', async function() {
@@ -247,8 +236,8 @@ contract("Loans", accounts => {
 
       await time.increase(toSecs({days: 2, minutes: 1}))
 
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       const sale = await this.loans.sale.call(this.loan)
       assert.equal(sale, true)

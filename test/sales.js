@@ -15,7 +15,7 @@ const Med   = artifacts.require("./MedianizerExample.sol");
 const utils = require('./helpers/Utils.js');
 
 const { rateToSec, numToBytes32 } = utils;
-const { toWei, fromWei } = web3.utils;
+const { toWei, fromWei, hexToNumberString } = web3.utils;
 
 const API_ENDPOINT_COIN = "https://atomicloans.io/marketcap/api/v1/"
 const BTC_TO_SAT = 10**8
@@ -158,134 +158,64 @@ contract("Sales", accounts => {
 
   describe('push', function() {
     it('should allow bidders to bid until end of auction period', async function() {
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
+      await this.token.transfer(bidr, toWei('100', 'ether'))
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: bidr })
+
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       const colvWei = await this.loans.collateralValue.call(this.loan)
       const colv = fromWei(colvWei)
 
       const col = await this.loans.collateral.call(this.loan)
 
-      await this.token.transfer(bidr, toWei('100', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.token.transfer(bidr2, toWei('100', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
-
-      await time.increase(toSecs({minutes: 2}))
-
       await this.sales.provideSecret(this.sale, lendSecs[1])
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
-      await this.sales.provideSecret(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, bidrSecs[0])
 
       await this.sales.accept(this.sale)
 
       const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
     })
-
-    it('should fail if bidders try to bid after end of auction period', async function() {
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
-
-      const colvWei = await this.loans.collateralValue.call(this.loan)
-      const colv = fromWei(colvWei)
-
-      const col = await this.loans.collateral.call(this.loan)
-
-      await this.token.transfer(bidr, toWei('100', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 61}))
-
-      await this.token.transfer(bidr2, toWei('100', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await expectRevert(this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 }), 'VM Exception while processing transaction: revert')
-    })
   })
 
   describe('3 auctions', function() {
     it('should allow for 3 auctions before considered failed', async function() {
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
+      await this.token.transfer(bidr, toWei('100', 'ether'))
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: bidr })
+
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       const colvWei = await this.loans.collateralValue.call(this.loan)
       const colv = fromWei(colvWei)
 
       const col = await this.loans.collateral.call(this.loan)
 
-      await this.token.transfer(bidr, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
+      await time.increase(toSecs({hours: 4, minutes: 2}))
 
-      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.token.transfer(bidr2, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      this.sale2 = await this.loans.liquidate.call(this.loan, bidrSechs[1], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[1], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
-      this.sale2 = await this.loans.liquidate.call(this.loan, { from: lender })
-      await this.loans.liquidate(this.loan, { from: lender })
-
-      await this.sales.offer(this.sale2, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.sales.offer(this.sale2, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      this.sale3 = await this.loans.liquidate.call(this.loan, bidrSechs[2], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[2], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({hours: 4, minutes: 2}))
 
-      this.sale3 = await this.loans.liquidate.call(this.loan, { from: lender })
-      await this.loans.liquidate(this.loan, { from: lender })
-
-      await this.sales.offer(this.sale3, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.sales.offer(this.sale3, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
-
-      await time.increase(toSecs({hours: 4, minutes: 2}))
-
-      await expectRevert(this.loans.liquidate(this.loan, { from: lender }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.loans.liquidate(this.loan, bidrSechs[2], ensure0x(bidrpbkh), { from: bidr }), 'VM Exception while processing transaction: revert')
     })
 
     it('should fail if auction called before previous auction is finished', async function() {
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
-
-      const colvWei = await this.loans.collateralValue.call(this.loan)
-      const colv = fromWei(colvWei)
-
-      const col = await this.loans.collateral.call(this.loan)
-
-      await this.token.transfer(bidr, toWei('5', 'ether'))
+      await this.token.transfer(bidr, toWei('100', 'ether'))
       await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.token.transfer(bidr2, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
-
-      await time.increase(toSecs({minutes: 2}))
-
-      await expectRevert(this.loans.liquidate(this.loan, { from: bidr }), 'VM Exception while processing transaction: revert')
+      await expectRevert(this.loans.liquidate(this.loan, bidrSechs[1], ensure0x(bidrpbkh), { from: bidr }), 'VM Exception while processing transaction: revert')
     })
   })
 
@@ -296,33 +226,33 @@ contract("Sales", accounts => {
       const owedForLoan = await this.loans.owedForLoan.call(this.loan)
       await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
 
-      await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
+      const collateralValue = await this.loans.collateralValue.call(this.loan)
+      const discountCollateralValue = await this.loans.discountCollateralValue.call(this.loan)
+      const repaid = await this.loans.repaid.call(this.loan)
+      const minCollateralValue = await this.loans.minCollateralValue.call(this.loan)
+      const owedToLender = await this.loans.owedToLender.call(this.loan)
+      const medValue = await this.med.read.call()
 
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
+      await this.med.poke(numToBytes32(BigNumber(minCollateralValue).dividedBy(collateralValue).times(hexToNumberString(medValue)).times(0.99).toFixed(0)))
 
-      const colvWei = await this.loans.collateralValue.call(this.loan)
-      const colv = fromWei(colvWei)
+      const collateralValue2 = await this.loans.collateralValue.call(this.loan)
+      const discountCollateralValue2 = await this.loans.discountCollateralValue.call(this.loan)
+      const repaid2 = await this.loans.repaid.call(this.loan)
+      const minCollateralValue2 = await this.loans.minCollateralValue.call(this.loan)
+      const owedToLender2 = await this.loans.owedToLender.call(this.loan)
+      const medValue2 = await this.med.read.call()
 
-      const col = await this.loans.collateral.call(this.loan)
+      await this.token.transfer(bidr, toWei('100', 'ether'))
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: bidr })
 
-      await this.token.transfer(bidr, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.token.transfer(bidr2, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.75).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       await time.increase(toSecs({minutes: 2}))
 
       await this.sales.provideSecret(this.sale, lendSecs[1])
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
-      await this.sales.provideSecret(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, bidrSecs[0])
 
       const lendBalBefore  = await this.token.balanceOf.call(lender)
       const borBalBefore   = await this.token.balanceOf.call(borrower)
@@ -334,10 +264,10 @@ contract("Sales", accounts => {
       const borBalAfter   = await this.token.balanceOf.call(borrower)
       const agentBalAfter = await this.token.balanceOf.call(agent)
 
-      const owedToLender = await this.loans.owedToLender.call(this.loan)
+      // const owedToLender = await this.loans.owedToLender.call(this.loan)
       const fee  = await this.loans.fee.call(this.loan)
       const penalty = await this.loans.penalty.call(this.loan)
-      const repaid = await this.loans.repaid.call(this.loan)
+      // const repaid = await this.loans.repaid.call(this.loan)
       const owedForLiquidation = await this.loans.owedForLiquidation.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)
 
@@ -355,33 +285,26 @@ contract("Sales", accounts => {
       const owedForLoan = await this.loans.owedForLoan.call(this.loan)
       await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
 
-      await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
+      const collateralValue = await this.loans.collateralValue.call(this.loan)
+      const minCollateralValue = await this.loans.minCollateralValue.call(this.loan)
+      const medValue = await this.med.read.call()
 
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
+      await this.med.poke(numToBytes32(BigNumber(minCollateralValue).dividedBy(collateralValue).times(hexToNumberString(medValue)).times(0.57).toFixed(0)))
+
+      await this.token.transfer(bidr, toWei('100', 'ether'))
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: bidr })
+
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       const colvWei = await this.loans.collateralValue.call(this.loan)
       const colv = fromWei(colvWei)
 
       const col = await this.loans.collateral.call(this.loan)
 
-      await this.token.transfer(bidr, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.token.transfer(bidr2, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.5).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
-
-      await time.increase(toSecs({minutes: 2}))
-
       await this.sales.provideSecret(this.sale, lendSecs[1])
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
-      await this.sales.provideSecret(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, bidrSecs[0])
 
       const lendBalBefore  = await this.token.balanceOf.call(lender)
       const borBalBefore   = await this.token.balanceOf.call(borrower)
@@ -399,6 +322,8 @@ contract("Sales", accounts => {
       const repaid = await this.loans.repaid.call(this.loan)
       const owedForLiquidation = await this.loans.owedForLiquidation.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)
+
+      const safe = await this.loans.safe.call(this.loan)
 
       assert.equal(BigNumber(lendBalBefore).plus(BigNumber(bid).plus(repaid)).toFixed(), lendBalAfter.toString())
       assert.equal(borBalBefore.toString(), borBalAfter.toString())
@@ -414,33 +339,29 @@ contract("Sales", accounts => {
       const owedForLoan = await this.loans.owedForLoan.call(this.loan)
       await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
 
-      await this.med.poke(numToBytes32(toWei((btcPrice * 0.35).toString(), 'ether')))
+      const collateralValue = await this.loans.collateralValue.call(this.loan)
+      const discountCollateralValue = await this.loans.discountCollateralValue.call(this.loan)
+      const repaid = await this.loans.repaid.call(this.loan)
+      const minCollateralValue = await this.loans.minCollateralValue.call(this.loan)
+      const medValue = await this.med.read.call()
+      const owedToLender = await this.loans.owedToLender.call(this.loan)
 
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
+      await this.med.poke(numToBytes32(BigNumber(minCollateralValue).dividedBy(collateralValue).times(hexToNumberString(medValue)).times(0.7183).toFixed(0)))
+
+      await this.token.transfer(bidr, toWei('100', 'ether'))
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: bidr })
+
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       const colvWei = await this.loans.collateralValue.call(this.loan)
       const colv = fromWei(colvWei)
 
       const col = await this.loans.collateral.call(this.loan)
 
-      await this.token.transfer(bidr, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.45).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.token.transfer(bidr2, toWei('5', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.715142637307).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
-
-      await time.increase(toSecs({minutes: 2}))
-
       await this.sales.provideSecret(this.sale, lendSecs[1])
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
-      await this.sales.provideSecret(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, bidrSecs[0])
 
       const lendBalBefore  = await this.token.balanceOf.call(lender)
       const borBalBefore   = await this.token.balanceOf.call(borrower)
@@ -454,17 +375,15 @@ contract("Sales", accounts => {
       const agentBalAfter = await this.token.balanceOf.call(agent)
       const medBalAfter   = await this.token.balanceOf.call(this.med.address)
 
-      const owedToLender = await this.loans.owedToLender.call(this.loan)
       const fee  = await this.loans.fee.call(this.loan)
       const penalty = await this.loans.penalty.call(this.loan)
-      const repaid = await this.loans.repaid.call(this.loan)
       const owedForLiquidation = await this.loans.owedForLiquidation.call(this.loan)
       const bid  = await this.sales.bid.call(this.sale)
 
       assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
-      assert.equal(borBalBefore.toString(), borBalAfter.toString())
-      assert.equal(agentBalBefore.toString(), agentBalAfter.toString())
       assert.equal(BigNumber(medBalBefore).plus(BigNumber(bid).plus(repaid).minus(owedToLender)).toString(), medBalAfter.toString())
+      assert.equal(agentBalBefore.toString(), agentBalAfter.toString())
+      assert.equal(borBalBefore.toString(), borBalAfter.toString())
 
       const taken = await this.sales.accepted.call(this.sale)
       assert.equal(taken, true)
@@ -473,25 +392,16 @@ contract("Sales", accounts => {
 
   describe('provideSig', function() {
     it('should allow parties to sign and retrieve their signatures', async function() {
-      this.sale = await this.loans.liquidate.call(this.loan, { from: bidr })
-      await this.loans.liquidate(this.loan, { from: bidr })
+      await this.token.transfer(bidr, toWei('100', 'ether'))
+      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: bidr })
+
+      this.sale = await this.loans.liquidate.call(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
+      await this.loans.liquidate(this.loan, bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
 
       const colvWei = await this.loans.collateralValue.call(this.loan)
       const colv = fromWei(colvWei)
 
       const col = await this.loans.collateral.call(this.loan)
-
-      await this.token.transfer(bidr, toWei('100', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.9).toString()), bidrSechs[0], ensure0x(bidrpbkh), { from: bidr })
-
-      await time.increase(toSecs({minutes: 59}))
-
-      await this.token.transfer(bidr2, toWei('100', 'ether'))
-      await this.token.approve(this.sales.address, toWei('100', 'ether'), { from: bidr2 })
-
-      await this.sales.offer(this.sale, toWei((colv * 0.92).toString()), bidrSechs[1], ensure0x(bidrpbkh), { from: bidr2 })
 
       await time.increase(toSecs({minutes: 2}))
 
@@ -514,7 +424,7 @@ contract("Sales", accounts => {
 
       await this.sales.provideSecret(this.sale, lendSecs[1])
       await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
-      await this.sales.provideSecret(this.sale, bidrSecs[1])
+      await this.sales.provideSecret(this.sale, bidrSecs[0])
 
       await this.sales.accept(this.sale)
 
