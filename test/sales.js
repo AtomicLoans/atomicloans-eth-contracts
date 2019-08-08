@@ -101,6 +101,8 @@ contract("Sales", accounts => {
   const borrower = accounts[1]
   const agent    = accounts[2]
   const liquidator     = accounts[3]
+  const liquidator2    = accounts[4]
+  const liquidator3    = accounts[5]
 
   const sig1  = '0x3045022100acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
   const sig2  = '0x3045022101acb79a21e7e6cea47a598254e02639f87b5fa9a08c0ec8455503da0a479c19560220724014c241ac64ffc108d4457302644d5d057fbc4f2edbf33a86f24cf0b10447'
@@ -440,6 +442,191 @@ contract("Sales", accounts => {
 
       const accepted = await this.sales.accepted.call(this.sale)
       assert.equal(accepted, true)
+    })
+  })
+
+  describe('refund', function() {
+    it('should refund if not off, not accepted, current time greater than settlementExpiration and discountBuy set', async function() {
+      await approveAndTransfer(this.token, borrower, this.loans, toWei('100', 'ether'))
+
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+      const { collateral, collateralValue, minCollateralValue, repaid, owedToLender, fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
+      const medValue = await this.med.read.call()
+
+      // discountBuy + repaid - owedToLender - fee - penalty = 0
+      // discountBuy = medValue * x * 0.93 * collateral
+      // x = (-repaid + owedToLender + fee + penalty) / (medValue * 0.93 * collateral * BTC_TO_SAT)
+
+      const num = BigNumber(minCollateralValue).times(0.98)
+      const den = BigNumber(collateralValue)
+      const x = BigNumber(num).dividedBy(den)
+
+      await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(25)).toFixed(0)))
+
+      await approveAndTransfer(this.token, liquidator, this.loans, toWei('100', 'ether'))
+      this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
+
+      await time.increase(toSecs({hours: 4, minutes: 2}))
+
+      const balBefore = await this.token.balanceOf.call(liquidator)
+      const { borBalBefore } = await getBalancesBefore(this.token, lender, borrower, agent, this.med.address)
+
+      await this.sales.refund(this.sale)
+
+      const balAfter = await this.token.balanceOf.call(liquidator)
+      const { borBalAfter } = await getBalancesAfter(this.token, lender, borrower, agent, this.med.address)
+
+      assert.equal(BigNumber(balBefore).plus(discountBuy).toFixed(), balAfter.toString())
+      assert.equal(borBalBefore.toString(), borBalAfter.toString())
+    })
+
+    it('should refund borrower repaid amount after 3rd liquidation attempt', async function() {
+      await approveAndTransfer(this.token, borrower, this.loans, toWei('100', 'ether'))
+
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+      const { collateral, collateralValue, minCollateralValue, repaid, owedToLender, fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
+      const medValue = await this.med.read.call()
+
+      // discountBuy + repaid - owedToLender - fee - penalty = 0
+      // discountBuy = medValue * x * 0.93 * collateral
+      // x = (-repaid + owedToLender + fee + penalty) / (medValue * 0.93 * collateral * BTC_TO_SAT)
+
+      const num = BigNumber(minCollateralValue).times(0.98)
+      const den = BigNumber(collateralValue)
+      const x = BigNumber(num).dividedBy(den)
+
+      await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(25)).toFixed(0)))
+
+      await approveAndTransfer(this.token, liquidator, this.loans, toWei('100', 'ether'))
+      this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+      await time.increase(toSecs({hours: 4, minutes: 2}))
+
+      await this.sales.refund(this.sale)
+
+      await approveAndTransfer(this.token, liquidator2, this.loans, toWei('100', 'ether'))
+      this.sale2 = await liquidate(this.loans, this.loan, liquidatorSechs[1], liquidatorpbkh, liquidator2)
+
+      await time.increase(toSecs({hours: 4, minutes: 2}))
+
+      await this.sales.refund(this.sale2)
+
+      await approveAndTransfer(this.token, liquidator3, this.loans, toWei('100', 'ether'))
+      this.sale3 = await liquidate(this.loans, this.loan, liquidatorSechs[2], liquidatorpbkh, liquidator3)
+
+      await time.increase(toSecs({hours: 4, minutes: 2}))
+
+      const balBefore = await this.token.balanceOf.call(liquidator3)
+      const { borBalBefore } = await getBalancesBefore(this.token, lender, borrower, agent, this.med.address)
+
+      await this.sales.refund(this.sale3)
+
+      const balAfter = await this.token.balanceOf.call(liquidator3)
+      const { borBalAfter } = await getBalancesAfter(this.token, lender, borrower, agent, this.med.address)
+
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
+
+      assert.equal(BigNumber(balBefore).plus(discountBuy).toFixed(), balAfter.toString())
+      assert.equal(BigNumber(borBalBefore).plus(repaid).toFixed(), borBalAfter.toString())
+    })
+
+    it('should fail refunding if already refunded', async function() {
+      await approveAndTransfer(this.token, borrower, this.loans, toWei('100', 'ether'))
+
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+      const { collateral, collateralValue, minCollateralValue, repaid, owedToLender, fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
+      const medValue = await this.med.read.call()
+
+      // discountBuy + repaid - owedToLender - fee - penalty = 0
+      // discountBuy = medValue * x * 0.93 * collateral
+      // x = (-repaid + owedToLender + fee + penalty) / (medValue * 0.93 * collateral * BTC_TO_SAT)
+
+      const num = BigNumber(minCollateralValue).times(0.98)
+      const den = BigNumber(collateralValue)
+      const x = BigNumber(num).dividedBy(den)
+
+      await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(25)).toFixed(0)))
+
+      await approveAndTransfer(this.token, liquidator, this.loans, toWei('100', 'ether'))
+      this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
+
+      await time.increase(toSecs({hours: 4, minutes: 2}))
+
+      await this.sales.refund(this.sale)
+
+      await time.increase(toSecs({minutes: 2}))
+
+      await expectRevert(this.sales.refund(this.sale), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should fail refunding if current time before settlement expiration', async function() {
+      await approveAndTransfer(this.token, borrower, this.loans, toWei('100', 'ether'))
+
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+      const { collateral, collateralValue, minCollateralValue, repaid, owedToLender, fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
+      const medValue = await this.med.read.call()
+
+      // discountBuy + repaid - owedToLender - fee - penalty = 0
+      // discountBuy = medValue * x * 0.93 * collateral
+      // x = (-repaid + owedToLender + fee + penalty) / (medValue * 0.93 * collateral * BTC_TO_SAT)
+
+      const num = BigNumber(minCollateralValue).times(0.98)
+      const den = BigNumber(collateralValue)
+      const x = BigNumber(num).dividedBy(den)
+
+      await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(25)).toFixed(0)))
+
+      await approveAndTransfer(this.token, liquidator, this.loans, toWei('100', 'ether'))
+      this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
+
+      await time.increase(toSecs({hours: 3, minutes: 59}))
+
+      await expectRevert(this.sales.refund(this.sale), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should fail refunding if discountBuy already accepted', async function() {
+      await approveAndTransfer(this.token, borrower, this.loans, toWei('100', 'ether'))
+
+      const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+      await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+      const { collateral, collateralValue, minCollateralValue, repaid, owedToLender, fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
+      const medValue = await this.med.read.call()
+
+      // discountBuy + repaid - owedToLender - fee - penalty = 0
+      // discountBuy = medValue * x * 0.93 * collateral
+      // x = (-repaid + owedToLender + fee + penalty) / (medValue * 0.93 * collateral * BTC_TO_SAT)
+
+      const num = BigNumber(minCollateralValue).times(0.98)
+      const den = BigNumber(collateralValue)
+      const x = BigNumber(num).dividedBy(den)
+
+      await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(25)).toFixed(0)))
+
+      await approveAndTransfer(this.token, liquidator, this.loans, toWei('100', 'ether'))
+      this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
+
+      await time.increase(toSecs({hours: 3, minutes: 59}))
+
+      await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
+
+      await expectRevert(this.sales.refund(this.sale), 'VM Exception while processing transaction: revert')
     })
   })
 })
