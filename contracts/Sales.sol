@@ -209,7 +209,7 @@ contract Sales is DSMath { // Auctions
 		return (numCorrectSecrets >= 2);
 	}
 
-	function accept(bytes32 sale) external { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
+	function accept(bytes32 sale) external { // Withdraw DiscountBuy (Accept DiscountBuy and disperse funds to rightful parties)
         require(!accepted(sale));
         require(!off(sale));
 		require(hasSecrets(sale));
@@ -238,7 +238,7 @@ contract Sales is DSMath { // Auctions
         if (available > 0) { require(token.transfer(sales[sale].borrower, available)); }
 	}
 
-	function refund(bytes32 sale) external { // Refund Bid
+	function refund(bytes32 sale) external { // Refund DiscountBuy
         require(!accepted(sale));
         require(!off(sale));
 		require(now > settlementExpiration(sale));
