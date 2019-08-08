@@ -28,16 +28,16 @@ contract Sales is DSMath { // Auctions
     ERC20 public token;
 
     struct Sale {
-        bytes32    loanIndex;  // Loan Index
-        uint256    bid;        // Current Bid
-        address    bidder;     // Bidder
-        address    borrower;   // Borrower
-        address    lender;     // Lender
-        address    agent;      // Optional Automated Agent
-        uint256    createdAt;  // Created At
-        bytes20    pubKeyHash; // Bidder PubKey Hash
-        bool       set;        // Sale at index opened
-        bool       accepted;   // Winning bid accepted
+        bytes32    loanIndex;   // Loan Index
+        uint256    discountBuy; // Amount collateral was bought for at discount
+        address    liquidator;  // Party who buys the collateral at a discount
+        address    borrower;    // Borrower
+        address    lender;      // Lender
+        address    agent;       // Optional Automated Agent
+        uint256    createdAt;   // Created At
+        bytes20    pubKeyHash;  // Liquidator PubKey Hash
+        bool       set;         // Sale at index opened
+        bool       accepted;    // discountBuy accepted
         bool       off;
     }
 
@@ -57,12 +57,12 @@ contract Sales is DSMath { // Auctions
         bytes32 secretD;     // Secret D
     }
 
-    function bid(bytes32 sale) public view returns (uint256) {
-        return sales[sale].bid;
+    function discountBuy(bytes32 sale) public view returns (uint256) {
+        return sales[sale].discountBuy;
     }
 
-    function bidder(bytes32 sale) public returns (address) {
-        return sales[sale].bidder;
+    function liquidator(bytes32 sale) public returns (address) {
+        return sales[sale].liquidator;
     }
 
     function borrower(bytes32 sale) public returns (address) {
@@ -145,6 +145,7 @@ contract Sales is DSMath { // Auctions
     	address borrower,    // Address Borrower
     	address lender,      // Address Lender
         address agent,       // Optional Address automated agent
+        address liquidator,  // Liquidator address
     	bytes32 secretHashA, // Secret Hash A
     	bytes32 secretHashB, // Secret Hash B
     	bytes32 secretHashC, // Secret Hash C
@@ -154,14 +155,15 @@ contract Sales is DSMath { // Auctions
     	require(msg.sender == deployer);
     	saleIndex = add(saleIndex, 1);
         sale = bytes32(saleIndex);
-        sales[sale].loanIndex  = loanIndex;
-        sales[sale].borrower   = borrower;
-        sales[sale].lender     = lender;
-        sales[sale].agent      = agent;
-        sales[sale].createdAt  = now;
-        sales[sale].pubKeyHash = pubKeyHash;
-        sales[sale].bid        = loans.discountCollateralValue(loanIndex);
-        sales[sale].set        = true;
+        sales[sale].loanIndex   = loanIndex;
+        sales[sale].borrower    = borrower;
+        sales[sale].lender      = lender;
+        sales[sale].agent       = agent;
+        sales[sale].liquidator  = liquidator;
+        sales[sale].createdAt   = now;
+        sales[sale].pubKeyHash  = pubKeyHash;
+        sales[sale].discountBuy = loans.discountCollateralValue(loanIndex);
+        sales[sale].set         = true;
         secretHashes[sale].secretHashA = secretHashA;
         secretHashes[sale].secretHashB = secretHashB;
         secretHashes[sale].secretHashC = secretHashC;
@@ -214,7 +216,7 @@ contract Sales is DSMath { // Auctions
 		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
         sales[sale].accepted = true;
 
-        uint256 available = add(sales[sale].bid, loans.repaid(sales[sale].loanIndex));
+        uint256 available = add(sales[sale].discountBuy, loans.repaid(sales[sale].loanIndex));
         uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
 
         require(token.transfer(sales[sale].lender, amount));
@@ -240,9 +242,9 @@ contract Sales is DSMath { // Auctions
         require(!accepted(sale));
         require(!off(sale));
 		require(now > settlementExpiration(sale));
-		require(sales[sale].bid > 0);
+		require(sales[sale].discountBuy > 0);
         sales[sale].off = true;
-		require(token.transfer(sales[sale].bidder, sales[sale].bid));
+		require(token.transfer(sales[sale].liquidator, sales[sale].discountBuy));
         if (next(sales[sale].loanIndex) == 3) {
             require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)));
         }

@@ -266,17 +266,17 @@ contract("Sales", accounts => {
       await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
       const { lendBalAfter, borBalAfter, agentBalAfter } = await getBalancesAfter(this.token, lender, borrower, agent, this.med.address)
       const { fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
-      const bid  = await this.sales.bid.call(this.sale)
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
 
       assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
-      assert.equal(BigNumber(borBalBefore).plus(BigNumber(bid).plus(repaid).minus(owedForLiquidation)).toString(), borBalAfter.toString())
+      assert.equal(BigNumber(borBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedForLiquidation)).toString(), borBalAfter.toString())
       assert.equal(BigNumber(agentBalBefore).plus(fee).toString(), agentBalAfter)
 
       const accepted = await this.sales.accepted.call(this.sale)
       assert.equal(accepted, true)
     })
 
-    it('should disperse all funds to lender if bid + repaid doesn\'t cover principal + interest', async function() {
+    it('should disperse all funds to lender if discountBuy + repaid doesn\'t cover principal + interest', async function() {
       await approveAndTransfer(this.token, borrower, this.loans, toWei('100', 'ether'))
 
       const owedForLoan = await this.loans.owedForLoan.call(this.loan)
@@ -294,9 +294,9 @@ contract("Sales", accounts => {
       await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
       const { lendBalAfter, borBalAfter, agentBalAfter } = await getBalancesAfter(this.token, lender, borrower, agent, this.med.address)
       const { owedToLender, fee, penalty, repaid, owedForLiquidation, safe } = await getLoanValues(this.loans, this.loan)
-      const bid  = await this.sales.bid.call(this.sale)
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-      assert.equal(BigNumber(lendBalBefore).plus(BigNumber(bid).plus(repaid)).toFixed(), lendBalAfter.toString())
+      assert.equal(BigNumber(lendBalBefore).plus(BigNumber(discountBuy).plus(repaid)).toFixed(), lendBalAfter.toString())
       assert.equal(borBalBefore.toString(), borBalAfter.toString())
       assert.equal(agentBalBefore.toString(), agentBalAfter)
 
@@ -304,7 +304,7 @@ contract("Sales", accounts => {
       assert.equal(taken, true)
     })
 
-    it('should disperse all funds to lender if bid + repaid covers only principal + interest', async function() {
+    it('should disperse all funds to lender if discountBuy + repaid covers only principal + interest', async function() {
       await approveAndTransfer(this.token, borrower, this.loans, toWei('100', 'ether'))
 
       const owedForLoan = await this.loans.owedForLoan.call(this.loan)
@@ -313,8 +313,8 @@ contract("Sales", accounts => {
       const { collateral, collateralValue, minCollateralValue, repaid, owedToLender, fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
       const medValue = await this.med.read.call()
 
-      // bid + repaid - owedToLender = 0
-      // bid = medValue * x * 0.93 * collateral
+      // discountBuy + repaid - owedToLender = 0
+      // discountBuy = medValue * x * 0.93 * collateral
       // x = (-repaid + owedToLender) / (medValue * 0.93 * collateral * BTC_TO_SAT)
 
       const num = BigNumber(repaid).times(-1).plus(owedToLender)
@@ -329,7 +329,7 @@ contract("Sales", accounts => {
       const { lendBalBefore, borBalBefore, agentBalBefore, medBalBefore } = await getBalancesBefore(this.token, lender, borrower, agent, this.med.address)
       await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
       const { lendBalAfter, borBalAfter, agentBalAfter, medBalAfter } = await getBalancesAfter(this.token, lender, borrower, agent, this.med.address)
-      const bid  = await this.sales.bid.call(this.sale)
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
 
       assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
       assert.equal(medBalBefore.toString(), medBalAfter.toString())
@@ -349,8 +349,8 @@ contract("Sales", accounts => {
       const { collateral, collateralValue, minCollateralValue, repaid, owedToLender } = await getLoanValues(this.loans, this.loan)
       const medValue = await this.med.read.call()
 
-      // bid + repaid - owedToLender > 0
-      // bid = medValue * x * 0.93 * collateral
+      // discountBuy + repaid - owedToLender > 0
+      // discountBuy = medValue * x * 0.93 * collateral
       // x = (-repaid + owedToLender) / (medValue * 0.93 * collateral)
 
       const num = BigNumber(repaid).times(-1).plus(owedToLender).plus(1000) // increase slighlty to make statement true for ">"
@@ -366,10 +366,10 @@ contract("Sales", accounts => {
       await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
       const { lendBalAfter, borBalAfter, agentBalAfter, medBalAfter } = await getBalancesAfter(this.token, lender, borrower, agent, this.med.address)
       const { fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
-      const bid  = await this.sales.bid.call(this.sale)
+      const discountBuy = await this.sales.discountBuy.call(this.sale)
 
       assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
-      assert.equal(BigNumber(medBalBefore).plus(BigNumber(bid).plus(repaid).minus(owedToLender)).toString(), medBalAfter.toString())
+      assert.equal(BigNumber(medBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedToLender)).toString(), medBalAfter.toString())
       assert.equal(agentBalBefore.toString(), agentBalAfter.toString())
       assert.equal(borBalBefore.toString(), borBalAfter.toString())
 
@@ -386,8 +386,8 @@ contract("Sales", accounts => {
       const { collateral, collateralValue, minCollateralValue, repaid, owedToLender, fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
       const medValue = await this.med.read.call()
 
-      // bid + repaid - owedToLender - fee - penalty = 0
-      // bid = medValue * x * 0.93 * collateral
+      // discountBuy + repaid - owedToLender - fee - penalty = 0
+      // discountBuy = medValue * x * 0.93 * collateral
       // x = (-repaid + owedToLender + fee + penalty) / (medValue * 0.93 * collateral * BTC_TO_SAT)
 
       const num = BigNumber(repaid).times(-1).plus(owedToLender).plus(fee).plus(penalty)
@@ -402,7 +402,6 @@ contract("Sales", accounts => {
       const { lendBalBefore, borBalBefore, agentBalBefore, medBalBefore } = await getBalancesBefore(this.token, lender, borrower, agent, this.med.address)
       await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
       const { lendBalAfter, borBalAfter, agentBalAfter, medBalAfter } = await getBalancesAfter(this.token, lender, borrower, agent, this.med.address)
-      const bid  = await this.sales.bid.call(this.sale)
 
       assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
       assert.equal(BigNumber(medBalBefore).plus(penalty).toFixed(), medBalAfter.toString())
