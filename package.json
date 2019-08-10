@@ -23,9 +23,11 @@
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {
-    "@atomicloans/loan-bundle": "^0.2.50",
+    "@atomicloans/loan-bundle": "^0.2.52",
+    "@atomicloans/provider": "^0.2.48",
     "@codechecks/client": "^0.1.5",
     "@mblackmblack/bundle": "^0.2.12",
+    "bitcoinjs-lib": "^5.1.3",
     "chai": "^4.2.0",
     "chai-bignumber": "^3.0.0",
     "chai-bn": "^0.1.1",

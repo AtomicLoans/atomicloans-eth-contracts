@@ -61,72 +61,20 @@ contract Sales is DSMath { // Auctions
         return sales[sale].discountBuy;
     }
 
-    function liquidator(bytes32 sale) public returns (address) {
-        return sales[sale].liquidator;
-    }
-
-    function borrower(bytes32 sale) public returns (address) {
-        return sales[sale].borrower;
-    }
-
-    function lender(bytes32 sale) public returns (address) {
-        return sales[sale].lender;
-    }
-
-    function agent(bytes32 sale) public returns (address) {
-        return sales[sale].agent;
-    }
-
-    function swapExpiration(bytes32 sale) public returns (uint256) {
+    function swapExpiration(bytes32 sale) public view returns (uint256) {
         return sales[sale].createdAt + SWAP_EXP;
     }
 
-    function settlementExpiration(bytes32 sale) public returns (uint256) {
+    function settlementExpiration(bytes32 sale) public view returns (uint256) {
         return sales[sale].createdAt + SETTLEMENT_EXP;
     }
 
-    function pubKeyHash(bytes32 sale) public returns (bytes20) {
-        return sales[sale].pubKeyHash;
-    }
-
-    function accepted(bytes32 sale) public returns (bool) {
+    function accepted(bytes32 sale) public view returns (bool) {
         return sales[sale].accepted;
     }
 
-    function off(bytes32 sale) public returns (bool) {
+    function off(bytes32 sale) public view returns (bool) {
         return sales[sale].off;
-    }
-
-    function secretHashA(bytes32 sale) public returns (bytes32) {
-        return secretHashes[sale].secretHashA;
-    }
-
-    function secretA(bytes32 sale) public returns (bytes32) {
-        return secretHashes[sale].secretA;
-    }
-
-    function secretHashB(bytes32 sale) public returns (bytes32) {
-        return secretHashes[sale].secretHashB;
-    }
-
-    function secretB(bytes32 sale) public returns (bytes32) {
-        return secretHashes[sale].secretB;
-    }
-
-    function secretHashC(bytes32 sale) public returns (bytes32) {
-        return secretHashes[sale].secretHashC;
-    }
-
-    function secretC(bytes32 sale) public returns (bytes32) {
-        return secretHashes[sale].secretC;
-    }
-
-    function secretHashD(bytes32 sale) public returns (bytes32) {
-        return secretHashes[sale].secretHashD;
-    }
-
-    function secretD(bytes32 sale) public returns (bytes32) {
-        return secretHashes[sale].secretD;
     }
 
     constructor (Loans loans_, Medianizer med_, ERC20 token_) public {
@@ -223,7 +171,7 @@ contract Sales is DSMath { // Auctions
         available = sub(available, amount);
 
         if (available >= add(loans.fee(sales[sale].loanIndex), loans.penalty(sales[sale].loanIndex))) {
-            if (agent(sale) != address(0)) {
+            if (sales[sale].agent != address(0)) {
                 require(token.transfer(sales[sale].agent, loans.fee(sales[sale].loanIndex)));
             }
             require(token.approve(address(med), loans.penalty(sales[sale].loanIndex)));

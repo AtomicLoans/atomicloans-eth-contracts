@@ -2,10 +2,10 @@
 # yarn lockfile v1
 
 
-"@atomicloans/bitcoin-collateral-provider@^0.2.49":
-  version "0.2.49"
-  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-provider/-/bitcoin-collateral-provider-0.2.49.tgz#763973dc683c8f7dba05d258f07e20e1a43be8d6"
-  integrity sha512-eHM4jH6pF/IE62UN9GNf16XGYgZ3pfBdzfItci12r/PeBBcFoD7+9SmKsR+2KTrxttD+GpHNJagdpzsmj+H5HQ==
+"@atomicloans/bitcoin-collateral-provider@^0.2.52":
+  version "0.2.52"
+  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-provider/-/bitcoin-collateral-provider-0.2.52.tgz#91a56389fc49c26e273045fc5283fa23aa221d55"
+  integrity sha512-LWqISYxQMVE/Es1WiLB2NoNZwQw6KCSnnGDtZpySPRo+9wVgnxxJpInBpYPdZCGDw3SNysq7FkFRxjSb8FNXCg==
   dependencies:
     "@atomicloans/provider" "^0.2.48"
     "@babel/runtime" "^7.4.3"
@@ -30,12 +30,12 @@
     "@liquality/utils" "^0.2.11"
     bignumber.js "^9.0.0"
 
-"@atomicloans/loan-bundle@^0.2.50":
-  version "0.2.50"
-  resolved "https://registry.yarnpkg.com/@atomicloans/loan-bundle/-/loan-bundle-0.2.50.tgz#e8ba8a68fa8cbdaa975e53654f2cd39a25530a9a"
-  integrity sha512-Am1sT79/uAvMNdRcKp69Xp+LRE6Dd0Kc2TinejFSc/p1Gu3RC+ptp+58IfoUyQ2yTFrKxTl8lyvvSY0mVpRpMw==
+"@atomicloans/loan-bundle@^0.2.52":
+  version "0.2.52"
+  resolved "https://registry.yarnpkg.com/@atomicloans/loan-bundle/-/loan-bundle-0.2.52.tgz#7f0bd734dd9afcf231aefb51e4108958429403fb"
+  integrity sha512-dSiE1cfbhYL0g59gm0fwG9lWTs6mTlVN8Z4f0kjeDQF6wisIeiYh7PqVXjURjeXUxEZcpX3BOZFetw6ypCARUA==
   dependencies:
-    "@atomicloans/bitcoin-collateral-provider" "^0.2.49"
+    "@atomicloans/bitcoin-collateral-provider" "^0.2.52"
     "@atomicloans/bitcoin-collateral-swap-provider" "^0.2.49"
     "@atomicloans/loan-client" "^0.2.48"
     "@babel/runtime" "^7.4.3"
@@ -1188,7 +1188,7 @@ bitcoin-ops@^1.3.0, bitcoin-ops@^1.4.0:
   resolved "https://registry.yarnpkg.com/bitcoin-ops/-/bitcoin-ops-1.4.1.tgz#e45de620398e22fd4ca6023de43974ff42240278"
   integrity sha512-pef6gxZFztEhaE9RY9HmWVmiIHqCb2OyS4HPKkpc6CIiiOa3Qmuoylxc5P2EkU3w+5eTSifI9SEZC88idAIGow==
 
-bitcoinjs-lib@^5.1.1, bitcoinjs-lib@^5.1.2:
+bitcoinjs-lib@^5.1.1, bitcoinjs-lib@^5.1.2, bitcoinjs-lib@^5.1.3:
   version "5.1.3"
   resolved "https://registry.yarnpkg.com/bitcoinjs-lib/-/bitcoinjs-lib-5.1.3.tgz#d3810ca2935c75d8a8189c9e92c2c574059153ba"
   integrity sha512-lvFQGWv9CMFetWewhfpUIbcYThRwo80rzhjPztorS4uMo27DwcdPAMKs9dYSkKpJvEZwPuIrUYSuT/+Hs1pZjg==
