@@ -199,6 +199,11 @@ contract("E2E", accounts => {
   }
 
   beforeEach(async function () {
+    const blockHeight = await bitcoin.client.chain.getBlockHeight()
+    if (blockHeight < 101) {
+      await bitcoin.client.chain.generateBlock(101)
+    }
+
     lenderBTC = await getUnusedPubKeyAndAddress()
     borrowerBTC = await getUnusedPubKeyAndAddress()
     agentBTC = await getUnusedPubKeyAndAddress()

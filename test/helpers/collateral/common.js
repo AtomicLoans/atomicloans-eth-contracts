@@ -1,5 +1,5 @@
 const { Client, Provider, providers, crypto } = require('@mblackmblack/bundle')
-const { LoanClient, providers: lproviders } = require('../../../../chainabstractionlayer-loans/packages/loan-bundle/dist/index.cjs.js')
+const { LoanClient, providers: lproviders } = require('@atomicloans/loan-bundle')
 const config = require('./config.js')
 
 const bitcoinNetworks = providers.bitcoin.networks
