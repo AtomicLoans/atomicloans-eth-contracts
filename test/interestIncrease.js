@@ -208,8 +208,6 @@ contract("Interest", accounts => {
       const globalInterestRate = await this.funds.globalInterestRate.call()
       console.info('globalInterestRate', fromWei(globalInterestRate, 'gether'))
 
-      console.info(rateToSec('10'))
-
       const globalInterestRateNumerator = await this.funds.globalInterestRateNumerator.call()
       console.info('globalInterestRateNumerator', fromWei(globalInterestRateNumerator, 'gether'))
 
@@ -245,10 +243,9 @@ contract("Interest", accounts => {
 
       const utilizationRatio2 = await this.funds.lastUtilizationRatio.call()
       console.info('utilizationRatio2', fromWei(utilizationRatio2, 'gether'))
-      console.info('====================================')
 
       const interestRate2 = Math.pow(fromWei(globalInterestRate2, 'gether'), 31536000)
-      console.info('interestRate2', interestRate2)
+      console.info('~interestRate2', interestRate2)
       console.info('====================================')
 
 
@@ -271,22 +268,21 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams2, { from: borrower })
 
 
-      const globalInterestRate4 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate4', fromWei(globalInterestRate4, 'gether'))
+      const globalInterestRate3 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate3', fromWei(globalInterestRate3, 'gether'))
 
-      const globalInterestRateNumerator4 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator4', fromWei(globalInterestRateNumerator4, 'gether'))
+      const globalInterestRateNumerator3 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator3', fromWei(globalInterestRateNumerator3, 'gether'))
 
-      const utilizationRatio4 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio4', fromWei(utilizationRatio4, 'gether'))
+      const utilizationRatio3 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio3', fromWei(utilizationRatio3, 'gether'))
+
+      const interestRate3 = Math.pow(fromWei(globalInterestRate3, 'gether'), 31536000)
+      console.info('~interestRate3', interestRate3)
       console.info('====================================')
 
-      const interestRate4 = Math.pow(fromWei(globalInterestRate4, 'gether'), 31536000)
-      console.info('interestRate4', interestRate4)
-      console.info('====================================')
-
-      assert.equal(BigNumber(fromWei(globalInterestRate4, 'gether')).gte(BigNumber(rateToSec('12'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate4, 'gether')).lt(BigNumber(rateToSec('12.1'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate3, 'gether')).gte(BigNumber(rateToSec('12'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate3, 'gether')).lt(BigNumber(rateToSec('12.1'))), true)
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
 
@@ -303,22 +299,21 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams3, { from: borrower })
 
 
-      const globalInterestRate5 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate5', fromWei(globalInterestRate5, 'gether'))
+      const globalInterestRate4 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate4', fromWei(globalInterestRate4, 'gether'))
 
-      const globalInterestRateNumerator5 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator5', fromWei(globalInterestRateNumerator5, 'gether'))
+      const globalInterestRateNumerator4 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator4', fromWei(globalInterestRateNumerator4, 'gether'))
 
-      const utilizationRatio5 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio5', fromWei(utilizationRatio5, 'gether'))
+      const utilizationRatio4 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio4', fromWei(utilizationRatio4, 'gether'))
+
+      const interestRate4 = Math.pow(fromWei(globalInterestRate4, 'gether'), 31536000)
+      console.info('~interestRate4', interestRate4)
       console.info('====================================')
 
-      const interestRate5 = Math.pow(fromWei(globalInterestRate5, 'gether'), 31536000)
-      console.info('interestRate5', interestRate5)
-      console.info('====================================')
-
-      assert.equal(BigNumber(fromWei(globalInterestRate5, 'gether')).gte(BigNumber(rateToSec('13'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate5, 'gether')).lt(BigNumber(rateToSec('13.1'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate4, 'gether')).gte(BigNumber(rateToSec('13'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate4, 'gether')).lt(BigNumber(rateToSec('13.1'))), true)
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
 
@@ -335,22 +330,21 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams4, { from: borrower })
 
 
-      const globalInterestRate6 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate6', fromWei(globalInterestRate6, 'gether'))
+      const globalInterestRate5 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate5', fromWei(globalInterestRate5, 'gether'))
 
-      const globalInterestRateNumerator6 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator6', fromWei(globalInterestRateNumerator6, 'gether'))
+      const globalInterestRateNumerator5 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator5', fromWei(globalInterestRateNumerator5, 'gether'))
 
-      const utilizationRatio6 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio6', fromWei(utilizationRatio6, 'gether'))
+      const utilizationRatio5 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio5', fromWei(utilizationRatio5, 'gether'))
+
+      const interestRate5 = Math.pow(fromWei(globalInterestRate5, 'gether'), 31536000)
+      console.info('~interestRate5', interestRate5)
       console.info('====================================')
 
-      const interestRate6 = Math.pow(fromWei(globalInterestRate6, 'gether'), 31536000)
-      console.info('interestRate6', interestRate6)
-      console.info('====================================')
-
-      assert.equal(BigNumber(fromWei(globalInterestRate6, 'gether')).gte(BigNumber(rateToSec('14'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate6, 'gether')).lt(BigNumber(rateToSec('14.1'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate5, 'gether')).gte(BigNumber(rateToSec('14'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate5, 'gether')).lt(BigNumber(rateToSec('14.1'))), true)
 
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
@@ -368,22 +362,21 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams5, { from: borrower })
 
 
-      const globalInterestRate7 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate7', fromWei(globalInterestRate7, 'gether'))
+      const globalInterestRate6 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate6', fromWei(globalInterestRate6, 'gether'))
 
-      const globalInterestRateNumerator7 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator7', fromWei(globalInterestRateNumerator7, 'gether'))
+      const globalInterestRateNumerator6 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator6', fromWei(globalInterestRateNumerator6, 'gether'))
 
-      const utilizationRatio7 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio7', fromWei(utilizationRatio7, 'gether'))
+      const utilizationRatio6 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio6', fromWei(utilizationRatio6, 'gether'))
+
+      const interestRate6 = Math.pow(fromWei(globalInterestRate6, 'gether'), 31536000)
+      console.info('~interestRate6', interestRate6)
       console.info('====================================')
 
-      const interestRate7 = Math.pow(fromWei(globalInterestRate7, 'gether'), 31536000)
-      console.info('interestRate7', interestRate7)
-      console.info('====================================')
-
-      assert.equal(BigNumber(fromWei(globalInterestRate7, 'gether')).gt(BigNumber(rateToSec('15'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate7, 'gether')).lt(BigNumber(rateToSec('15.2'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate6, 'gether')).gt(BigNumber(rateToSec('15'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate6, 'gether')).lt(BigNumber(rateToSec('15.2'))), true)
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
 
@@ -400,22 +393,21 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams6, { from: borrower })
 
 
-      const globalInterestRate8 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate8', fromWei(globalInterestRate8, 'gether'))
+      const globalInterestRate7 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate7', fromWei(globalInterestRate7, 'gether'))
 
-      const globalInterestRateNumerator8 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator8', fromWei(globalInterestRateNumerator8, 'gether'))
+      const globalInterestRateNumerator7 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator7', fromWei(globalInterestRateNumerator7, 'gether'))
 
-      const utilizationRatio8 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio8', fromWei(utilizationRatio8, 'gether'))
+      const utilizationRatio7 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio7', fromWei(utilizationRatio7, 'gether'))
+
+      const interestRate7 = Math.pow(fromWei(globalInterestRate7, 'gether'), 31536000)
+      console.info('~interestRate7', interestRate7)
       console.info('====================================')
 
-      const interestRate8 = Math.pow(fromWei(globalInterestRate8, 'gether'), 31536000)
-      console.info('interestRate8', interestRate8)
-      console.info('====================================')
-
-      assert.equal(BigNumber(fromWei(globalInterestRate8, 'gether')).gt(BigNumber(rateToSec('16'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate8, 'gether')).lt(BigNumber(rateToSec('16.2'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate7, 'gether')).gt(BigNumber(rateToSec('16'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate7, 'gether')).lt(BigNumber(rateToSec('16.2'))), true)
 
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
@@ -425,22 +417,21 @@ contract("Interest", accounts => {
       await this.funds.deposit(this.fund, toWei('1500', 'ether'))
 
 
-      const globalInterestRate9 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate9', fromWei(globalInterestRate9, 'gether'))
+      const globalInterestRate8 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate8', fromWei(globalInterestRate8, 'gether'))
 
-      const globalInterestRateNumerator9 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator9', fromWei(globalInterestRateNumerator9, 'gether'))
+      const globalInterestRateNumerator8 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator8', fromWei(globalInterestRateNumerator8, 'gether'))
 
-      const utilizationRatio9 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio9', fromWei(utilizationRatio9, 'gether'))
+      const utilizationRatio8 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio8', fromWei(utilizationRatio8, 'gether'))
+
+      const interestRate8 = Math.pow(fromWei(globalInterestRate8, 'gether'), 31536000)
+      console.info('~interestRate8', interestRate8)
       console.info('====================================')
 
-      const interestRate9 = Math.pow(fromWei(globalInterestRate9, 'gether'), 31536000)
-      console.info('interestRate9', interestRate9)
-      console.info('====================================')
-
-      assert.equal(BigNumber(fromWei(globalInterestRate9, 'gether')).gt(BigNumber(rateToSec('15'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate9, 'gether')).lt(BigNumber(rateToSec('15.1'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate8, 'gether')).gt(BigNumber(rateToSec('15'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate8, 'gether')).lt(BigNumber(rateToSec('15.1'))), true)
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
 
@@ -457,23 +448,22 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams7, { from: borrower })
 
 
-      const globalInterestRate10 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate10', fromWei(globalInterestRate10, 'gether'))
+      const globalInterestRate9 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate9', fromWei(globalInterestRate9, 'gether'))
 
-      const globalInterestRateNumerator10 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator10', fromWei(globalInterestRateNumerator10, 'gether'))
+      const globalInterestRateNumerator9 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator9', fromWei(globalInterestRateNumerator9, 'gether'))
 
-      const utilizationRatio10 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio10', fromWei(utilizationRatio10, 'gether'))
+      const utilizationRatio9 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio9', fromWei(utilizationRatio9, 'gether'))
+
+      const interestRate9 = Math.pow(fromWei(globalInterestRate9, 'gether'), 31536000)
+      console.info('~interestRate9', interestRate9)
       console.info('====================================')
 
-      const interestRate10 = Math.pow(fromWei(globalInterestRate10, 'gether'), 31536000)
-      console.info('interestRate10', interestRate10)
-      console.info('====================================')
 
-
-      assert.equal(BigNumber(fromWei(globalInterestRate10, 'gether')).gt(BigNumber(rateToSec('16'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate10, 'gether')).lt(BigNumber(rateToSec('16.2'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate9, 'gether')).gt(BigNumber(rateToSec('16'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate9, 'gether')).lt(BigNumber(rateToSec('16.2'))), true)
 
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
@@ -491,23 +481,22 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams8, { from: borrower })
 
 
-      const globalInterestRate11 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate11', fromWei(globalInterestRate11, 'gether'))
+      const globalInterestRate10 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate10', fromWei(globalInterestRate10, 'gether'))
 
-      const globalInterestRateNumerator11 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator11', fromWei(globalInterestRateNumerator11, 'gether'))
+      const globalInterestRateNumerator10 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator10', fromWei(globalInterestRateNumerator10, 'gether'))
 
-      const utilizationRatio11 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio11', fromWei(utilizationRatio11, 'gether'))
+      const utilizationRatio10 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio10', fromWei(utilizationRatio10, 'gether'))
+
+      const interestRate10 = Math.pow(fromWei(globalInterestRate10, 'gether'), 31536000)
+      console.info('~interestRate10', interestRate10)
       console.info('====================================')
 
-      const interestRate11 = Math.pow(fromWei(globalInterestRate11, 'gether'), 31536000)
-      console.info('interestRate11', interestRate11)
-      console.info('====================================')
 
-
-      assert.equal(BigNumber(fromWei(globalInterestRate11, 'gether')).gt(BigNumber(rateToSec('17'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate11, 'gether')).lt(BigNumber(rateToSec('17.2'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate10, 'gether')).gt(BigNumber(rateToSec('17'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate10, 'gether')).lt(BigNumber(rateToSec('17.2'))), true)
 
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
@@ -525,23 +514,22 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams9, { from: borrower })
 
 
-      const globalInterestRate12 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate12', fromWei(globalInterestRate12, 'gether'))
+      const globalInterestRate11 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate11', fromWei(globalInterestRate11, 'gether'))
 
-      const globalInterestRateNumerator12 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator12', fromWei(globalInterestRateNumerator12, 'gether'))
+      const globalInterestRateNumerator11 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator11', fromWei(globalInterestRateNumerator11, 'gether'))
 
-      const utilizationRatio12 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio12', fromWei(utilizationRatio12, 'gether'))
+      const utilizationRatio11 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio11', fromWei(utilizationRatio11, 'gether'))
+
+      const interestRate11 = Math.pow(fromWei(globalInterestRate11, 'gether'), 31536000)
+      console.info('~interestRate11', interestRate11)
       console.info('====================================')
 
-      const interestRate12 = Math.pow(fromWei(globalInterestRate12, 'gether'), 31536000)
-      console.info('interestRate12', interestRate12)
-      console.info('====================================')
 
-
-      assert.equal(BigNumber(fromWei(globalInterestRate12, 'gether')).gt(BigNumber(rateToSec('18'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate12, 'gether')).lt(BigNumber(rateToSec('18.3'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate11, 'gether')).gt(BigNumber(rateToSec('18'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate11, 'gether')).lt(BigNumber(rateToSec('18.3'))), true)
 
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
@@ -559,22 +547,21 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams10, { from: borrower })
 
 
-      const globalInterestRate13 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate13', fromWei(globalInterestRate13, 'gether'))
+      const globalInterestRate12 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate12', fromWei(globalInterestRate12, 'gether'))
 
-      const globalInterestRateNumerator13 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator13', fromWei(globalInterestRateNumerator13, 'gether'))
+      const globalInterestRateNumerator12 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator12', fromWei(globalInterestRateNumerator12, 'gether'))
 
-      const utilizationRatio13 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio13', fromWei(utilizationRatio13, 'gether'))
+      const utilizationRatio12 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio12', fromWei(utilizationRatio12, 'gether'))
+
+      const interestRate12 = Math.pow(fromWei(globalInterestRate12, 'gether'), 31536000)
+      console.info('~interestRate12', interestRate12)
       console.info('====================================')
 
-      const interestRate13 = Math.pow(fromWei(globalInterestRate13, 'gether'), 31536000)
-      console.info('interestRate13', interestRate13)
-      console.info('====================================')
-
-      assert.equal(BigNumber(fromWei(globalInterestRate13, 'gether')).gt(BigNumber(rateToSec('19'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate13, 'gether')).lt(BigNumber(rateToSec('19.4'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate12, 'gether')).gt(BigNumber(rateToSec('19'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate12, 'gether')).lt(BigNumber(rateToSec('19.4'))), true)
 
 
       await time.increase(toSecs({ days: 1, minutes: 1 }))
@@ -592,22 +579,21 @@ contract("Interest", accounts => {
       await this.funds.request(...loanParams11, { from: borrower })
 
 
-      const globalInterestRate14 = await this.funds.globalInterestRate.call()
-      console.info('globalInterestRate14', fromWei(globalInterestRate14, 'gether'))
+      const globalInterestRate13 = await this.funds.globalInterestRate.call()
+      console.info('globalInterestRate13', fromWei(globalInterestRate13, 'gether'))
 
-      const globalInterestRateNumerator14 = await this.funds.globalInterestRateNumerator.call()
-      console.info('globalInterestRateNumerator14', fromWei(globalInterestRateNumerator14, 'gether'))
+      const globalInterestRateNumerator13 = await this.funds.globalInterestRateNumerator.call()
+      console.info('globalInterestRateNumerator13', fromWei(globalInterestRateNumerator13, 'gether'))
 
-      const utilizationRatio14 = await this.funds.lastUtilizationRatio.call()
-      console.info('utilizationRatio14', fromWei(utilizationRatio14, 'gether'))
+      const utilizationRatio13 = await this.funds.lastUtilizationRatio.call()
+      console.info('utilizationRatio13', fromWei(utilizationRatio13, 'gether'))
+
+      const interestRate13 = Math.pow(fromWei(globalInterestRate13, 'gether'), 31536000)
+      console.info('~interestRate13', interestRate13)
       console.info('====================================')
 
-      const interestRate14 = Math.pow(fromWei(globalInterestRate14, 'gether'), 31536000)
-      console.info('interestRate14', interestRate14)
-      console.info('====================================')
-
-      assert.equal(BigNumber(fromWei(globalInterestRate14, 'gether')).gte(BigNumber(rateToSec('20'))), true)
-      assert.equal(BigNumber(fromWei(globalInterestRate14, 'gether')).lt(BigNumber(rateToSec('20.2'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate13, 'gether')).gte(BigNumber(rateToSec('20'))), true)
+      assert.equal(BigNumber(fromWei(globalInterestRate13, 'gether')).lt(BigNumber(rateToSec('20.2'))), true)
     })
   })
 })
