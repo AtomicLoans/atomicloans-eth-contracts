@@ -8,6 +8,6 @@ contract ExampleDaiCoin is ERC20 {
   uint public decimals = 18;
 
   constructor () public {
-    _mint(msg.sender, 12020000000000000000000);
+    _mint(msg.sender, 22020000000000000000000);
   }
 }

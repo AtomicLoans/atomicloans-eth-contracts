@@ -9,13 +9,35 @@ pragma solidity ^0.5.8;
 contract Funds is DSMath {
     Loans loans;
 
+    uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;  // 140% (1.4x in RAY) minimum collateralization ratio
+    uint256 public constant DEFAULT_LIQUIDATION_PENALTY = 1000000000937303470807876289; // 3% (3 in RAY) liquidation penalty
+    uint256 public constant DEFAULT_AGENT_FEE = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional agent fee
+    uint256 public constant DEFAULT_MIN_LOAN_AMT = 20000000000000000000; // Min 20 WAD
+    uint256 public constant DEFAULT_MAX_LOAN_AMT = 2**256-1; // Max 2**256
+    uint256 public constant DEFAULT_MIN_LOAN_DUR = 21600; // 6 hours
+    uint256 public constant NUM_SECONDS_IN_YEAR = 31536000;
+
     mapping (address => bytes32[]) public secretHashes;    // User secret hashes
     mapping (address => uint256)   public secretHashIndex; // User secret hash index
 
     mapping (address => bytes)     public pubKeys;  // User A Coin PubKeys
     
-    mapping (bytes32 => Fund)      public funds;  
+    mapping (bytes32 => Fund)      public funds;
+    mapping (address => Fund)      public fundOwner;
     uint256                        public fundIndex;
+
+    uint256 public lastGlobalInterestUpdated;
+    uint256 public marketLiquidity;
+    uint256 public totalBorrow;
+    uint256 public globalInterestRateNumerator;
+
+    uint256 public lastUtilizationRatio;
+    uint256 public globalInterestRate;
+    uint256 public maxUtilizationDelta;
+    uint256 public utilizationInterestDivisor;
+    uint256 public maxInterestRateNumerator;
+    uint256 public minInterestRateNumerator;
+    uint256 public interestUpdateDelay;
 
     ERC20 public token;
 
@@ -33,11 +55,24 @@ contract Funds is DSMath {
         uint256  liquidationRatio; // Liquidation Ratio in RAY
         address  agent;            // Optional Automator Agent
         uint256  balance;          // Locked amount in fund (in token)
+        bool     custom;
     }
 
     constructor(ERC20 token_) public {
         deployer = msg.sender;
         token = token_;
+        utilizationInterestDivisor = 10531702972595856680093239305; // 10.53 in RAY (~10:1 ratio for % change in utilization ratio to % change in interest rate)
+        maxUtilizationDelta = 95310179948351216961192521; // Global Interest Rate Numerator can change up to 9.53% in RAY (~10% change in utilization ratio = ~1% change in interest rate)
+        globalInterestRateNumerator =  95310179948351216961192521; // ~10%  ( (e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        maxInterestRateNumerator    = 182321557320989604265864303; // ~20%  ( (e^(ln(1.200)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        minInterestRateNumerator    =  24692612600038629323181834; // ~2.5% ( (e^(ln(1.025)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        interestUpdateDelay = 86400; // 1 DAY
+        globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
+
+        // utilizationInterestDivisor calculation (this is aiming for utilizationInterestDivisor to allow max change from 10% APR to be 11% APR despite using compound interest)
+        // 1 + (globalInterestRateNumerator + (maxUtilizationDelta * RAY) / utilizationInterestDivisor) / NUM_SECONDS_IN_YEAR = 11% interest per second
+        // utilizationInterestDivisor = (maxUtilizationDelta * RAY) / ( (11% interest per second - 1)(NUM_SECONDS_IN_YEAR) - globalInterestRateNumerator )
+        // utilizationInterestDivisor = ((e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) * (10^27)) / ( (( e^(ln(1.110)/(60*60*24*365)) -1 ) * ( 60*60*24*365 )) - ((e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365)))
     }
 
     function setLoans(Loans loans_) public {
@@ -47,40 +82,90 @@ contract Funds is DSMath {
         require(token.approve(address(loans_), 2**256-1));
     }
 
-    function lender(bytes32 fund)    public view returns (address) {
+    // NOTE: THE FOLLOWING FUNCTIONS ALLOW VARIABLES TO BE MODIFIED BY THE 
+    //       DEPLOYER, SINCE THE ALGORITHM FOR CALCULATING GLOBAL INTEREST 
+    //       RATE IS UNTESTED WITH A DECENTRALIZED PROTOCOL, AND MAY NEED TO
+    //       BE UPDATED IN THE CASE THAT RATES DO NOT UPDATE AS INTENDED. A 
+    //       FUTURE ITERATION OF THE PROTOCOL WILL REMOVE THESE FUNCTIONS. IF 
+    //       YOU WISH TO OPT OUT OF GLOBAL APR YOU CAN CREATE A CUSTOM LOAN FUND
+    // ======================================================================
+    function setUtilizationInterestDivisor(uint256 utilizationInterestDivisor_) external {
+        require(msg.sender == deployer);
+        utilizationInterestDivisor = utilizationInterestDivisor_;
+    }
+
+    function setMaxUtilizationDelta(uint256 maxUtilizationDelta_) external {
+        require(msg.sender == deployer);
+        maxUtilizationDelta = maxUtilizationDelta_;
+    }
+
+    function setGlobalInterestRateNumerator(uint256 globalInterestRateNumerator_) external {
+        require(msg.sender == deployer);
+        globalInterestRateNumerator = globalInterestRateNumerator_;
+    }
+
+    function setGlobalInterestRate(uint256 globalInterestRate_) external {
+        require(msg.sender == deployer);
+        globalInterestRate = globalInterestRate_;
+    }
+
+    function setMaxInterestRateNumerator(uint256 maxInterestRateNumerator_) external {
+        require(msg.sender == deployer);
+        maxInterestRateNumerator = maxInterestRateNumerator_;
+    }
+
+    function setMinInterestRateNumerator(uint256 minInterestRateNumerator_) external {
+        require(msg.sender == deployer);
+        minInterestRateNumerator = minInterestRateNumerator_;
+    }
+
+    function setInterestUpdateDelay(uint256 interestUpdateDelay_) external {
+        require(msg.sender == deployer);
+        interestUpdateDelay = interestUpdateDelay_;
+    }
+    // ======================================================================
+
+    function lender(bytes32 fund) public view returns (address) {
         return funds[fund].lender;
     }
 
-    function minLoanAmt(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].minLoanAmt;
+    function minLoanAmt(bytes32 fund) public view returns (uint256) {
+        if (funds[fund].custom) { return funds[fund].minLoanAmt; }
+        else                    { return DEFAULT_MIN_LOAN_AMT; }
     }
 
-    function maxLoanAmt(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].maxLoanAmt;
+    function maxLoanAmt(bytes32 fund) public view returns (uint256) {
+        if (funds[fund].custom) { return funds[fund].maxLoanAmt; }
+        else                    { return DEFAULT_MAX_LOAN_AMT; }
     }
 
-    function minLoanDur(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].minLoanDur;
+    function minLoanDur(bytes32 fund) public view returns (uint256) {
+        if (funds[fund].custom) { return funds[fund].minLoanDur; }
+        else                    { return DEFAULT_MIN_LOAN_DUR; }
     }
 
-    function maxLoanDur(bytes32 fund)    public view returns (uint256) {
+    function maxLoanDur(bytes32 fund) public view returns (uint256) {
         return funds[fund].maxLoanDur;
     }
 
-    function interest(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].interest;
+    function interest(bytes32 fund) public view returns (uint256) {
+        if (funds[fund].custom) { return funds[fund].interest; }
+        else                    { return globalInterestRate; }
     }
 
-    function penalty(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].penalty;
+    function penalty(bytes32 fund) public view returns (uint256) {
+        if (funds[fund].custom) { return funds[fund].penalty; }
+        else                    { return DEFAULT_LIQUIDATION_PENALTY; }
     }
 
-    function fee(bytes32 fund)    public view returns (uint256) {
-        return funds[fund].fee;
+    function fee(bytes32 fund) public view returns (uint256) {
+        if (funds[fund].custom) { return funds[fund].fee; }
+        else                    { return DEFAULT_AGENT_FEE; }
     }
 
-    function liquidationRatio(bytes32 fund)     public view returns (uint256) {
-        return funds[fund].liquidationRatio;
+    function liquidationRatio(bytes32 fund) public view returns (uint256) {
+        if (funds[fund].custom) { return funds[fund].liquidationRatio; }
+        else                    { return DEFAULT_LIQUIDATION_RATIO; }
     }
 
     function agent(bytes32 fund)   public view returns (address) {
@@ -91,7 +176,24 @@ contract Funds is DSMath {
         return funds[fund].balance;
     }
 
+    function custom(bytes32 fund) public view returns (bool) {
+        return funds[fund].custom;
+    }
+
     function create(
+        uint256  maxLoanDur_,       // Max Loan Duration
+        address  agent_             // Optional Address Automated Agent
+    ) external returns (bytes32 fund) {
+        require(fundOwner[msg.sender].lender != msg.sender); // Only allow one loan fund per address
+        fundIndex = add(fundIndex, 1);
+        fund = bytes32(fundIndex);
+        funds[fund].lender           = msg.sender;
+        funds[fund].maxLoanDur       = maxLoanDur_;
+        funds[fund].agent            = agent_;
+        funds[fund].custom           = false;
+    }
+
+    function createCustom(
         uint256  minLoanAmt_,       // Min Loan Amount
         uint256  maxLoanAmt_,       // Max Loan Amount
         uint256  minLoanDur_,       // Min Loan Duration
@@ -102,6 +204,7 @@ contract Funds is DSMath {
         uint256  fee_,              // Optional Automation Fee Rate
         address  agent_             // Optional Address Automated Agent
     ) external returns (bytes32 fund) {
+        require(fundOwner[msg.sender].lender != msg.sender); // Only allow one loan fund per address
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
@@ -114,12 +217,17 @@ contract Funds is DSMath {
         funds[fund].fee              = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
         funds[fund].agent            = agent_;
+        funds[fund].custom           = true;
     }
 
     function deposit(bytes32 fund, uint256 amount) external { // Deposit funds to Loan Fund
         // require(msg.sender == lender(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         funds[fund].balance = add(funds[fund].balance, amount);
         require(token.transferFrom(msg.sender, address(this), amount));
+        if (funds[fund].custom == false) {
+            marketLiquidity = add(marketLiquidity, amount);
+            calcGlobalInterest();
+        }
     }
 
     function generate(bytes32[] calldata secretHashes_) external { // Generate secret hashes for Loan Fund
@@ -130,6 +238,49 @@ contract Funds is DSMath {
 
     function setPubKey(bytes calldata pubKey) external { // Set PubKey for Fund
         pubKeys[msg.sender] = pubKey;
+    }
+
+
+    function increaseMarketLiquidity(uint256 amount) external {
+        require(msg.sender == address(loans));
+        marketLiquidity = add(marketLiquidity, amount);
+    }
+
+    function decreaseMarketLiquidity(uint256 amount) external {
+        require(msg.sender == address(loans));
+        marketLiquidity = sub(marketLiquidity, amount);
+    }
+
+    function increaseTotalBorrow(uint256 amount) external {
+        require(msg.sender == address(loans));
+        totalBorrow = add(totalBorrow, amount);
+    }
+
+    function decreaseTotalBorrow(uint256 amount) external {
+        require(msg.sender == address(loans));
+        totalBorrow = sub(totalBorrow, amount);
+    }
+
+    function calcGlobalInterest() public {
+        // if utilizationRatio increases newAPR = oldAPR + min(10%, utilizationRatio) / 10
+        // if utilizationRatio decreases newAPR = oldAPR - max(10%, utilizationRatio) / 10
+        
+        if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) { // Only updates if after a day
+            uint256 utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow));
+
+            if (utilizationRatio > lastUtilizationRatio) {
+                uint256 changeUtilizationRatio = sub(utilizationRatio, lastUtilizationRatio);
+                globalInterestRateNumerator = min(maxInterestRateNumerator, add(globalInterestRateNumerator, rdiv(min(maxUtilizationDelta, changeUtilizationRatio), utilizationInterestDivisor)));
+            } else {
+                uint256 changeUtilizationRatio = sub(lastUtilizationRatio, utilizationRatio);
+                globalInterestRateNumerator = max(minInterestRateNumerator, sub(globalInterestRateNumerator, rdiv(min(maxUtilizationDelta, changeUtilizationRatio), utilizationInterestDivisor)));
+            }
+
+            globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
+
+            lastGlobalInterestUpdated = now;
+            lastUtilizationRatio = utilizationRatio;
+        }
     }
 
     function update(                // Set Loan Fund details
@@ -176,15 +327,19 @@ contract Funds is DSMath {
         loans.fund(loanIndex);
     }
 
-    function withdraw(bytes32 fund, uint256 amt) external { // Withdraw funds from Loan Fund
+    function withdraw(bytes32 fund, uint256 amount) external { // Withdraw funds from Loan Fund
         require(msg.sender     == lender(fund));
-        require(balance(fund)  >= amt);
-        funds[fund].balance = sub(funds[fund].balance, amt);
-        require(token.transfer(lender(fund), amt));
+        require(balance(fund)  >= amount);
+        funds[fund].balance = sub(funds[fund].balance, amount);
+        require(token.transfer(lender(fund), amount));
+        if (funds[fund].custom == false) {
+            marketLiquidity = sub(marketLiquidity, amount);
+            calcGlobalInterest();
+        }
     }
 
-    function calcInterest(uint256 amt, uint256 rate, uint256 lodu) public pure returns (uint256) { // Calculate interest
-        return sub(rmul(amt, rpow(rate, lodu)), amt);
+    function calcInterest(uint256 amount, uint256 rate, uint256 loanDur) public pure returns (uint256) { // Calculate interest
+        return sub(rmul(amount, rpow(rate, loanDur)), amount);
     }
 
     function createLoan(      // Private Loan Create
@@ -196,7 +351,7 @@ contract Funds is DSMath {
         loanIndex = loans.create(
             now + loanDur_,
             [ msg.sender, lender(fund), funds[fund].agent],
-            [ amount_, calcInterest(amount_, interest(fund), loanDur_), calcInterest(amount_, penalty(fund), loanDur_), calcInterest(amount_, fee(fund), loanDur_), collateral_, funds[fund].liquidationRatio],
+            [ amount_, calcInterest(amount_, interest(fund), loanDur_), calcInterest(amount_, penalty(fund), loanDur_), calcInterest(amount_, fee(fund), loanDur_), collateral_, liquidationRatio(fund)],
             fund
         );
     }
