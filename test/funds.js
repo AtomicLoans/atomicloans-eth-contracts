@@ -83,8 +83,8 @@ contract("Funds", accounts => {
       agent
     ]
 
-    this.fund = await this.funds.create.call(...fundParams)
-    await this.funds.create(...fundParams)
+    this.fund = await this.funds.createCustom.call(...fundParams)
+    await this.funds.createCustom(...fundParams)
   })
 
   describe('generate secret hashes', function() {
@@ -191,8 +191,8 @@ contract("Funds", accounts => {
         agent
       ]
 
-      this.fund = await this.funds.create.call(...fundParams)
-      await this.funds.create(...fundParams)
+      this.fund = await this.funds.createCustom.call(...fundParams)
+      await this.funds.createCustom(...fundParams)
 
       const finalFundIndex = await this.funds.fundIndex.call()
 
