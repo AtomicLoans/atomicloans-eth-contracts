@@ -262,10 +262,13 @@ contract Funds is DSMath {
     }
 
     function calcGlobalInterest() public {
-        // if utilizationRatio increases newAPR = oldAPR + min(10%, utilizationRatio) / 10
-        // if utilizationRatio decreases newAPR = oldAPR - max(10%, utilizationRatio) / 10
-        
-        if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) { // Only updates if after a day
+        // if utilizationRatio increases newAPR = oldAPR + (min(10%, utilizationRatio) / 10)
+        // if utilizationRatio decreases newAPR = oldAPR - (max(10%, utilizationRatio) / 10)
+        // ΔAPR should be less than or equal to 1%
+        // For every 10% change in utilization ratio, the interest rate will change a maximum of 1%
+        // i.e. newAPR = 11.5% + (10% / 10) = 12.5%
+
+        if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) { // Only updates if globalInterestRate hasn't been changed in over a day
             uint256 utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow));
 
             if (utilizationRatio > lastUtilizationRatio) {
