@@ -20,8 +20,8 @@
     "test:loans": "truffle test ./test/loans.js",
     "test:sales": "truffle test ./test/sales.js",
     "test:e2e": "truffle test ./test/e2e.js",
-    "test:interest_increase": "truffle test ./test/interestIncrease.js",
-    "test:interest_decrease": "truffle test ./test/interestDecrease.js",
+    "test:global_interest_increase": "truffle test ./test/globalInterestIncrease.js",
+    "test:global_interest_decrease": "truffle test ./test/globalInterestDecrease.js",
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {
