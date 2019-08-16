@@ -2,11 +2,11 @@ import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 import './Loans.sol';
-import './DSMath.sol';
+import './ALCompound.sol';
 
 pragma solidity ^0.5.8;
 
-contract Funds is DSMath {
+contract Funds is DSMath, ALCompound {
     Loans loans;
 
     uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;  // 140% (1.4x in RAY) minimum collateralization ratio
@@ -40,6 +40,7 @@ contract Funds is DSMath {
     uint256 public interestUpdateDelay;
 
     ERC20 public token;
+    CTokenInterface public ctoken;
 
     address deployer;
 
@@ -56,11 +57,17 @@ contract Funds is DSMath {
         address  agent;            // Optional Automator Agent
         uint256  balance;          // Locked amount in fund (in token)
         bool     custom;
+        bool     compoundEnabled;
     }
 
-    constructor(ERC20 token_) public {
+    constructor(
+        ERC20 token_,
+        CTokenInterface ctoken_,
+        address troller_
+    ) public ALCompound(troller_) {
         deployer = msg.sender;
         token = token_;
+        ctoken = ctoken_;
         utilizationInterestDivisor = 10531702972595856680093239305; // 10.53 in RAY (~10:1 ratio for % change in utilization ratio to % change in interest rate)
         maxUtilizationDelta = 95310179948351216961192521; // Global Interest Rate Numerator can change up to 9.53% in RAY (~10% change in utilization ratio = ~1% change in interest rate)
         globalInterestRateNumerator =  95310179948351216961192521; // ~10%  ( (e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) )
@@ -182,8 +189,9 @@ contract Funds is DSMath {
 
     function create(
         uint256  maxLoanDur_,       // Max Loan Duration
-        address  agent_             // Optional Address Automated Agent
-    ) external returns (bytes32 fund) {
+        address  agent_,            // Optional Address Automated Agent
+        bool     compoundEnabled_
+    ) external returns (bytes32 fund) { 
         require(fundOwner[msg.sender].lender != msg.sender); // Only allow one loan fund per address
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -191,6 +199,7 @@ contract Funds is DSMath {
         funds[fund].maxLoanDur       = maxLoanDur_;
         funds[fund].agent            = agent_;
         funds[fund].custom           = false;
+        funds[fund].compoundEnabled  = compoundEnabled_;
     }
 
     function createCustom(
@@ -202,7 +211,8 @@ contract Funds is DSMath {
         uint256  interest_,         // Interest Rate
         uint256  penalty_,          // Liquidation Penalty Rate
         uint256  fee_,              // Optional Automation Fee Rate
-        address  agent_             // Optional Address Automated Agent
+        address  agent_,            // Optional Address Automated Agent
+        bool     compoundEnabled_   // Enable Compound
     ) external returns (bytes32 fund) {
         require(fundOwner[msg.sender].lender != msg.sender); // Only allow one loan fund per address
         fundIndex = add(fundIndex, 1);
@@ -218,12 +228,17 @@ contract Funds is DSMath {
         funds[fund].liquidationRatio = liquidationRatio_;
         funds[fund].agent            = agent_;
         funds[fund].custom           = true;
+        funds[fund].compoundEnabled  = compoundEnabled_;
     }
 
     function deposit(bytes32 fund, uint256 amount) external { // Deposit funds to Loan Fund
         // require(msg.sender == lender(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         funds[fund].balance = add(funds[fund].balance, amount);
-        require(token.transferFrom(msg.sender, address(this), amount));
+        if (funds[fund].compoundEnabled) {
+            mintCToken(address(token), address(ctoken), amount);
+        } else {
+            require(token.transferFrom(msg.sender, address(this), amount));
+        }
         if (funds[fund].custom == false) {
             marketLiquidity = add(marketLiquidity, amount);
             calcGlobalInterest();
@@ -334,7 +349,11 @@ contract Funds is DSMath {
         require(msg.sender     == lender(fund));
         require(balance(fund)  >= amount);
         funds[fund].balance = sub(funds[fund].balance, amount);
-        require(token.transfer(lender(fund), amount));
+        if (funds[fund].compoundEnabled) {
+            redeemCToken(address(token), address(ctoken), amount);
+        } else {
+            require(token.transfer(lender(fund), amount));
+        }
         if (funds[fund].custom == false) {
             marketLiquidity = sub(marketLiquidity, amount);
             calcGlobalInterest();

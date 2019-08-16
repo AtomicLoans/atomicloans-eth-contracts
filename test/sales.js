@@ -184,7 +184,8 @@ contract("Sales", accounts => {
       toWei(rateToSec('16.5'), 'gether'), // 16.50%
       toWei(rateToSec('3'), 'gether'), //  3.00%
       toWei(rateToSec('0.75'), 'gether'), //  0.75%
-      agent
+      agent,
+      false
     ]
 
     this.fund = await this.funds.createCustom.call(...fundParams)

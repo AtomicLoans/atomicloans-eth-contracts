@@ -6,7 +6,9 @@ module.exports = {
     development: {
       host: "127.0.0.1",
       port: 8545,
-      network_id: "*"
+      network_id: "*",
+      gasPrice: 1,
+      gas: 6700000
     },
     goerli: {
       provider: function() {
@@ -22,7 +24,7 @@ module.exports = {
       version: "0.5.8",
       settings: {
         optimizer: {
-          enabled: false,
+          enabled: true,
           runs: 200
         },
         evmVersion: 'byzantium'

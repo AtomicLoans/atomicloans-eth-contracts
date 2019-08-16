@@ -19,6 +19,7 @@
     "test:funds": "truffle test ./test/funds.js",
     "test:loans": "truffle test ./test/loans.js",
     "test:sales": "truffle test ./test/sales.js",
+    "test:compound": "truffle test ./test/compound.js",
     "test:e2e": "truffle test ./test/e2e.js",
     "test:global_interest_increase": "truffle test ./test/globalInterestIncrease.js",
     "test:global_interest_decrease": "truffle test ./test/globalInterestDecrease.js",
