@@ -22,7 +22,7 @@
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {
-    "@codechecks/client": "^0.1.5",
+    "@codechecks/client": "^0.1.6",
     "chai": "^4.2.0",
     "chai-bignumber": "^3.0.0",
     "chai-bn": "^0.1.1",
