@@ -1,10 +1,13 @@
-import './Unitroller.sol';
-import './ComptrollerStorage.sol';
-import './ErrorReporter.sol';
-import './Exponential.sol';
+import "./CToken.sol";
+import "./ErrorReporter.sol";
+import "./Exponential.sol";
+import "./PriceOracle.sol";
+import "./ComptrollerInterface.sol";
+import "./ComptrollerStorage.sol";
+import "./Unitroller.sol";
+
 
 pragma solidity ^0.5.8;
-
 
 /**
  * @title Compound's Comptroller Contract
@@ -317,8 +320,9 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
         redeemAmount;   // currently unused
         redeemTokens;   // currently unused
 
-        if (false) {
-            maxAssets = maxAssets; // not pure
+        // Require tokens is zero or amount is also zero
+        if (redeemTokens == 0 && redeemAmount > 0) {
+            revert("redeemTokens zero");
         }
     }
 
@@ -334,23 +338,23 @@ contract Comptroller is ComptrollerV1Storage, ComptrollerInterface, ComptrollerE
             return uint(Error.MARKET_NOT_LISTED);
         }
 
-        // // *may include Policy Hook-type checks
+        // *may include Policy Hook-type checks
 
         if (!markets[cToken].accountMembership[borrower]) {
             return uint(Error.MARKET_NOT_ENTERED);
         }
 
-        // if (oracle.getUnderlyingPrice(CToken(cToken)) == 0) {
-        //     return uint(Error.PRICE_ERROR);
-        // }
+        if (oracle.getUnderlyingPrice(CToken(cToken)) == 0) {
+            return uint(Error.PRICE_ERROR);
+        }
 
-        // (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(borrower, CToken(cToken), 0, borrowAmount);
-        // if (err != Error.NO_ERROR) {
-        //     return uint(err);
-        // }
-        // if (shortfall > 0) {
-        //     return uint(Error.INSUFFICIENT_LIQUIDITY);
-        // }
+        (Error err, , uint shortfall) = getHypotheticalAccountLiquidityInternal(borrower, CToken(cToken), 0, borrowAmount);
+        if (err != Error.NO_ERROR) {
+            return uint(err);
+        }
+        if (shortfall > 0) {
+            return uint(Error.INSUFFICIENT_LIQUIDITY);
+        }
 
         return uint(Error.NO_ERROR);
     }

@@ -87,7 +87,7 @@ contract Helpers is DSMath {
         }
     }
 
-    function enterMarket(address cErc20) internal {
+    function enterMarket(address cErc20) public {
         ComptrollerInterface troller = ComptrollerInterface(getComptrollerAddress());
         address[] memory markets = troller.getAssetsIn(address(this));
         bool isEntered = false;
@@ -202,7 +202,7 @@ contract ALCompound is Helpers {
     /**
      * @dev borrow ETH/ERC20
      */
-    function borrow(address erc20, address cErc20, uint tokenAmt) external {
+    function borrow(address erc20, address cErc20, uint tokenAmt) public {
         enterMarket(cErc20);
         require(CTokenInterface(cErc20).borrow(tokenAmt) == 0, "got collateral?");
         transferToken(erc20);

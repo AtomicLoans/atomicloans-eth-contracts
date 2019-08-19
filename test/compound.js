@@ -15,6 +15,8 @@ const Med   = artifacts.require("./Medianizer.sol");
 const CErc20 = artifacts.require('./CErc20.sol');
 const CEther = artifacts.require('./CEther.sol');
 
+const Compound = artifacts.require('./ALCompound.sol');
+
 const utils = require('./helpers/Utils.js');
 
 const { rateToSec, numToBytes32 } = utils;
@@ -77,6 +79,8 @@ contract("Compound", accounts => {
     this.cErc20 = await CErc20.deployed();
     this.cEther = await CEther.deployed();
 
+    this.compound = await Compound.deployed();
+
     const fundParams = [
       toWei('1', 'ether'),
       toWei('100', 'ether'),
@@ -126,16 +130,17 @@ contract("Compound", accounts => {
       console.log('bal6', fromWei(bal6, 'ether'))
 
 
-      await web3.eth.sendTransaction({ to: borrower, from: lender, value: toWei('30', 'ether')})
+      await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('30', 'ether')})
 
-      await this.funds.mintCToken('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', this.cEther.address, toWei('20', 'ether'), { from: borrower, value: toWei('20', 'ether') })
+      await this.compound.mintCToken('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE', this.cEther.address, toWei('20', 'ether'), { from: agent, value: toWei('20', 'ether') })
 
 
       const bal8 = await this.cEther.balanceOf.call(this.funds.address)
       console.log('bal8', fromWei(bal8, 'ether'))
 
 
-      // await this.funds.borrow(this.token.address, this.cErc20.address, toWei('10', 'ether'), { from: borrower })
+      await this.compound.enterMarket(this.cErc20.address, { from: agent })
+      await this.compound.borrow(this.token.address, this.cErc20.address, toWei('10', 'ether'), { from: agent })
 
       // const bal = await this.token.balanceOf.call(this.funds.address)
 
