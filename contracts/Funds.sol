@@ -12,7 +12,7 @@ contract Funds is DSMath, ALCompound {
     uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;  // 140% (1.4x in RAY) minimum collateralization ratio
     uint256 public constant DEFAULT_LIQUIDATION_PENALTY = 1000000000937303470807876289; // 3% (3 in RAY) liquidation penalty
     uint256 public constant DEFAULT_AGENT_FEE = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional agent fee
-    uint256 public constant DEFAULT_MIN_LOAN_AMT = 20000000000000000000; // Min 20 WAD
+    uint256 public constant DEFAULT_MIN_LOAN_AMT = 10000000000000000000; // Min 10 WAD
     uint256 public constant DEFAULT_MAX_LOAN_AMT = 2**256-1; // Max 2**256
     uint256 public constant DEFAULT_MIN_LOAN_DUR = 21600; // 6 hours
     uint256 public constant NUM_SECONDS_IN_YEAR = 31536000;
@@ -27,6 +27,8 @@ contract Funds is DSMath, ALCompound {
     uint256                        public fundIndex;
 
     uint256 public lastGlobalInterestUpdated;
+    uint256 public tokenMarketLiquidity;
+    uint256 public cTokenMarketLiquidity;
     uint256 public marketLiquidity;
     uint256 public totalBorrow;
     uint256 public globalInterestRateNumerator;
@@ -40,7 +42,8 @@ contract Funds is DSMath, ALCompound {
     uint256 public interestUpdateDelay;
 
     ERC20 public token;
-    CTokenInterface public ctoken;
+    CTokenInterface public cToken;
+    bool compoundSet;
 
     address deployer;
 
@@ -56,18 +59,16 @@ contract Funds is DSMath, ALCompound {
         uint256  liquidationRatio; // Liquidation Ratio in RAY
         address  agent;            // Optional Automator Agent
         uint256  balance;          // Locked amount in fund (in token)
+        uint256  cBalance;         // Compound token balance
         bool     custom;
         bool     compoundEnabled;
     }
 
     constructor(
-        ERC20 token_,
-        CTokenInterface ctoken_,
-        address troller_
-    ) public ALCompound(troller_) {
+        ERC20 token_
+    ) public {
         deployer = msg.sender;
         token = token_;
-        ctoken = ctoken_;
         utilizationInterestDivisor = 10531702972595856680093239305; // 10.53 in RAY (~10:1 ratio for % change in utilization ratio to % change in interest rate)
         maxUtilizationDelta = 95310179948351216961192521; // Global Interest Rate Numerator can change up to 9.53% in RAY (~10% change in utilization ratio = ~1% change in interest rate)
         globalInterestRateNumerator =  95310179948351216961192521; // ~10%  ( (e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) )
@@ -89,6 +90,14 @@ contract Funds is DSMath, ALCompound {
         require(token.approve(address(loans_), 2**256-1));
     }
 
+    function setCompound(CTokenInterface cToken_, address comptroller_) public {
+        require(msg.sender == deployer);
+        require(!compoundSet);
+        cToken = cToken_;
+        comptroller = comptroller_;
+        compoundSet = true;
+    }
+
     // NOTE: THE FOLLOWING FUNCTIONS ALLOW VARIABLES TO BE MODIFIED BY THE 
     //       DEPLOYER, SINCE THE ALGORITHM FOR CALCULATING GLOBAL INTEREST 
     //       RATE IS UNTESTED WITH A DECENTRALIZED PROTOCOL, AND MAY NEED TO
@@ -96,6 +105,7 @@ contract Funds is DSMath, ALCompound {
     //       FUTURE ITERATION OF THE PROTOCOL WILL REMOVE THESE FUNCTIONS. IF 
     //       YOU WISH TO OPT OUT OF GLOBAL APR YOU CAN CREATE A CUSTOM LOAN FUND
     // ======================================================================
+    // TODO: add tests
     function setUtilizationInterestDivisor(uint256 utilizationInterestDivisor_) external {
         require(msg.sender == deployer);
         utilizationInterestDivisor = utilizationInterestDivisor_;
@@ -179,8 +189,12 @@ contract Funds is DSMath, ALCompound {
         return funds[fund].agent;
     }
 
-    function balance(bytes32 fund) public view returns (uint256) {
-        return funds[fund].balance;
+    function balance(bytes32 fund) public returns (uint256) {
+        if (funds[fund].compoundEnabled) {
+            return wmul(funds[fund].cBalance, cToken.exchangeRateCurrent());
+        } else {
+            return funds[fund].balance;
+        }
     }
 
     function custom(bytes32 fund) public view returns (bool) {
@@ -193,6 +207,7 @@ contract Funds is DSMath, ALCompound {
         bool     compoundEnabled_
     ) external returns (bytes32 fund) { 
         require(fundOwner[msg.sender].lender != msg.sender); // Only allow one loan fund per address
+        if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
@@ -215,6 +230,7 @@ contract Funds is DSMath, ALCompound {
         bool     compoundEnabled_   // Enable Compound
     ) external returns (bytes32 fund) {
         require(fundOwner[msg.sender].lender != msg.sender); // Only allow one loan fund per address
+        if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
@@ -233,72 +249,18 @@ contract Funds is DSMath, ALCompound {
 
     function deposit(bytes32 fund, uint256 amount) external { // Deposit funds to Loan Fund
         // require(msg.sender == lender(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
-        funds[fund].balance = add(funds[fund].balance, amount);
         if (funds[fund].compoundEnabled) {
-            mintCToken(address(token), address(ctoken), amount);
-        } else {
+            uint256 cTokenToAdd = div(mul(amount, WAD), cToken.exchangeRateCurrent());
+            funds[fund].cBalance = add(funds[fund].cBalance, cTokenToAdd);
             require(token.transferFrom(msg.sender, address(this), amount));
+            mintCToken(address(token), address(cToken), amount);
+            if (!custom(fund)) { cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToAdd); }
+        } else {
+            funds[fund].balance = add(funds[fund].balance, amount);
+            require(token.transferFrom(msg.sender, address(this), amount));
+            if (!custom(fund)) { tokenMarketLiquidity = add(tokenMarketLiquidity, amount); }
         }
-        if (funds[fund].custom == false) {
-            marketLiquidity = add(marketLiquidity, amount);
-            calcGlobalInterest();
-        }
-    }
-
-    function generate(bytes32[] calldata secretHashes_) external { // Generate secret hashes for Loan Fund
-        for (uint i = 0; i < secretHashes_.length; i++) {
-            secretHashes[msg.sender].push(secretHashes_[i]);
-        }
-    }
-
-    function setPubKey(bytes calldata pubKey) external { // Set PubKey for Fund
-        pubKeys[msg.sender] = pubKey;
-    }
-
-
-    function increaseMarketLiquidity(uint256 amount) external {
-        require(msg.sender == address(loans));
-        marketLiquidity = add(marketLiquidity, amount);
-    }
-
-    function decreaseMarketLiquidity(uint256 amount) external {
-        require(msg.sender == address(loans));
-        marketLiquidity = sub(marketLiquidity, amount);
-    }
-
-    function increaseTotalBorrow(uint256 amount) external {
-        require(msg.sender == address(loans));
-        totalBorrow = add(totalBorrow, amount);
-    }
-
-    function decreaseTotalBorrow(uint256 amount) external {
-        require(msg.sender == address(loans));
-        totalBorrow = sub(totalBorrow, amount);
-    }
-
-    function calcGlobalInterest() public {
-        // if utilizationRatio increases newAPR = oldAPR + (min(10%, utilizationRatio) / 10)
-        // if utilizationRatio decreases newAPR = oldAPR - (max(10%, utilizationRatio) / 10)
-        // ΔAPR should be less than or equal to 1%
-        // For every 10% change in utilization ratio, the interest rate will change a maximum of 1%
-        // i.e. newAPR = 11.5% + (10% / 10) = 12.5%
-
-        if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) { // Only updates if globalInterestRate hasn't been changed in over a day
-            uint256 utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow));
-
-            if (utilizationRatio > lastUtilizationRatio) {
-                uint256 changeUtilizationRatio = sub(utilizationRatio, lastUtilizationRatio);
-                globalInterestRateNumerator = min(maxInterestRateNumerator, add(globalInterestRateNumerator, rdiv(min(maxUtilizationDelta, changeUtilizationRatio), utilizationInterestDivisor)));
-            } else {
-                uint256 changeUtilizationRatio = sub(lastUtilizationRatio, utilizationRatio);
-                globalInterestRateNumerator = max(minInterestRateNumerator, sub(globalInterestRateNumerator, rdiv(min(maxUtilizationDelta, changeUtilizationRatio), utilizationInterestDivisor)));
-            }
-
-            globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
-
-            lastGlobalInterestUpdated = now;
-            lastUtilizationRatio = utilizationRatio;
-        }
+        if (!custom(fund)) { calcGlobalInterest(); }
     }
 
     function update(                // Set Loan Fund details
@@ -342,21 +304,104 @@ contract Funds is DSMath, ALCompound {
 
         loanIndex = createLoan(fund, amount_, collateral_, loanDur);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKey_);
+        
+        if (funds[fund].compoundEnabled) {
+            uint256 cTokenToRemove = div(mul(amount_, WAD), cToken.exchangeRateCurrent());
+            funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
+            redeemUnderlying(address(cToken), amount_);
+            if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
+        } else {
+            funds[fund].balance = sub(funds[fund].balance, amount_);
+            if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_); }
+        }
+        if (!custom(fund)) {
+            totalBorrow = add(totalBorrow, amount_);
+            calcGlobalInterest();
+        }
         loans.fund(loanIndex);
     }
 
     function withdraw(bytes32 fund, uint256 amount) external { // Withdraw funds from Loan Fund
         require(msg.sender     == lender(fund));
         require(balance(fund)  >= amount);
-        funds[fund].balance = sub(funds[fund].balance, amount);
         if (funds[fund].compoundEnabled) {
-            redeemCToken(address(token), address(ctoken), amount);
-        } else {
+            uint256 cTokenToRemove = div(mul(amount, WAD), cToken.exchangeRateCurrent());
+            funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
+            redeemUnderlying(address(cToken), amount);
             require(token.transfer(lender(fund), amount));
+            if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
+        } else {
+            funds[fund].balance = sub(funds[fund].balance, amount);
+            require(token.transfer(lender(fund), amount));
+            if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount); }
         }
-        if (funds[fund].custom == false) {
-            marketLiquidity = sub(marketLiquidity, amount);
-            calcGlobalInterest();
+        if (!custom(fund)) { calcGlobalInterest(); }
+    }
+
+    function generate(bytes32[] calldata secretHashes_) external { // Generate secret hashes for Loan Fund
+        for (uint i = 0; i < secretHashes_.length; i++) {
+            secretHashes[msg.sender].push(secretHashes_[i]);
+        }
+    }
+
+    function setPubKey(bytes calldata pubKey) external { // Set PubKey for Fund
+        pubKeys[msg.sender] = pubKey;
+    }
+
+    function enableCompound(bytes32 fund) external {
+        require(compoundSet);
+        require(funds[fund].compoundEnabled == false);
+        require(msg.sender == lender(fund));
+        uint256 cTokenToReturn = div(mul(funds[fund].balance, WAD), cToken.exchangeRateCurrent());
+        mintCToken(address(token), address(cToken), funds[fund].balance);
+        tokenMarketLiquidity = sub(tokenMarketLiquidity, funds[fund].balance);
+        cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToReturn);
+        funds[fund].compoundEnabled = true;
+        funds[fund].balance = 0;
+        funds[fund].cBalance = cTokenToReturn;
+    }
+
+    function disableCompound(bytes32 fund) external {
+        require(funds[fund].compoundEnabled);
+        require(msg.sender == lender(fund));
+        uint tokenToReturn = wmul(funds[fund].cBalance, cToken.exchangeRateCurrent());
+        redeemUnderlying(address(cToken), tokenToReturn);
+        tokenMarketLiquidity = add(tokenMarketLiquidity, tokenToReturn);
+        cTokenMarketLiquidity = sub(cTokenMarketLiquidity, funds[fund].cBalance);
+        funds[fund].compoundEnabled = false;
+        funds[fund].cBalance = 0;
+        funds[fund].balance = tokenToReturn;
+    }
+
+    function decreaseTotalBorrow(uint256 amount) external {
+        require(msg.sender == address(loans));
+        totalBorrow = sub(totalBorrow, amount);
+    }
+
+    function calcGlobalInterest() public {
+        // if utilizationRatio increases newAPR = oldAPR + (min(10%, utilizationRatio) / 10)
+        // if utilizationRatio decreases newAPR = oldAPR - (max(10%, utilizationRatio) / 10)
+        // ΔAPR should be less than or equal to 1%
+        // For every 10% change in utilization ratio, the interest rate will change a maximum of 1%
+        // i.e. newAPR = 11.5% + (10% / 10) = 12.5%
+
+        marketLiquidity = add(tokenMarketLiquidity, wmul(cTokenMarketLiquidity, cToken.exchangeRateCurrent()));
+
+        if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) { // Only updates if globalInterestRate hasn't been changed in over a day
+            uint256 utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow));
+
+            if (utilizationRatio > lastUtilizationRatio) {
+                uint256 changeUtilizationRatio = sub(utilizationRatio, lastUtilizationRatio);
+                globalInterestRateNumerator = min(maxInterestRateNumerator, add(globalInterestRateNumerator, rdiv(min(maxUtilizationDelta, changeUtilizationRatio), utilizationInterestDivisor)));
+            } else {
+                uint256 changeUtilizationRatio = sub(lastUtilizationRatio, utilizationRatio);
+                globalInterestRateNumerator = max(minInterestRateNumerator, sub(globalInterestRateNumerator, rdiv(min(maxUtilizationDelta, changeUtilizationRatio), utilizationInterestDivisor)));
+            }
+
+            globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
+
+            lastGlobalInterestUpdated = now;
+            lastUtilizationRatio = utilizationRatio;
         }
     }
 

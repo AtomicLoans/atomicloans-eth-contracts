@@ -252,11 +252,6 @@ contract Loans is DSMath {
     	require(bools[loan].funded == false);
     	require(token.transferFrom(msg.sender, address(this), principal(loan)));
     	bools[loan].funded = true;
-        if (msg.sender == address(funds) && funds.custom(fundIndex[loan]) == false) {
-            funds.decreaseMarketLiquidity(owedToLender(loan));
-            funds.increaseTotalBorrow(owedToLender(loan));
-            funds.calcGlobalInterest();
-        }
     }
 
     function approve(bytes32 loan) external { // Approve locking of collateral
@@ -299,7 +294,7 @@ contract Loans is DSMath {
         bools[loan].off = true;
     	require(token.transfer(loans[loan].borrower, owedForLoan(loan)));
         if (funds.custom(fundIndex[loan]) == false) {
-            funds.decreaseTotalBorrow(owedToLender(loan));
+            funds.decreaseTotalBorrow(loans[loan].principal);
             funds.calcGlobalInterest();
         }
     }
@@ -321,23 +316,19 @@ contract Loans is DSMath {
             if (fundIndex[loan] == bytes32(0)) {
                 require(token.transfer(loans[loan].lender, loans[loan].principal));
             } else {
-                funds.deposit(fundIndex[loan], loans[loan].principal);
                 if (funds.custom(fundIndex[loan]) == false) {
-                    funds.increaseMarketLiquidity(loans[loan].principal);
                     funds.decreaseTotalBorrow(loans[loan].principal);
-                    funds.calcGlobalInterest();
                 }
+                funds.deposit(fundIndex[loan], loans[loan].principal);
             }
         } else if (bools[loan].withdrawn == true) {
             if (fundIndex[loan] == bytes32(0)) {
                 require(token.transfer(loans[loan].lender, owedToLender(loan)));
             } else {
-                funds.deposit(fundIndex[loan], owedToLender(loan));
                 if (funds.custom(fundIndex[loan]) == false) {
-                    funds.increaseMarketLiquidity(owedToLender(loan));
-                    funds.decreaseTotalBorrow(owedToLender(loan));
-                    funds.calcGlobalInterest();
+                    funds.decreaseTotalBorrow(loans[loan].principal);
                 }
+                funds.deposit(fundIndex[loan], owedToLender(loan));
             }
             require(token.transfer(loans[loan].agent, fee(loan)));
         }
@@ -354,7 +345,7 @@ contract Loans is DSMath {
 				require(!safe(loan));
 			}
             if (funds.custom(fundIndex[loan]) == false) {
-                funds.decreaseTotalBorrow(owedToLender(loan));
+                funds.decreaseTotalBorrow(loans[loan].principal);
                 funds.calcGlobalInterest();
             }
 		} else {
