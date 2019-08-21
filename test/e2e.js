@@ -122,7 +122,7 @@ async function increaseTime(seconds) {
 
   await bitcoin.client.getMethod('jsonrpc')('setmocktime', currentTime)
 
-  await bitcoin.client.chain.generateBlock(6)
+  await bitcoin.client.chain.generateBlock(10)
 }
 
 function getVinRedeemScript (vin) {
