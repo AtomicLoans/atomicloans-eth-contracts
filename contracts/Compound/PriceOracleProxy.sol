@@ -1,17 +1,11 @@
+import './Comptroller.sol';
 import './PriceOracle.sol';
+import './CErc20.sol';
 
 pragma solidity ^0.5.8;
 
 interface V1PriceOracleInterface {
     function assetPrices(address asset) external view returns (uint);
-}
-
-interface Comptroller {
-    function markets(address marketAddress) external view returns (bool, uint);
-}
-
-interface CErc20 {
-    function underlying() external view returns (address);
 }
 
 contract PriceOracleProxy is PriceOracle {
@@ -59,8 +53,8 @@ contract PriceOracleProxy is PriceOracle {
      * @return The underlying asset price mantissa (scaled by 1e18).
      *  Zero means the price is unavailable.
      */
-    function getUnderlyingPrice(address cTokenAddress) public view returns (uint) {
-        address cTokenAddress = cTokenAddress;
+    function getUnderlyingPrice(CToken cToken) public view returns (uint) {
+        address cTokenAddress = address(cToken);
         (bool isListed, ) = comptroller.markets(cTokenAddress);
 
         if (!isListed) {
