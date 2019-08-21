@@ -121,4 +121,18 @@ contract ALCompound is Helpers {
         }
         require(cToken.redeemUnderlying(tokenToReturn) == 0, "something went wrong");
     }
+
+    /**
+     * @dev Redeem ETH/ERC20 and burn Compound Tokens
+     * @param cTokenAmt Amount of CToken To burn
+     */
+    function redeemCToken(address cErc20, uint cTokenAmt) public {
+        CTokenInterface cToken = CTokenInterface(cErc20);
+        uint toBurn = cToken.balanceOf(address(this));
+        if (toBurn > cTokenAmt) {
+            toBurn = cTokenAmt;
+        }
+        setApproval(cErc20, toBurn, cErc20);
+        require(cToken.redeem(toBurn) == 0, "something went wrong");
+    }
 }

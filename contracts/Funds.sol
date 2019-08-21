@@ -365,7 +365,7 @@ contract Funds is DSMath, ALCompound {
         require(funds[fund].compoundEnabled);
         require(msg.sender == lender(fund));
         uint tokenToReturn = wmul(funds[fund].cBalance, cToken.exchangeRateCurrent());
-        redeemUnderlying(address(cToken), tokenToReturn);
+        redeemCToken(address(cToken), funds[fund].cBalance);
         tokenMarketLiquidity = add(tokenMarketLiquidity, tokenToReturn);
         cTokenMarketLiquidity = sub(cTokenMarketLiquidity, funds[fund].cBalance);
         funds[fund].compoundEnabled = false;
