@@ -47,19 +47,36 @@ contract Funds is DSMath, ALCompound {
 
     address deployer;
 
+    /**
+     * @notice Container for Loan Fund information
+     * @member lender Loan Fund Owner
+     * @member minLoanAmt Minimum Loan Amount that can be requested by a 'borrower'
+     * @member maxLoanAmt Maximum Loan Amount that can be requested by a 'borrower'
+     * @member minLoanDur Minimum Loan Duration that can be requested by a 'borrower'
+     * @member maxLoanDur Maximum Loan Duration that can be requested by a 'borrower'
+     * @member interest Interest Rate of Loan Fund in RAY per second
+     * @member penalty Liquidation Penalty Rate of Loan Fund in RAY per second
+     * @member fee Optional Automation Fee Rate of Loan Fund in RAY per second
+     * @member liquidationRatio Liquidation Ratio of Loan Fund in RAY
+     * @member agent Optional address of Automator Agent
+     * @member balance Amount of non-borrowed tokens in Loan Fund
+     * @member cBalance Amount of non-borrowed cTokens in Loan Fund
+     * @member custom Indicator that this Loan Fund is custom and does not use global settings
+     * @member compoundEnabled Indicator that this Loan Fund lends non-borrowed tokens on Compound
+     */
     struct Fund {
-        address  lender;           // Loan Fund Owner (Lender)
-        uint256  minLoanAmt;       // Min Loan Amount
-        uint256  maxLoanAmt;       // Max Loan Amount
-        uint256  minLoanDur;       // Min Loan Duration
-        uint256  maxLoanDur;       // Max Loan Duration
-        uint256  interest;         // Interest Rate in RAY
-        uint256  penalty;          // Liquidation Penalty Rate in RAY
-        uint256  fee;              // Optional Automation Fee in RAY
-        uint256  liquidationRatio; // Liquidation Ratio in RAY
-        address  agent;            // Optional Automator Agent
-        uint256  balance;          // Locked amount in fund (in token)
-        uint256  cBalance;         // Compound token balance
+        address  lender;
+        uint256  minLoanAmt;
+        uint256  maxLoanAmt;
+        uint256  minLoanDur;
+        uint256  maxLoanDur;
+        uint256  interest;
+        uint256  penalty;
+        uint256  fee;
+        uint256  liquidationRatio;
+        address  agent;
+        uint256  balance;
+        uint256  cBalance;
         bool     custom;
         bool     compoundEnabled;
     }
@@ -83,6 +100,10 @@ contract Funds is DSMath, ALCompound {
         // utilizationInterestDivisor = ((e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) * (10^27)) / ( (( e^(ln(1.110)/(60*60*24*365)) -1 ) * ( 60*60*24*365 )) - ((e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365)))
     }
 
+    /**
+     * @dev Sets Loans contract
+     * @param loans_ Address of Loans contract
+     */
     function setLoans(Loans loans_) public {
         require(msg.sender == deployer);
         require(address(loans) == address(0));
@@ -90,6 +111,11 @@ contract Funds is DSMath, ALCompound {
         require(token.approve(address(loans_), 2**256-1));
     }
 
+    /**
+     * @dev Enables assets in loan fund that haven't been borrowed to be lent on Compound
+     * @param cToken_ The address of the Compound Token
+     * @param comptroller_ The address of the Compound Comptroller
+     */
     function setCompound(CTokenInterface cToken_, address comptroller_) public {
         require(msg.sender == deployer);
         require(!compoundSet);
@@ -105,66 +131,117 @@ contract Funds is DSMath, ALCompound {
     //       FUTURE ITERATION OF THE PROTOCOL WILL REMOVE THESE FUNCTIONS. IF 
     //       YOU WISH TO OPT OUT OF GLOBAL APR YOU CAN CREATE A CUSTOM LOAN FUND
     // ======================================================================
-    // TODO: add tests
+
+    /**
+     * @dev Sets the Utilization Interest Divisor
+     */
     function setUtilizationInterestDivisor(uint256 utilizationInterestDivisor_) external {
         require(msg.sender == deployer);
         utilizationInterestDivisor = utilizationInterestDivisor_;
     }
 
+    /**
+     * @dev Sets the Max Utilization Delta
+     */
     function setMaxUtilizationDelta(uint256 maxUtilizationDelta_) external {
         require(msg.sender == deployer);
         maxUtilizationDelta = maxUtilizationDelta_;
     }
 
+    /**
+     * @dev Sets the Global Interest Rate Numerator
+     */
     function setGlobalInterestRateNumerator(uint256 globalInterestRateNumerator_) external {
         require(msg.sender == deployer);
         globalInterestRateNumerator = globalInterestRateNumerator_;
     }
 
+    /**
+     * @dev Sets the Global Interest Rate
+     */
     function setGlobalInterestRate(uint256 globalInterestRate_) external {
         require(msg.sender == deployer);
         globalInterestRate = globalInterestRate_;
     }
 
+    /**
+     * @dev Sets the Maximum Interest Rate Numerator
+     */
     function setMaxInterestRateNumerator(uint256 maxInterestRateNumerator_) external {
         require(msg.sender == deployer);
         maxInterestRateNumerator = maxInterestRateNumerator_;
     }
 
+    /**
+     * @dev Sets the Minimum Interest Rate Numerator
+     */
     function setMinInterestRateNumerator(uint256 minInterestRateNumerator_) external {
         require(msg.sender == deployer);
         minInterestRateNumerator = minInterestRateNumerator_;
     }
 
+    /**
+     * @dev Sets the Interest Update Delay
+     */
     function setInterestUpdateDelay(uint256 interestUpdateDelay_) external {
         require(msg.sender == deployer);
         interestUpdateDelay = interestUpdateDelay_;
     }
     // ======================================================================
 
+    /**
+     * @notice Get the lender of a Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @return Owner address of Loan Fund
+     */
     function lender(bytes32 fund) public view returns (address) {
         return funds[fund].lender;
     }
 
+    /**
+     * @notice Get minimum loan amount able to be requested by a 'borrower'
+     * @param fund The Id of a Loan Fund
+     * @return The minimum amount of tokens that can be requested from a Loan Fund
+     */
     function minLoanAmt(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].minLoanAmt; }
         else                    { return DEFAULT_MIN_LOAN_AMT; }
     }
 
+    /**
+     * @notice Get maximum loan amount able to be requested by a 'borrower'
+     * @param fund The Id of a Loan Fund
+     * @return The maximum amount of tokens that can be requested from a Loan Fund
+     */
     function maxLoanAmt(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].maxLoanAmt; }
         else                    { return DEFAULT_MAX_LOAN_AMT; }
     }
 
+    /**
+     * @notice Get minimum loan duration able to be requested by a 'borrower'
+     * @param fund The Id of a Loan Fund
+     * @return The minimum duration loan that can be requested from a Loan Fund
+     */
     function minLoanDur(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].minLoanDur; }
         else                    { return DEFAULT_MIN_LOAN_DUR; }
     }
 
+    /**
+     * @notice Get maximum loan duration able to be requested by a 'borrower'
+     * @param fund The Id of a Loan Fund
+     * @return The maximum duration loan that can be requested from a Loan Fund
+     */
     function maxLoanDur(bytes32 fund) public view returns (uint256) {
         return funds[fund].maxLoanDur;
     }
 
+    /**
+     * @notice Get the interest rate for a Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @return The interest rate per second for a Loan Fund
+     */
     function interest(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].interest; }
         else                    { return globalInterestRate; }
