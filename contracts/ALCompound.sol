@@ -49,7 +49,7 @@ interface ComptrollerInterface {
 
 contract Helpers is DSMath {
 
-    address comptroller;
+    address public comptroller;
 
     /**
      * @dev get Compound Comptroller Address
@@ -95,7 +95,7 @@ contract ALCompound is Helpers {
     /**
      * @dev Deposit ETH/ERC20 and mint Compound Tokens
      */
-    function mintCToken(address erc20, address cErc20, uint tokenAmt) public {
+    function mintCToken(address erc20, address cErc20, uint tokenAmt) internal {
         enterMarket(cErc20);
         ERC20Interface token = ERC20Interface(erc20);
         uint toDeposit = token.balanceOf(address(this));
@@ -111,7 +111,7 @@ contract ALCompound is Helpers {
      * @dev Redeem ETH/ERC20 and mint Compound Tokens
      * @param tokenAmt Amount of token To Redeem
      */
-    function redeemUnderlying(address cErc20, uint tokenAmt) public {
+    function redeemUnderlying(address cErc20, uint tokenAmt) internal {
         CTokenInterface cToken = CTokenInterface(cErc20);
         setApproval(cErc20, 10**50, cErc20);
         uint toBurn = cToken.balanceOf(address(this));
@@ -126,7 +126,7 @@ contract ALCompound is Helpers {
      * @dev Redeem ETH/ERC20 and burn Compound Tokens
      * @param cTokenAmt Amount of CToken To burn
      */
-    function redeemCToken(address cErc20, uint cTokenAmt) public {
+    function redeemCToken(address cErc20, uint cTokenAmt) internal {
         CTokenInterface cToken = CTokenInterface(cErc20);
         uint toBurn = cToken.balanceOf(address(this));
         if (toBurn > cTokenAmt) {

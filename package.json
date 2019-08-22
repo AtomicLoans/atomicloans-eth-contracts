@@ -10,7 +10,7 @@
     "decimal.js": "^10.2.0",
     "lodash": "^4.17.13",
     "openzeppelin-solidity": "^2.2.0",
-    "truffle-contract": "^4.0.11",
+    "truffle-contract": "^4.0.29",
     "truffle-hdwallet-provider": "^1.0.9",
     "web3": "^1.0.0-beta.55"
   },
@@ -20,6 +20,9 @@
     "test:loans": "truffle test ./test/loans.js",
     "test:sales": "truffle test ./test/sales.js",
     "test:compound": "truffle test ./test/compound.js",
+    "test:alcompound:js": "truffle test ./test/alcompound.js",
+    "test:alcompound:sol": "truffle test ./test/TestALCompound.sol",
+    "test:alcompound": "truffle test ./test/alcompound.js ./test/TestALCompound.sol",
     "test:e2e": "truffle test ./test/e2e.js",
     "test:global_interest_increase": "truffle test ./test/globalInterestIncrease.js",
     "test:global_interest_decrease": "truffle test ./test/globalInterestDecrease.js",

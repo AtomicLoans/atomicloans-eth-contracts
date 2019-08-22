@@ -565,7 +565,7 @@ contract("Compound", accounts => {
     })
   })
 
-  describe.only('disableCompound', function() {
+  describe('disableCompound', function() {
     it('should properly convert cDAI to DAI at the current exchangeRate and update token and cToken balances', async function() {
       this.fund  = await createCompoundEnabledFund(this, agent, lender, toWei('100', 'ether'))
       this.fund2 = await createCompoundEnabledFund(this, agent, lender2, toWei('100', 'ether'))
