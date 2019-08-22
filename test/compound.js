@@ -565,7 +565,7 @@ contract("Compound", accounts => {
     })
   })
 
-  describe('disableCompound', function() {
+  describe.only('disableCompound', function() {
     it('should properly convert cDAI to DAI at the current exchangeRate and update token and cToken balances', async function() {
       this.fund  = await createCompoundEnabledFund(this, agent, lender, toWei('100', 'ether'))
       this.fund2 = await createCompoundEnabledFund(this, agent, lender2, toWei('100', 'ether'))
@@ -606,12 +606,12 @@ contract("Compound", accounts => {
       assert.equal(false, isCompoundEnabledAfter)
       assert.equal(0, cBalanceAfter)
 
-      const expectedBalanceAfter = BN(cBalanceBefore).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(17)
-      const expectedBalanceChange = BN(tokenBalanceAfter).minus(tokenBalanceBefore).dividedBy(WAD).toFixed(17)
-      const expectedCBalanceChange = BN(cErc20BalanceBefore).minus(cErc20BalanceAfter).dividedBy(COM).toFixed(6)
+      const expectedBalanceAfter = BN(cBalanceBefore).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(5)
+      const expectedBalanceChange = BN(tokenBalanceAfter).minus(tokenBalanceBefore).dividedBy(WAD).toFixed(5)
+      const expectedCBalanceChange = BN(cErc20BalanceBefore).minus(cErc20BalanceAfter).dividedBy(COM).toFixed(8)
 
-      const actualBalanceAfter = BN(balanceAfter).dividedBy(WAD).toFixed(17)
-      const actualCBalanceBefore = BN(cBalanceBefore).dividedBy(COM).toFixed(6)
+      const actualBalanceAfter = BN(balanceAfter).dividedBy(WAD).toFixed(5)
+      const actualCBalanceBefore = BN(cBalanceBefore).dividedBy(COM).toFixed(8)
 
       assert.equal(expectedBalanceAfter, actualBalanceAfter)
       assert.equal(expectedBalanceChange, actualBalanceAfter)
@@ -667,10 +667,10 @@ contract("Compound", accounts => {
       const tokenMarketLiquidityAfter = await this.funds.tokenMarketLiquidity.call()
       const cTokenMarketLiquidityAfter = await this.funds.cTokenMarketLiquidity.call()
 
-      const expectedTokenMarketLiquidity = BN(tokenMarketLiquidityBefore).plus(expectedBalanceChange).dividedBy(WAD).toFixed(18)
+      const expectedTokenMarketLiquidity = BN(tokenMarketLiquidityBefore).plus(expectedBalanceChange).dividedBy(WAD).toFixed(17)
       const expectedCTokenMarketLiquidity = BN(cTokenMarketLiquidityBefore).minus(expectedCBalanceChange).dividedBy(COM).toFixed(8)
 
-      const actualTokenMarketLiquidity = BN(tokenMarketLiquidityAfter).dividedBy(WAD).toFixed(18)
+      const actualTokenMarketLiquidity = BN(tokenMarketLiquidityAfter).dividedBy(WAD).toFixed(17)
       const actualCTokenMarketLiquidity = BN(cTokenMarketLiquidityAfter).dividedBy(COM).toFixed(8)
 
       assert.equal(expectedTokenMarketLiquidity, actualTokenMarketLiquidity)

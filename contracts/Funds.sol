@@ -251,9 +251,9 @@ contract Funds is DSMath, ALCompound {
         // require(msg.sender == lender(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
         require(token.transferFrom(msg.sender, address(this), amount));
         if (funds[fund].compoundEnabled) {
+            mintCToken(address(token), address(cToken), amount);
             uint256 cTokenToAdd = div(mul(amount, WAD), cToken.exchangeRateCurrent());
             funds[fund].cBalance = add(funds[fund].cBalance, cTokenToAdd);
-            mintCToken(address(token), address(cToken), amount);
             if (!custom(fund)) { cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToAdd); }
         } else {
             funds[fund].balance = add(funds[fund].balance, amount);
@@ -305,9 +305,11 @@ contract Funds is DSMath, ALCompound {
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKey_);
         
         if (funds[fund].compoundEnabled) {
-            uint256 cTokenToRemove = div(mul(amount_, WAD), cToken.exchangeRateCurrent());
-            funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
+            uint256 cBalanceBefore = cToken.balanceOf(address(this));
             redeemUnderlying(address(cToken), amount_);
+            uint256 cBalanceAfter = cToken.balanceOf(address(this));
+            uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
+            funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
             if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
         } else {
             funds[fund].balance = sub(funds[fund].balance, amount_);
@@ -324,9 +326,11 @@ contract Funds is DSMath, ALCompound {
         require(msg.sender     == lender(fund));
         require(balance(fund)  >= amount);
         if (funds[fund].compoundEnabled) {
-            uint256 cTokenToRemove = div(mul(amount, WAD), cToken.exchangeRateCurrent());
-            funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
+            uint256 cBalanceBefore = cToken.balanceOf(address(this));
             redeemUnderlying(address(cToken), amount);
+            uint256 cBalanceAfter = cToken.balanceOf(address(this));
+            uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
+            funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
             require(token.transfer(lender(fund), amount));
             if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
         } else {
@@ -351,8 +355,10 @@ contract Funds is DSMath, ALCompound {
         require(compoundSet);
         require(funds[fund].compoundEnabled == false);
         require(msg.sender == lender(fund));
+        uint256 cBalanceBefore = cToken.balanceOf(address(this));
         mintCToken(address(token), address(cToken), funds[fund].balance);
-        uint256 cTokenToReturn = div(mul(funds[fund].balance, WAD), cToken.exchangeRateCurrent());
+        uint256 cBalanceAfter = cToken.balanceOf(address(this));
+        uint256 cTokenToReturn = sub(cBalanceAfter, cBalanceBefore);
         tokenMarketLiquidity = sub(tokenMarketLiquidity, funds[fund].balance);
         cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToReturn);
         funds[fund].compoundEnabled = true;
@@ -363,8 +369,10 @@ contract Funds is DSMath, ALCompound {
     function disableCompound(bytes32 fund) external {
         require(funds[fund].compoundEnabled);
         require(msg.sender == lender(fund));
+        uint256 balanceBefore = token.balanceOf(address(this));
         redeemCToken(address(cToken), funds[fund].cBalance);
-        uint tokenToReturn = wmul(funds[fund].cBalance, cToken.exchangeRateCurrent());
+        uint256 balanceAfter = token.balanceOf(address(this));
+        uint256 tokenToReturn = sub(balanceAfter, balanceBefore);
         tokenMarketLiquidity = add(tokenMarketLiquidity, tokenToReturn);
         cTokenMarketLiquidity = sub(cTokenMarketLiquidity, funds[fund].cBalance);
         funds[fund].compoundEnabled = false;
