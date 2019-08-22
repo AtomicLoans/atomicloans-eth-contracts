@@ -249,15 +249,14 @@ contract Funds is DSMath, ALCompound {
 
     function deposit(bytes32 fund, uint256 amount) external { // Deposit funds to Loan Fund
         // require(msg.sender == lender(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
+        require(token.transferFrom(msg.sender, address(this), amount));
         if (funds[fund].compoundEnabled) {
             uint256 cTokenToAdd = div(mul(amount, WAD), cToken.exchangeRateCurrent());
             funds[fund].cBalance = add(funds[fund].cBalance, cTokenToAdd);
-            require(token.transferFrom(msg.sender, address(this), amount));
             mintCToken(address(token), address(cToken), amount);
             if (!custom(fund)) { cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToAdd); }
         } else {
             funds[fund].balance = add(funds[fund].balance, amount);
-            require(token.transferFrom(msg.sender, address(this), amount));
             if (!custom(fund)) { tokenMarketLiquidity = add(tokenMarketLiquidity, amount); }
         }
         if (!custom(fund)) { calcGlobalInterest(); }

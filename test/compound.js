@@ -222,9 +222,9 @@ contract("Compound", accounts => {
       const CErc20Balance = await this.cErc20.balanceOf.call(this.funds.address)
       const cTokenMarketLiquidity = await this.funds.cTokenMarketLiquidity.call()
 
-      const actualMarketLiquidity = BN(await this.funds.marketLiquidity.call()).dividedBy(WAD).toFixed(8)
-      const expectedMarketLiquidity = BN(cTokenMarketLiquidity).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(8)
-      const expectedMarketLiquidityFromCToken = BN(CErc20Balance).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(8)
+      const actualMarketLiquidity = BN(await this.funds.marketLiquidity.call()).dividedBy(WAD).toFixed(5)
+      const expectedMarketLiquidity = BN(cTokenMarketLiquidity).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(5)
+      const expectedMarketLiquidityFromCToken = BN(CErc20Balance).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(5)
 
       assert.equal(expectedMarketLiquidity, actualMarketLiquidity)
       assert.equal(expectedMarketLiquidityFromCToken, actualMarketLiquidity)
@@ -313,9 +313,9 @@ contract("Compound", accounts => {
       const CErc20Balance = await this.cErc20.balanceOf.call(this.funds.address)
       const cTokenMarketLiquidity = await this.funds.cTokenMarketLiquidity.call()
 
-      const actualMarketLiquidity = BN(await this.funds.marketLiquidity.call()).dividedBy(WAD).toFixed(8)
-      const expectedMarketLiquidity = BN(cTokenMarketLiquidity).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(8)
-      const expectedMarketLiquidityFromCToken = BN(CErc20Balance).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(8)
+      const actualMarketLiquidity = BN(await this.funds.marketLiquidity.call()).dividedBy(WAD).toFixed(5)
+      const expectedMarketLiquidity = BN(cTokenMarketLiquidity).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(5)
+      const expectedMarketLiquidityFromCToken = BN(CErc20Balance).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(5)
 
       assert.equal(expectedMarketLiquidity, actualMarketLiquidity)
       assert.equal(expectedMarketLiquidityFromCToken, actualMarketLiquidity)
@@ -493,11 +493,11 @@ contract("Compound", accounts => {
       assert.equal(true, isCompoundEnabledAfter)
       assert.equal(0, balanceAfter)
 
-      const expectedCBalanceAfter = BN(balanceBefore).times(WAD).dividedBy(exchangeRateCurrent).dividedBy(COM).toFixed(8)
-      const expectedCBalanceChange = BN(cErc20BalanceAfter).minus(cErc20BalanceBefore).dividedBy(COM).toFixed(8)
+      const expectedCBalanceAfter = BN(balanceBefore).times(WAD).dividedBy(exchangeRateCurrent).dividedBy(COM).toFixed(4)
+      const expectedCBalanceChange = BN(cErc20BalanceAfter).minus(cErc20BalanceBefore).dividedBy(COM).toFixed(4)
       const expectedBalanceChange = BN(tokenBalanceBefore).minus(tokenBalanceAfter).dividedBy(WAD).toFixed(18)
 
-      const actualCBalanceAfter = BN(cBalanceAfter).dividedBy(COM).toFixed(8)
+      const actualCBalanceAfter = BN(cBalanceAfter).dividedBy(COM).toFixed(4)
       const actualBalanceBefore = BN(balanceBefore).dividedBy(WAD).toFixed(18)
 
       assert.equal(expectedCBalanceAfter, actualCBalanceAfter)
@@ -606,11 +606,11 @@ contract("Compound", accounts => {
       assert.equal(false, isCompoundEnabledAfter)
       assert.equal(0, cBalanceAfter)
 
-      const expectedBalanceAfter = BN(cBalanceBefore).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(17)
-      const expectedBalanceChange = BN(tokenBalanceAfter).minus(tokenBalanceBefore).dividedBy(WAD).toFixed(17)
+      const expectedBalanceAfter = BN(cBalanceBefore).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(6)
+      const expectedBalanceChange = BN(tokenBalanceAfter).minus(tokenBalanceBefore).dividedBy(WAD).toFixed(6)
       const expectedCBalanceChange = BN(cErc20BalanceBefore).minus(cErc20BalanceAfter).dividedBy(COM).toFixed(6)
 
-      const actualBalanceAfter = BN(balanceAfter).dividedBy(WAD).toFixed(17)
+      const actualBalanceAfter = BN(balanceAfter).dividedBy(WAD).toFixed(6)
       const actualCBalanceBefore = BN(cBalanceBefore).dividedBy(COM).toFixed(6)
 
       assert.equal(expectedBalanceAfter, actualBalanceAfter)
