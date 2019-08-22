@@ -351,8 +351,8 @@ contract Funds is DSMath, ALCompound {
         require(compoundSet);
         require(funds[fund].compoundEnabled == false);
         require(msg.sender == lender(fund));
-        uint256 cTokenToReturn = div(mul(funds[fund].balance, WAD), cToken.exchangeRateCurrent());
         mintCToken(address(token), address(cToken), funds[fund].balance);
+        uint256 cTokenToReturn = div(mul(funds[fund].balance, WAD), cToken.exchangeRateCurrent());
         tokenMarketLiquidity = sub(tokenMarketLiquidity, funds[fund].balance);
         cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToReturn);
         funds[fund].compoundEnabled = true;
@@ -363,8 +363,8 @@ contract Funds is DSMath, ALCompound {
     function disableCompound(bytes32 fund) external {
         require(funds[fund].compoundEnabled);
         require(msg.sender == lender(fund));
-        uint tokenToReturn = wmul(funds[fund].cBalance, cToken.exchangeRateCurrent());
         redeemCToken(address(cToken), funds[fund].cBalance);
+        uint tokenToReturn = wmul(funds[fund].cBalance, cToken.exchangeRateCurrent());
         tokenMarketLiquidity = add(tokenMarketLiquidity, tokenToReturn);
         cTokenMarketLiquidity = sub(cTokenMarketLiquidity, funds[fund].cBalance);
         funds[fund].compoundEnabled = false;

@@ -606,11 +606,11 @@ contract("Compound", accounts => {
       assert.equal(false, isCompoundEnabledAfter)
       assert.equal(0, cBalanceAfter)
 
-      const expectedBalanceAfter = BN(cBalanceBefore).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(6)
-      const expectedBalanceChange = BN(tokenBalanceAfter).minus(tokenBalanceBefore).dividedBy(WAD).toFixed(6)
+      const expectedBalanceAfter = BN(cBalanceBefore).times(exchangeRateCurrent).dividedBy(WAD ** 2).toFixed(17)
+      const expectedBalanceChange = BN(tokenBalanceAfter).minus(tokenBalanceBefore).dividedBy(WAD).toFixed(17)
       const expectedCBalanceChange = BN(cErc20BalanceBefore).minus(cErc20BalanceAfter).dividedBy(COM).toFixed(6)
 
-      const actualBalanceAfter = BN(balanceAfter).dividedBy(WAD).toFixed(6)
+      const actualBalanceAfter = BN(balanceAfter).dividedBy(WAD).toFixed(17)
       const actualCBalanceBefore = BN(cBalanceBefore).dividedBy(COM).toFixed(6)
 
       assert.equal(expectedBalanceAfter, actualBalanceAfter)
