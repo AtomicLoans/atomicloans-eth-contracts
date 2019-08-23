@@ -199,11 +199,27 @@ contract("E2E", accounts => {
   }
 
   beforeEach(async function () {
+    currentTime = await time.latest();
+
     const blockHeight = await bitcoin.client.chain.getBlockHeight()
     if (blockHeight < 101) {
       await bitcoin.client.chain.generateBlock(101)
     } else {
-      await bitcoin.client.chain.generateBlock(6)
+      try {
+        await bitcoin.client.chain.generateBlock(6)
+      } catch(e) {
+        const latestBlockHash = await bitcoin.client.getMethod('jsonrpc')('getblockhash', blockHeight)
+        const latestBlock = await bitcoin.client.getMethod('jsonrpc')('getblock', latestBlockHash)
+
+        let btcTime = latestBlock.time
+        const ethTime = await getCurrentTime()
+
+        while (ethTime > btcTime && (ethTime - btcTime) >= toSecs({ hours: 2 })) {
+          await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+          await bitcoin.client.chain.generateBlock(6)
+          btcTime += toSecs({ hours: 1, minutes: 59 })
+        }
+      }
     }
 
     lenderBTC = await getUnusedPubKeyAndAddress()
@@ -217,8 +233,6 @@ contract("E2E", accounts => {
     liquidatorBTC2.pubKeyHash = hash160(liquidatorBTC2.pubKey)
     liquidatorBTC3.pubKeyHash = hash160(liquidatorBTC3.pubKey)
 
-    currentTime = await time.latest();
-    // btcPrice = await fetchCoin('bitcoin')
     btcPrice = '9340.23'
 
     col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)

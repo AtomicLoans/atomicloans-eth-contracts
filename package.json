@@ -33,7 +33,7 @@
     "@atomicloans/loan-bundle": "^0.2.53",
     "@atomicloans/provider": "^0.2.48",
     "@codechecks/client": "^0.1.5",
-    "@mblackmblack/bundle": "^0.2.12",
+    "@liquality/bundle": "^0.3.2",
     "bitcoinjs-lib": "^5.1.3",
     "chai": "^4.2.0",
     "chai-bignumber": "^3.0.0",

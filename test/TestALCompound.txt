@@ -6,7 +6,7 @@
 
 // contract TestALCompound is Funds {
 
-//   constructor() public Funds(Funds(DeployedAddresses.Funds()).token()) {
+//   constructor() public Funds(Funds(DeployedAddresses.Funds()).token(), 18) {
 //     Funds funds = Funds(DeployedAddresses.Funds());
 //     setCompound(funds.cToken(), funds.comptroller());
 //     (bool status,) = address(token).call(abi.encodePacked(bytes4(keccak256("mintTokens()"))));
