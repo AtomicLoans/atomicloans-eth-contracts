@@ -11,7 +11,7 @@ contract Funds is DSMath, ALCompound {
 
     uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;  // 140% (1.4x in RAY) minimum collateralization ratio
     uint256 public constant DEFAULT_LIQUIDATION_PENALTY = 1000000000937303470807876289; // 3% (3 in RAY) liquidation penalty
-    uint256 public constant DEFAULT_AGENT_FEE = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional agent fee
+    uint256 public constant DEFAULT_AGENT_FEE = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional agent fee // needs to be editable but there needs to be a maximum
     uint256 public constant DEFAULT_MIN_LOAN_AMT = 10000000000000000000; // Min 10 WAD
     uint256 public constant DEFAULT_MAX_LOAN_AMT = 2**256-1; // Max 2**256
     uint256 public constant DEFAULT_MIN_LOAN_DUR = 21600; // 6 hours
@@ -449,7 +449,7 @@ contract Funds is DSMath, ALCompound {
     }
 
     /**
-     * @notice Borrowers request loan from Loan Fund
+     * @notice Lenders request loan from Loan Fund on behalf of Borrower
      * @param fund The Id of a Loan Fund
      * @param amount_ Amount of tokens to request
      * @param collateral_ Amount of collateral to deposit in satoshis
@@ -494,7 +494,12 @@ contract Funds is DSMath, ALCompound {
         loans.fund(loanIndex);
     }
 
-    function withdraw(bytes32 fund, uint256 amount) external { // Withdraw funds from Loan Fund
+    /**
+     * @notice Lenders withdraw tokens in Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @param amount Amount of tokens to withdraw
+     */
+    function withdraw(bytes32 fund, uint256 amount) external {
         require(msg.sender     == lender(fund));
         require(balance(fund)  >= amount);
         if (funds[fund].compoundEnabled) {
@@ -513,16 +518,28 @@ contract Funds is DSMath, ALCompound {
         if (!custom(fund)) { calcGlobalInterest(); }
     }
 
-    function generate(bytes32[] calldata secretHashes_) external { // Generate secret hashes for Loan Fund
+    /**
+     * @notice Submit secretHashes to be used with future loans
+     * @param secretHashes_ List of secretHashes
+     */
+    function generate(bytes32[] calldata secretHashes_) external {
         for (uint i = 0; i < secretHashes_.length; i++) {
             secretHashes[msg.sender].push(secretHashes_[i]);
         }
     }
 
+    /**
+     * @notice Set Lender or Agent Bitcoin Public Key
+     * @param pubKey Bitcoin Public Key
+     */
     function setPubKey(bytes calldata pubKey) external { // Set PubKey for Fund
         pubKeys[msg.sender] = pubKey;
     }
 
+    /**
+     * @notice Enable Compound for Loan Fund
+     * @param fund The Id of a Loan Fund
+     */
     function enableCompound(bytes32 fund) external {
         require(compoundSet);
         require(funds[fund].compoundEnabled == false);
@@ -538,6 +555,10 @@ contract Funds is DSMath, ALCompound {
         funds[fund].cBalance = cTokenToReturn;
     }
 
+    /**
+     * @notice Disable Compound for Loan Fund
+     * @param fund The Id of a Loan Fund
+     */
     function disableCompound(bytes32 fund) external {
         require(funds[fund].compoundEnabled);
         require(msg.sender == lender(fund));
@@ -552,21 +573,31 @@ contract Funds is DSMath, ALCompound {
         funds[fund].balance = tokenToReturn;
     }
 
+    /**
+     * @notice Decrease Total Borrow by Loans contract
+     * @param amount The amount of tokens to decrease totalBorrow by
+     */
     function decreaseTotalBorrow(uint256 amount) external {
         require(msg.sender == address(loans));
         totalBorrow = sub(totalBorrow, amount);
     }
 
+    /**
+     * @notice Calculate and update Global Interest Rate
+     * @dev Implementation returns Global Interest Rate per second in RAY
+     *      
+     *      Note: Only updates interest rate if interestUpdateDelay has passed since last update
+     *            if utilizationRatio increases newAPR = oldAPR + (min(10%, utilizationRatio) / 10)
+     *            if utilizationRatio decreases newAPR = oldAPR - (max(10%, utilizationRatio) / 10)
+     *            ΔAPR should be less than or equal to 1%
+     *            For every 10% change in utilization ratio, the interest rate will change a maximum of 1%
+     *            i.e. newAPR = 11.5% + (10% / 10) = 12.5%
+     *
+     */
     function calcGlobalInterest() public {
-        // if utilizationRatio increases newAPR = oldAPR + (min(10%, utilizationRatio) / 10)
-        // if utilizationRatio decreases newAPR = oldAPR - (max(10%, utilizationRatio) / 10)
-        // ΔAPR should be less than or equal to 1%
-        // For every 10% change in utilization ratio, the interest rate will change a maximum of 1%
-        // i.e. newAPR = 11.5% + (10% / 10) = 12.5%
-
         marketLiquidity = add(tokenMarketLiquidity, wmul(cTokenMarketLiquidity, cToken.exchangeRateCurrent()));
 
-        if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) { // Only updates if globalInterestRate hasn't been changed in over a day
+        if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) {
             uint256 utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow));
 
             if (utilizationRatio > lastUtilizationRatio) {
@@ -577,23 +608,37 @@ contract Funds is DSMath, ALCompound {
                 globalInterestRateNumerator = max(minInterestRateNumerator, sub(globalInterestRateNumerator, rdiv(min(maxUtilizationDelta, changeUtilizationRatio), utilizationInterestDivisor)));
             }
 
-            globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
+            globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR));
 
             lastGlobalInterestUpdated = now;
             lastUtilizationRatio = utilizationRatio;
         }
     }
 
-    function calcInterest(uint256 amount, uint256 rate, uint256 loanDur) public pure returns (uint256) { // Calculate interest
+    /*
+     * @notice Calculate compound interest for a length of time
+     * @param amount The amount of tokens
+     * @param rate The interest rate in seconds
+     * @param loanDur The loan duration in seconds
+     */
+    function calcInterest(uint256 amount, uint256 rate, uint256 loanDur) public pure returns (uint256) {
         return sub(rmul(amount, rpow(rate, loanDur)), amount);
     }
 
-    function createLoan(      // Private Loan Create
-        bytes32  fund,        // Fund Index
+
+    /*
+     * @dev Takes loan request parameters, creates loan, and returns loanIndex
+     * @param fund The Id of a Loan Fund
+     * @param amount_ Amount of tokens to request
+     * @param collateral_ Amount of collateral to deposit in satoshis
+     * @param loanDur_ Length of loan request in seconds     
+     */
+    function createLoan(
+        bytes32  fund,
         address  borrower_,
-        uint256  amount_,     // Loan Amount
-        uint256  collateral_, // Collateral Amount in satoshis
-        uint256  loanDur_     // Loan Duration in seconds
+        uint256  amount_,
+        uint256  collateral_,
+        uint256  loanDur_
     ) private returns (bytes32 loanIndex) {
         loanIndex = loans.create(
             now + loanDur_,
@@ -603,6 +648,12 @@ contract Funds is DSMath, ALCompound {
         );
     }
 
+    /*
+     * @dev Takes loan request Bitcoin parameters, sets loan Public Keys and Secret Hashes
+     * @param loan The Id of the Loan
+     * @param secretHashes_ 4 secretHashes to be used in atomic loan process
+     * @param pubKey_ Bitcoin public key to use for refunding collateral
+     */
     function loanSetSecretHashes(        // Loan Set Secret Hashes
         bytes32           fund,          // Fund Index
         bytes32           loan,          // Loan Index
@@ -620,7 +671,11 @@ contract Funds is DSMath, ALCompound {
         );
     }
 
-    function getSecretHashesForLoan(address addr) private returns (bytes32[4] memory) { // Get 4 secrethashes for loan
+    /*
+     * @dev Get the next 4 secret hashes required for loan
+     * @param addr Address of Lender or Agent
+     */
+    function getSecretHashesForLoan(address addr) private returns (bytes32[4] memory) {
         secretHashIndex[addr] = add(secretHashIndex[addr], 4);
         return [
             secretHashes[addr][sub(secretHashIndex[addr], 4)],
