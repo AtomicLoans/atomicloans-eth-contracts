@@ -8,6 +8,7 @@ var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
 
 var DAIInterestRateModel = artifacts.require('./DAIInterestRateModel.sol')
+var USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 var ETHInterestRateModel = artifacts.require('./ETHInterestRateModel.sol')
 var Unitroller = artifacts.require('./Unitroller.sol')
 var Comptroller = artifacts.require('./Comptroller.sol')
@@ -36,8 +37,10 @@ module.exports = function(deployer, network, accounts) {
 
     // Deploy cDAI
     await deployer.deploy(DAIInterestRateModel, toWei('0.05', 'ether'), toWei('0.12', 'ether'))
+    await deployer.deploy(USDCInterestRateModel, toWei('0', 'ether'), toWei('0.2', 'ether'))
     await deployer.deploy(ETHInterestRateModel, toWei('0', 'ether'), toWei('0.2', 'ether'))
     var daiInterestRateModel = await DAIInterestRateModel.deployed()
+    var usdcInterestRateModel = await USDCInterestRateModel.deployed()
     var ethInterestRateModel = await ETHInterestRateModel.deployed()
 
     await deployer.deploy(Unitroller)
@@ -80,10 +83,10 @@ module.exports = function(deployer, network, accounts) {
     var medianizer = await Medianizer.deployed();
 
     // // Deploy Atomic Loan Contracts
-    await deployer.deploy(Funds, dai.address);
+    await deployer.deploy(Funds, dai.address, '18');
     var funds = await Funds.deployed();
     await funds.setCompound(cdai.address, comptroller.address);
-    await deployer.deploy(Loans, funds.address, medianizer.address, dai.address);
+    await deployer.deploy(Loans, funds.address, medianizer.address, dai.address, '18');
     var loans = await Loans.deployed();
     await deployer.deploy(Sales, loans.address, medianizer.address, dai.address);
     var sales = await Sales.deployed();
