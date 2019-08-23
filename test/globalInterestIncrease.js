@@ -173,7 +173,8 @@ contract("Interest", accounts => {
     const fundParams = [
       toSecs({days: 366}),
       agent,
-      false
+      false,
+      0
     ]
 
     this.fund = await this.funds.create.call(...fundParams)
@@ -222,6 +223,7 @@ contract("Interest", accounts => {
 
       const loanParams = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -229,8 +231,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan = await this.funds.request.call(...loanParams, { from: borrower })
-      await this.funds.request(...loanParams, { from: borrower })
+      this.loan = await this.funds.request.call(...loanParams)
+      await this.funds.request(...loanParams)
 
       await this.loans.approve(this.loan)
 
@@ -258,6 +260,7 @@ contract("Interest", accounts => {
 
       const loanParams2 = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -265,8 +268,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan2 = await this.funds.request.call(...loanParams2, { from: borrower })
-      await this.funds.request(...loanParams2, { from: borrower })
+      this.loan2 = await this.funds.request.call(...loanParams2)
+      await this.funds.request(...loanParams2)
 
 
       const globalInterestRate3 = await this.funds.globalInterestRate.call()
@@ -289,6 +292,7 @@ contract("Interest", accounts => {
 
       const loanParams3 = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -296,8 +300,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan3 = await this.funds.request.call(...loanParams3, { from: borrower })
-      await this.funds.request(...loanParams3, { from: borrower })
+      this.loan3 = await this.funds.request.call(...loanParams3)
+      await this.funds.request(...loanParams3)
 
 
       const globalInterestRate4 = await this.funds.globalInterestRate.call()
@@ -320,6 +324,7 @@ contract("Interest", accounts => {
 
       const loanParams4 = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -327,8 +332,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan3 = await this.funds.request.call(...loanParams4, { from: borrower })
-      await this.funds.request(...loanParams4, { from: borrower })
+      this.loan3 = await this.funds.request.call(...loanParams4)
+      await this.funds.request(...loanParams4)
 
 
       const globalInterestRate5 = await this.funds.globalInterestRate.call()
@@ -352,6 +357,7 @@ contract("Interest", accounts => {
 
       const loanParams5 = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -359,8 +365,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan4 = await this.funds.request.call(...loanParams5, { from: borrower })
-      await this.funds.request(...loanParams5, { from: borrower })
+      this.loan4 = await this.funds.request.call(...loanParams5)
+      await this.funds.request(...loanParams5)
 
 
       const globalInterestRate6 = await this.funds.globalInterestRate.call()
@@ -383,6 +389,7 @@ contract("Interest", accounts => {
 
       const loanParams6 = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -390,8 +397,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan4 = await this.funds.request.call(...loanParams6, { from: borrower })
-      await this.funds.request(...loanParams6, { from: borrower })
+      this.loan4 = await this.funds.request.call(...loanParams6)
+      await this.funds.request(...loanParams6)
 
 
       const globalInterestRate7 = await this.funds.globalInterestRate.call()
@@ -438,6 +445,7 @@ contract("Interest", accounts => {
 
       const loanParams7 = [
         this.fund,
+        borrower,
         toWei(loanReq2.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -445,8 +453,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan4 = await this.funds.request.call(...loanParams7, { from: borrower })
-      await this.funds.request(...loanParams7, { from: borrower })
+      this.loan4 = await this.funds.request.call(...loanParams7)
+      await this.funds.request(...loanParams7)
 
 
       const globalInterestRate9 = await this.funds.globalInterestRate.call()
@@ -471,6 +479,7 @@ contract("Interest", accounts => {
 
       const loanParams8 = [
         this.fund,
+        borrower,
         toWei(loanReq2.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -478,8 +487,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan4 = await this.funds.request.call(...loanParams8, { from: borrower })
-      await this.funds.request(...loanParams8, { from: borrower })
+      this.loan4 = await this.funds.request.call(...loanParams8)
+      await this.funds.request(...loanParams8)
 
 
       const globalInterestRate10 = await this.funds.globalInterestRate.call()
@@ -504,6 +513,7 @@ contract("Interest", accounts => {
 
       const loanParams9 = [
         this.fund,
+        borrower,
         toWei(loanReq2.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -511,8 +521,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan4 = await this.funds.request.call(...loanParams9, { from: borrower })
-      await this.funds.request(...loanParams9, { from: borrower })
+      this.loan4 = await this.funds.request.call(...loanParams9)
+      await this.funds.request(...loanParams9)
 
 
       const globalInterestRate11 = await this.funds.globalInterestRate.call()
@@ -537,6 +547,7 @@ contract("Interest", accounts => {
 
       const loanParams10 = [
         this.fund,
+        borrower,
         toWei(loanReq2.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -544,8 +555,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan4 = await this.funds.request.call(...loanParams10, { from: borrower })
-      await this.funds.request(...loanParams10, { from: borrower })
+      this.loan4 = await this.funds.request.call(...loanParams10)
+      await this.funds.request(...loanParams10)
 
 
       const globalInterestRate12 = await this.funds.globalInterestRate.call()
@@ -569,6 +580,7 @@ contract("Interest", accounts => {
 
       const loanParams11 = [
         this.fund,
+        borrower,
         toWei(loanReq2.toString(), 'ether'),
         col,
         toSecs({days: 10}),
@@ -576,8 +588,8 @@ contract("Interest", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan4 = await this.funds.request.call(...loanParams11, { from: borrower })
-      await this.funds.request(...loanParams11, { from: borrower })
+      this.loan4 = await this.funds.request.call(...loanParams11)
+      await this.funds.request(...loanParams11)
 
 
       const globalInterestRate13 = await this.funds.globalInterestRate.call()

@@ -29,6 +29,8 @@ contract("Funds", accounts => {
   const lender = accounts[0]
   const borrower = accounts[1]
   const agent = accounts[2]
+  const lender2 = accounts[3]
+  const lender3 = accounts[4]
 
   let currentTime
   let btcPrice
@@ -81,11 +83,49 @@ contract("Funds", accounts => {
       toWei(rateToSec('3'), 'gether'), //  3.00%
       toWei(rateToSec('0.75'), 'gether'), //  0.75%
       agent, 
-      false
+      false,
+      0
     ]
 
     this.fund = await this.funds.createCustom.call(...fundParams)
     await this.funds.createCustom(...fundParams)
+  })
+
+  describe('create', function() {
+    it('should fail if user tries to create two loan funds', async function() {
+      const fundParams = [
+        toSecs({days: 366}),
+        agent,
+        false,
+        0
+      ]
+
+      await this.funds.create(...fundParams, { from: lender2 })
+
+      await expectRevert(this.funds.create(...fundParams, { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+  })
+
+  describe('createCustom', function() {
+    it('should fail if user tries to create two loan funds', async function() {
+      const fundParams = [
+        toWei('1', 'ether'),
+        toWei('100', 'ether'),
+        toSecs({days: 1}),
+        toSecs({days: 366}),
+        toWei('1.5', 'gether'), // 150% collateralization ratio
+        toWei(rateToSec('16.5'), 'gether'), // 16.50%
+        toWei(rateToSec('3'), 'gether'), //  3.00%
+        toWei(rateToSec('0.75'), 'gether'), //  0.75%
+        agent,
+        false,
+        0
+      ]
+
+      await this.funds.createCustom(...fundParams, { from: lender3 })
+
+      await expectRevert(this.funds.createCustom(...fundParams, { from: lender3 }), 'VM Exception while processing transaction: revert')
+    })
   })
 
   describe('generate secret hashes', function() {
@@ -146,6 +186,7 @@ contract("Funds", accounts => {
 
       const loanParams = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 2}),
@@ -153,8 +194,8 @@ contract("Funds", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan = await this.funds.request.call(...loanParams, { from: borrower })
-      await this.funds.request(...loanParams, { from: borrower })
+      this.loan = await this.funds.request.call(...loanParams)
+      await this.funds.request(...loanParams)
 
       await this.loans.approve(this.loan)
 
@@ -190,7 +231,8 @@ contract("Funds", accounts => {
         toWei(rateToSec('3'), 'gether'), //  3.00%
         toWei(rateToSec('0.75'), 'gether'), //  0.75%
         agent,
-        false
+        false,
+        0
       ]
 
       this.fund = await this.funds.createCustom.call(...fundParams)

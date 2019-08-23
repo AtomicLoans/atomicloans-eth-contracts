@@ -26,6 +26,7 @@
     "test:e2e": "truffle test ./test/e2e.js",
     "test:global_interest_increase": "truffle test ./test/globalInterestIncrease.js",
     "test:global_interest_decrease": "truffle test ./test/globalInterestDecrease.js",
+    "test:usdc": "truffle test ./test/usdc.js",
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {

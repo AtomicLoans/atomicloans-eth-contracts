@@ -17,7 +17,6 @@ before_script:
   - bitcoind -reindex -txindex -regtest -daemon -rpcport=18332 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
 script:
   - CI=false ganache-cli -k byzantium &
-  - CI=false truffle compile --all
   - CI=false truffle test
 after_script:
   - npx codechecks

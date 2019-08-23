@@ -185,7 +185,8 @@ contract("Sales", accounts => {
       toWei(rateToSec('3'), 'gether'), //  3.00%
       toWei(rateToSec('0.75'), 'gether'), //  0.75%
       agent,
-      false
+      false,
+      0
     ]
 
     this.fund = await this.funds.createCustom.call(...fundParams)
@@ -207,6 +208,7 @@ contract("Sales", accounts => {
     // Pull from loan
     const loanParams = [
       this.fund,
+      borrower,
       toWei(loanReq.toString(), 'ether'),
       col,
       toSecs({days: 2}),
@@ -214,8 +216,8 @@ contract("Sales", accounts => {
       ensure0x(lendpubk)
     ]
 
-    this.loan = await this.funds.request.call(...loanParams, { from: borrower })
-    await this.funds.request(...loanParams, { from: borrower })
+    this.loan = await this.funds.request.call(...loanParams)
+    await this.funds.request(...loanParams)
     await this.loans.approve(this.loan)
     await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 

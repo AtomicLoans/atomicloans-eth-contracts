@@ -6,11 +6,16 @@ const { ensure0x, remove0x   }  = require('@liquality/ethereum-utils');
 const { BigNumber } = require('bignumber.js');
 const axios         = require('axios');
 
-const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
+const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
-const Med   = artifacts.require("./MedianizerExample.sol");
+const Medianizer = artifacts.require('./MedianizerExample.sol');
+
+const CErc20 = artifacts.require('./CErc20.sol');
+const CEther = artifacts.require('./CEther.sol');
+const Comptroller = artifacts.require('./Comptroller.sol')
 
 const utils = require('./helpers/Utils.js');
 
@@ -25,7 +30,7 @@ async function fetchCoin(coinName) {
   return (await axios.get(url)).data[0].price_usd; // this returns a promise - stored in 'request'
 }
 
-contract("Loans", accounts => {
+contract("Usdc", accounts => {
   const lender     = accounts[0]
   const borrower   = accounts[1]
   const agent      = accounts[2]
@@ -80,18 +85,31 @@ contract("Loans", accounts => {
 
     col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-    this.funds = await Funds.deployed();
-    this.loans = await Loans.deployed();
-    this.sales = await Sales.deployed();
-    this.token = await ExampleCoin.deployed();
+    this.med = await Medianizer.deployed()
 
-    this.med   = await Med.deployed();
+    this.token = await ExampleUsdcCoin.deployed()
+    this.comptroller = await Comptroller.deployed()
+    this.usdcInterestRateModel = await USDCInterestRateModel.deployed()
+
+    this.cUsdc = await CErc20.new(this.token.address, this.comptroller.address, this.usdcInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Usdc', 'cUSDC', '8')
+
+    await this.comptroller._supportMarket(this.cUsdc.address)
+
+    this.funds = await Funds.new(this.token.address, '6')
+    await this.funds.setCompound(this.cUsdc.address, this.comptroller.address)
+
+    this.loans = await Loans.new(this.funds.address, this.med.address, this.token.address, '6')
+
+    this.sales = await Sales.new(this.loans.address, this.med.address, this.token.address)
+
+    await this.funds.setLoans(this.loans.address)
+    await this.loans.setSales(this.sales.address)
 
     this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
 
     const fundParams = [
-      toWei('1', 'ether'),
-      toWei('100', 'ether'),
+      toWei('1', 'mwei'),
+      toWei('100', 'mwei'),
       toSecs({days: 1}),
       toSecs({days: 366}),
       toWei('1.5', 'gether'), // 150% collateralization ratio
@@ -116,14 +134,14 @@ contract("Loans", accounts => {
     await this.funds.setPubKey(ensure0x(lendpubk))
 
     // Push funds to loan fund
-    await this.token.approve(this.funds.address, toWei('100', 'ether'))
-    await this.funds.deposit(this.fund, toWei('100', 'ether'))
+    await this.token.approve(this.funds.address, toWei('100', 'mwei'))
+    await this.funds.deposit(this.fund, toWei('100', 'mwei'))
 
     // Pull from loan
     const loanParams = [
       this.fund,
       borrower,
-      toWei(loanReq.toString(), 'ether'),
+      toWei(loanReq.toString(), 'mwei'),
       col,
       toSecs({days: 2}),
       borSechs,
@@ -141,9 +159,9 @@ contract("Loans", accounts => {
       await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       // Send funds to borrower so they can repay full
-      await this.token.transfer(borrower, toWei('1', 'ether'))
+      await this.token.transfer(borrower, toWei('1', 'mwei'))
 
-      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
+      await this.token.approve(this.loans.address, toWei('100', 'mwei'), { from: borrower })
 
       const owedForLoan = await this.loans.owedForLoan.call(this.loan)
       await this.loans.repay(this.loan, owedForLoan, { from: borrower })
@@ -160,9 +178,9 @@ contract("Loans", accounts => {
       await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       // Send funds to borrower so they can repay full
-      await this.token.transfer(borrower, toWei('1', 'ether'))
+      await this.token.transfer(borrower, toWei('1', 'mwei'))
 
-      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: borrower })
+      await this.token.approve(this.loans.address, toWei('100', 'mwei'), { from: borrower })
 
       const owedForLoan = await this.loans.owedForLoan.call(this.loan)
       await this.loans.repay(this.loan, owedForLoan, { from: borrower })
@@ -198,8 +216,8 @@ contract("Loans", accounts => {
       const safe = await this.loans.safe.call(this.loan)
       assert.equal(safe, false)
 
-      await this.token.transfer(liquidator, toWei('5', 'ether'))
-      await this.token.approve(this.loans.address, toWei('100', 'ether'), { from: liquidator })
+      await this.token.transfer(liquidator, toWei('5', 'mwei'))
+      await this.token.approve(this.loans.address, toWei('100', 'mwei'), { from: liquidator })
 
       this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
       await this.loans.liquidate(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
@@ -237,6 +255,9 @@ contract("Loans", accounts => {
       await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
       await time.increase(toSecs({days: 2, minutes: 1}))
+
+      await this.token.transfer(liquidator, toWei('5', 'mwei'))
+      await this.token.approve(this.loans.address, toWei('10', 'mwei'), { from: liquidator })
 
       this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
       await this.loans.liquidate(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })

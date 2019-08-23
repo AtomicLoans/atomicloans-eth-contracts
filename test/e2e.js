@@ -241,7 +241,8 @@ contract("E2E", accounts => {
       toWei(rateToSec('3'), 'gether'), //  3.00%
       toWei(rateToSec('0.75'), 'gether'), //  0.75%
       agent,
-      false
+      false,
+      0
     ]
 
     this.fund = await this.funds.createCustom.call(...fundParams)
@@ -263,18 +264,18 @@ contract("E2E", accounts => {
     await this.token.approve(this.funds.address, toWei('100', 'ether'))
     await this.funds.deposit(this.fund, toWei('100', 'ether'))
 
-    // Pull from loan
     const loanParams = [
       this.fund,
+      borrower,
       toWei(loanReq.toString(), 'ether'),
       col,
       toSecs({days: 2}),
       borSechs,
-      ensure0x(borrowerBTC.pubKey)
+      ensure0x(borrowerBTC.pubKey.toString('hex'))
     ]
 
-    this.loan = await this.funds.request.call(...loanParams, { from: borrower })
-    await this.funds.request(...loanParams, { from: borrower })
+    this.loan = await this.funds.request.call(...loanParams)
+    await this.funds.request(...loanParams)
   })
 
   describe('Regular loan flow with repayment before loanExpiration', function() {

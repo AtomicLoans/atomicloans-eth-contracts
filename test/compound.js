@@ -19,8 +19,6 @@ const CEther = artifacts.require('./CEther.sol');
 
 const Comptroller = artifacts.require('./Comptroller.sol')
 
-const Compound = artifacts.require('./ALCompound.sol');
-
 const utils = require('./helpers/Utils.js');
 
 const { rateToSec, numToBytes32, toBaseUnit } = utils;
@@ -46,7 +44,8 @@ async function createFund(_this, agent, account, amount, compoundEnabled) {
   const fundParams = [
     toSecs({days: 366}),
     agent, 
-    compoundEnabled
+    compoundEnabled,
+    0
   ]
 
   const fund = await _this.funds.create.call(...fundParams, { from: account })
@@ -121,8 +120,6 @@ contract("Compound", accounts => {
     this.cErc20 = await CErc20.deployed();
     this.cEther = await CEther.deployed();
 
-    this.compound = await Compound.deployed();
-
     this.comptroller = await Comptroller.deployed();
   })
 
@@ -131,7 +128,8 @@ contract("Compound", accounts => {
       const fundParams = [
         toSecs({days: 366}),
         agent, 
-        true
+        true,
+        0
       ]
 
       this.fund = await this.funds.create.call(...fundParams)
@@ -236,7 +234,8 @@ contract("Compound", accounts => {
       const fundParams = [
         toSecs({days: 366}),
         agent, 
-        true
+        true,
+        0
       ]
 
       this.fund = await this.funds.create.call(...fundParams)
@@ -327,7 +326,8 @@ contract("Compound", accounts => {
       const fundParams = [
         toSecs({days: 366}),
         agent, 
-        true
+        true,
+        0
       ]
 
       this.fund = await this.funds.create.call(...fundParams)
@@ -371,6 +371,7 @@ contract("Compound", accounts => {
 
       const loanParams = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 2}),
@@ -378,8 +379,8 @@ contract("Compound", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan = await this.funds.request.call(...loanParams, { from: borrower })
-      await this.funds.request(...loanParams, { from: borrower })
+      this.loan = await this.funds.request.call(...loanParams)
+      await this.funds.request(...loanParams)
 
       const cErc20BalAfterDeposit2 = await this.cErc20.balanceOf.call(this.funds.address)
       const { cBalance } = await this.funds.funds.call(this.fund)
@@ -427,6 +428,7 @@ contract("Compound", accounts => {
 
       const loanParams = [
         this.fund,
+        borrower,
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 2}),
@@ -434,8 +436,8 @@ contract("Compound", accounts => {
         ensure0x(lendpubk)
       ]
 
-      this.loan = await this.funds.request.call(...loanParams, { from: borrower })
-      await this.funds.request(...loanParams, { from: borrower })
+      this.loan = await this.funds.request.call(...loanParams)
+      await this.funds.request(...loanParams)
 
       const exchangeRateCurrent = await this.cErc20.exchangeRateCurrent.call()
 
@@ -455,7 +457,7 @@ contract("Compound", accounts => {
   describe('enableCompound', function() {
     it('should properly convert DAI to cDAI at the current exchangeRate and update token and cToken balances', async function() {
       this.fund  = await createCompoundDisabledFund(this, agent, lender, toWei('100', 'ether'))
-      this.fund2 = await createCompoundEnabledFund(this, agent, lender2, toWei('100', 'ether'))
+      this.fund2 = await createCompoundEnabledFund(this, agent, lender, toWei('100', 'ether'))
 
       await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
       await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
@@ -507,7 +509,7 @@ contract("Compound", accounts => {
 
     it('should transfer tokenMarketLiquidity to cTokenMarketLiquidity at DAI to cDAI exchangeRate', async function() {
       this.fund  = await createCompoundDisabledFund(this, agent, lender, toWei('100', 'ether'))
-      this.fund2 = await createCompoundEnabledFund(this, agent, lender2, toWei('100', 'ether'))
+      this.fund2 = await createCompoundEnabledFund(this, agent, lender, toWei('100', 'ether'))
 
       await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
       await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
@@ -568,7 +570,7 @@ contract("Compound", accounts => {
   describe('disableCompound', function() {
     it('should properly convert cDAI to DAI at the current exchangeRate and update token and cToken balances', async function() {
       this.fund  = await createCompoundEnabledFund(this, agent, lender, toWei('100', 'ether'))
-      this.fund2 = await createCompoundEnabledFund(this, agent, lender2, toWei('100', 'ether'))
+      this.fund2 = await createCompoundEnabledFund(this, agent, lender, toWei('100', 'ether'))
 
       await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
       await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
@@ -620,7 +622,7 @@ contract("Compound", accounts => {
 
     it('should transfer cTokenMarketLiquidity to tokenMarketLiquidity at cDAI to DAI exchangeRate', async function() {
       this.fund  = await createCompoundEnabledFund(this, agent, lender, toWei('100', 'ether'))
-      this.fund2 = await createCompoundEnabledFund(this, agent, lender2, toWei('100', 'ether'))
+      this.fund2 = await createCompoundEnabledFund(this, agent, lender, toWei('100', 'ether'))
 
       await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
       await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
