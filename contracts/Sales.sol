@@ -110,7 +110,7 @@ contract Sales is DSMath { // Auctions
         sales[sale].liquidator  = liquidator;
         sales[sale].createdAt   = now;
         sales[sale].pubKeyHash  = pubKeyHash;
-        sales[sale].discountBuy = loans.discountCollateralValue(loanIndex);
+        sales[sale].discountBuy = loans.ddiv(loans.discountCollateralValue(loanIndex));
         sales[sale].set         = true;
         secretHashes[sale].secretHashA = secretHashA;
         secretHashes[sale].secretHashB = secretHashB;

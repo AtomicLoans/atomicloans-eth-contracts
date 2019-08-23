@@ -42,6 +42,7 @@ contract Funds is DSMath, ALCompound {
     uint256 public interestUpdateDelay;
 
     ERC20 public token;
+    uint256 public decimals;
     CTokenInterface public cToken;
     bool compoundSet;
 
@@ -82,10 +83,12 @@ contract Funds is DSMath, ALCompound {
     }
 
     constructor(
-        ERC20 token_
+        ERC20   token_,
+        uint256 decimals_
     ) public {
         deployer = msg.sender;
         token = token_;
+        decimals = decimals_;
         utilizationInterestDivisor = 10531702972595856680093239305; // 10.53 in RAY (~10:1 ratio for % change in utilization ratio to % change in interest rate)
         maxUtilizationDelta = 95310179948351216961192521; // Global Interest Rate Numerator can change up to 9.53% in RAY (~10% change in utilization ratio = ~1% change in interest rate)
         globalInterestRateNumerator =  95310179948351216961192521; // ~10%  ( (e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) )
@@ -205,7 +208,7 @@ contract Funds is DSMath, ALCompound {
      */
     function minLoanAmt(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].minLoanAmt; }
-        else                    { return DEFAULT_MIN_LOAN_AMT; }
+        else                    { return div(DEFAULT_MIN_LOAN_AMT, (10 ** sub(18, decimals))); }
     }
 
     /**
@@ -240,32 +243,57 @@ contract Funds is DSMath, ALCompound {
     /**
      * @notice Get the interest rate for a Loan Fund
      * @param fund The Id of a Loan Fund
-     * @return The interest rate per second for a Loan Fund
+     * @return The interest rate per second for a Loan Fund in RAY per second
      */
     function interest(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].interest; }
         else                    { return globalInterestRate; }
     }
 
+    /**
+     * @notice Get the liquidation penalty rate for a Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @return The liquidation penalty rate per second for a Loan Fund in RAY per second
+     */
     function penalty(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].penalty; }
         else                    { return DEFAULT_LIQUIDATION_PENALTY; }
     }
 
+    /**
+     * @notice Get the optional automation fee for a Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @return The optional automation fee rate of Loan Fund in RAY per second
+     */
     function fee(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].fee; }
         else                    { return DEFAULT_AGENT_FEE; }
     }
 
+    /**
+     * @notice Get the liquidation ratio of a Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @return The liquidation ratio of Loan Fund in RAY
+     */
     function liquidationRatio(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].liquidationRatio; }
         else                    { return DEFAULT_LIQUIDATION_RATIO; }
     }
 
+    /**
+     * @notice Get the agent for a Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @return The address of the agent for a Loan fund
+     */
     function agent(bytes32 fund)   public view returns (address) {
         return funds[fund].agent;
     }
 
+    /**
+     * @notice Get the current balance of a Loan Fund in tokens
+     * @param fund The Id of a Loan Fund
+     * @return The amount of tokens remaining in Loan Fund
+     */
     function balance(bytes32 fund) public returns (uint256) {
         if (funds[fund].compoundEnabled) {
             return wmul(funds[fund].cBalance, cToken.exchangeRateCurrent());
@@ -274,16 +302,33 @@ contract Funds is DSMath, ALCompound {
         }
     }
 
+    /**
+     * @notice Get the custom indicator for a Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @return The indicator of whether a Loan Fund is custom or not
+     */
     function custom(bytes32 fund) public view returns (bool) {
         return funds[fund].custom;
     }
 
+    /**
+     * @notice Lenders create Loan Fund using Global Protocol parameters and deposit assets
+     * @param maxLoanDur_ Max Loan Duration of Loan Fund in seconds
+     * @param agent_  Optional address of agent
+     * @param compoundEnabled_ Indicator whether excess funds should be lent on Compound
+     * @param amount_ Amount of tokens to be deposited on creation
+     * @return The Id of a Loan Fund
+     *
+     *         Note: Only one loan fund is allowed per ethereum address.
+     *               Exception is made for the deployer for testing.
+     */
     function create(
-        uint256  maxLoanDur_,       // Max Loan Duration
-        address  agent_,            // Optional Address Automated Agent
-        bool     compoundEnabled_
+        uint256  maxLoanDur_,
+        address  agent_,
+        bool     compoundEnabled_,
+        uint256  amount_
     ) external returns (bytes32 fund) { 
-        require(fundOwner[msg.sender].lender != msg.sender); // Only allow one loan fund per address
+        require(fundOwner[msg.sender].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -292,21 +337,38 @@ contract Funds is DSMath, ALCompound {
         funds[fund].agent            = agent_;
         funds[fund].custom           = false;
         funds[fund].compoundEnabled  = compoundEnabled_;
+        fundOwner[msg.sender]        = funds[fund];
+        if (amount_ > 0) { deposit(fund, amount_); }
     }
 
+    /**
+     * @notice Lenders create Loan Fund using Custom parameters and deposit assets
+     * @param minLoanAmt_ Minimum amount of tokens that can be borrowed from Loan Fund
+     * @param maxLoanAmt_ Maximum amount of tokens that can be borrowed from Loan Fund
+     * @param minLoanDur_ Minimum length of loan that can be requested from Loan Fund in seconds
+     * @param maxLoanDur_ Maximum length of loan that can be requested from Loan Fund in seconds
+     * @param agent_  Optional address of agent
+     * @param compoundEnabled_ Indicator whether excess funds should be lent on Compound
+     * @param amount_ Amount of tokens to be deposited on creation
+     * @return The Id of a Loan Fund
+     *
+     *         Note: Only one loan fund is allowed per ethereum address.
+     *               Exception is made for the deployer for testing.
+     */
     function createCustom(
-        uint256  minLoanAmt_,       // Min Loan Amount
-        uint256  maxLoanAmt_,       // Max Loan Amount
-        uint256  minLoanDur_,       // Min Loan Duration
-        uint256  maxLoanDur_,       // Max Loan Duration
-        uint256  liquidationRatio_, // Liquidation Ratio
-        uint256  interest_,         // Interest Rate
-        uint256  penalty_,          // Liquidation Penalty Rate
-        uint256  fee_,              // Optional Automation Fee Rate
-        address  agent_,            // Optional Address Automated Agent
-        bool     compoundEnabled_   // Enable Compound
+        uint256  minLoanAmt_,
+        uint256  maxLoanAmt_,
+        uint256  minLoanDur_,
+        uint256  maxLoanDur_,
+        uint256  liquidationRatio_,
+        uint256  interest_,
+        uint256  penalty_,
+        uint256  fee_,
+        address  agent_,
+        bool     compoundEnabled_,
+        uint256  amount_
     ) external returns (bytes32 fund) {
-        require(fundOwner[msg.sender].lender != msg.sender); // Only allow one loan fund per address
+        require(fundOwner[msg.sender].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -322,10 +384,18 @@ contract Funds is DSMath, ALCompound {
         funds[fund].agent            = agent_;
         funds[fund].custom           = true;
         funds[fund].compoundEnabled  = compoundEnabled_;
+        fundOwner[msg.sender]        = funds[fund];
+        if (amount_ > 0) { deposit(fund, amount_); }
     }
 
-    function deposit(bytes32 fund, uint256 amount) external { // Deposit funds to Loan Fund
-        // require(msg.sender == lender(fund) || msg.sender == address(loans)); // NOTE: this require is not necessary. Anyone can fund someone elses loan fund
+    /**
+     * @notice Lenders deposit tokens in Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @param amount Amount of tokens to deposit
+     *
+     *        Note: Anyone can deposit tokens into a Loan Fund
+     */
+    function deposit(bytes32 fund, uint256 amount) public {
         require(token.transferFrom(msg.sender, address(this), amount));
         if (funds[fund].compoundEnabled) {
             mintCToken(address(token), address(cToken), amount);
@@ -339,17 +409,32 @@ contract Funds is DSMath, ALCompound {
         if (!custom(fund)) { calcGlobalInterest(); }
     }
 
-    function update(                // Set Loan Fund details
-        bytes32  fund,              // Loan Fund Index
-        uint256  minLoanAmt_,       // Min Loan Amount
-        uint256  maxLoanAmt_,       // Max Loan Amount
-        uint256  minLoanDur_,       // Min Loan Duration
-        uint256  maxLoanDur_,       // Max Loan Duration
-        uint256  interest_,         // Interest Rate in RAY
-        uint256  penalty_,          // Liquidation Penalty Rate in RAY
-        uint256  fee_,              // Optional Automation Fee in RAY
-        uint256  liquidationRatio_, // Liquidation Ratio in RAY
-        address  agent_             // Optional Automator Agent)
+    /**
+     * @notice Users update Loan Fund settings
+     * @param fund The Id of a Loan Fund
+     * @param minLoanAmt_ Minimum amount of tokens that can be borrowed from Loan Fund
+     * @param maxLoanAmt_ Maximum amount of tokens that can be borrowed from Loan Fund
+     * @param minLoanDur_ Minimum length of loan that can be requested from Loan Fund in seconds
+     * @param maxLoanDur_ Maximum length of loan that can be requested from Loan Fund in seconds
+     * @param interest_ The interest rate per second for a Loan Fund in RAY per second
+     * @param penalty_ The liquidation penalty rate per second for a Loan Fund in RAY per second
+     * @param fee_ The optional automation fee rate of Loan Fund in RAY per second
+     * @param liquidationRatio_ The liquidation ratio of Loan Fund in RAY
+     * @param agent_ The address of the agent for a Loan fund
+     *
+     *        Note: msg.sender must be the lender of the Loan Fund
+     */
+    function update(
+        bytes32  fund,
+        uint256  minLoanAmt_,
+        uint256  maxLoanAmt_,
+        uint256  minLoanDur_,
+        uint256  maxLoanDur_,
+        uint256  interest_,
+        uint256  penalty_,
+        uint256  fee_,
+        uint256  liquidationRatio_,
+        address  agent_
     ) external {
         require(msg.sender == lender(fund));
         funds[fund].minLoanAmt       = minLoanAmt_;
@@ -363,22 +448,32 @@ contract Funds is DSMath, ALCompound {
         funds[fund].agent            = agent_;
     }
 
-    function request(                      // Request Loan
-        bytes32             fund,          // Fund Index
-        uint256             amount_,       // Loan Amount
-        uint256             collateral_,   // Collateral Amount in satoshis
-        uint256             loanDur,       // Loan Duration in seconds
-        bytes32[4] calldata secretHashes_, // Secret Hash A1 & A2
-        bytes      calldata pubKey_        // Pubkey
+    /**
+     * @notice Borrowers request loan from Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @param amount_ Amount of tokens to request
+     * @param collateral_ Amount of collateral to deposit in satoshis
+     * @param loanDur_ Length of loan request in seconds
+     * @param secretHashes_ 4 secretHashes to be used in atomic loan process
+     * @param pubKey_ Bitcoin public key to use for refunding collateral
+     */
+    function request(
+        bytes32             fund,
+        address             borrower_,
+        uint256             amount_,
+        uint256             collateral_,
+        uint256             loanDur_,
+        bytes32[4] calldata secretHashes_,
+        bytes      calldata pubKey_
     ) external returns (bytes32 loanIndex) {
-        require(msg.sender != lender(fund));
+        require(msg.sender == lender(fund));
         require(amount_    <= balance(fund));
         require(amount_    >= minLoanAmt(fund));
         require(amount_    <= maxLoanAmt(fund));
-        require(loanDur    >= minLoanDur(fund));
-        require(loanDur    <= maxLoanDur(fund));
+        require(loanDur_   >= minLoanDur(fund));
+        require(loanDur_   <= maxLoanDur(fund));
 
-        loanIndex = createLoan(fund, amount_, collateral_, loanDur);
+        loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKey_);
         
         if (funds[fund].compoundEnabled) {
@@ -495,13 +590,14 @@ contract Funds is DSMath, ALCompound {
 
     function createLoan(      // Private Loan Create
         bytes32  fund,        // Fund Index
+        address  borrower_,
         uint256  amount_,     // Loan Amount
         uint256  collateral_, // Collateral Amount in satoshis
         uint256  loanDur_     // Loan Duration in seconds
     ) private returns (bytes32 loanIndex) {
         loanIndex = loans.create(
             now + loanDur_,
-            [ msg.sender, lender(fund), funds[fund].agent],
+            [ borrower_, lender(fund), funds[fund].agent],
             [ amount_, calcInterest(amount_, interest(fund), loanDur_), calcInterest(amount_, penalty(fund), loanDur_), calcInterest(amount_, fee(fund), loanDur_), collateral_, liquidationRatio(fund)],
             fund
         );

@@ -29,6 +29,7 @@ contract Loans is DSMath {
     uint256                           public loanIndex;    // Current Loan Index
 
     ERC20 public token; // ERC20 Debt Stablecoin
+    uint256 public decimals;
 
     address deployer;
 
@@ -169,13 +170,21 @@ contract Loans is DSMath {
         return bools[loan].off;
     }
 
+    function dmul(uint x) public view returns (uint256) {
+        return mul(x, (10 ** sub(18, decimals)));
+    }
+
+    function ddiv(uint x) public view returns (uint256) {
+        return div(x, (10 ** sub(18, decimals)));
+    }
+
     function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
         uint256 val = uint(med.read());
         return cmul(val, collateral(loan)); // Multiply value dependent on number of decimals with currency
     }
 
     function minCollateralValue(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
-        return rmul(sub(principal(loan), repaid(loan)), liquidationRatio(loan));
+        return rmul(dmul(sub(principal(loan), repaid(loan))), liquidationRatio(loan));
     }
 
     function discountCollateralValue(bytes32 loan) public view returns (uint256) {
@@ -186,11 +195,12 @@ contract Loans is DSMath {
         return collateralValue(loan) >= minCollateralValue(loan);
     }
 
-    constructor (Funds funds_, Medianizer med_, ERC20 token_) public {
+    constructor (Funds funds_, Medianizer med_, ERC20 token_, uint256 decimals_) public {
         deployer = msg.sender;
     	funds    = funds_;
     	med      = med_;
         token    = token_;
+        decimals = decimals_;
         require(token.approve(address(funds), 2**256-1));
     }
 
@@ -353,8 +363,8 @@ contract Loans is DSMath {
             require(now > sales.settlementExpiration(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation after settlement expiration of pervious liquidation
             require(!sales.accepted(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation again if previous liquidation discountBuy wasn't taken
 		}
-        require(token.balanceOf(msg.sender) >= discountCollateralValue(loan));
-        require(token.transferFrom(msg.sender, address(sales), discountCollateralValue(loan)));
+        require(token.balanceOf(msg.sender) >= ddiv(discountCollateralValue(loan)));
+        require(token.transferFrom(msg.sender, address(sales), ddiv(discountCollateralValue(loan))));
         SecretHashes storage h = secretHashes[loan];
         uint256 i = sales.next(loan);
 		sale_ = sales.create(loan, loans[loan].borrower, loans[loan].lender, loans[loan].agent, msg.sender, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i], secretHash, pubKeyHash);
