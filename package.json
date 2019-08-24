@@ -17,9 +17,10 @@
   },
   "scripts": {
     "test": "truffle test",
-    "test:funds": "truffle test ./test/funds.js",
-    "test:loans": "truffle test ./test/loans.js",
-    "test:sales": "truffle test ./test/sales.js",
+    "test:dai:funds": "truffle test ./test/daiFunds.js",
+    "test:dai:loans": "truffle test ./test/daiLoans.js",
+    "test:dai:sales": "truffle test ./test/daiSales.js",
+    "test:dai": "truffle test ./test/daiFunds.js ./test/daiLoans.js ./test/daiSales.js",
     "test:compound": "truffle test ./test/compound.js",
     "test:alcompound:js": "truffle test ./test/alcompound.js",
     "test:alcompound:sol": "truffle test ./test/TestALCompound.sol",
@@ -27,7 +28,10 @@
     "test:e2e": "truffle test ./test/e2e.js",
     "test:global_interest_increase": "truffle test ./test/globalInterestIncrease.js",
     "test:global_interest_decrease": "truffle test ./test/globalInterestDecrease.js",
-    "test:usdc": "truffle test ./test/usdc.js",
+    "test:usdc:funds": "truffle test ./test/usdcFunds.js",
+    "test:usdc:loans": "truffle test ./test/usdcLoans.js",
+    "test:usdc:sales": "truffle test ./test/usdcSales.js",
+    "test:usdc": "truffle test ./test/usdcFunds.js ./test/usdcLoans.js ./test/usdcSales.js",
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {

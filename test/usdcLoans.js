@@ -22,15 +22,9 @@ const utils = require('./helpers/Utils.js');
 const { rateToSec, numToBytes32 } = utils;
 const { toWei, fromWei } = web3.utils;
 
-const API_ENDPOINT_COIN = "https://atomicloans.io/marketcap/api/v1/"
 const BTC_TO_SAT = 10**8
 
-async function fetchCoin(coinName) {
-  const url = `${API_ENDPOINT_COIN}${coinName}/`;
-  return (await axios.get(url)).data[0].price_usd; // this returns a promise - stored in 'request'
-}
-
-contract("Usdc", accounts => {
+contract("Usdc Loans", accounts => {
   const lender     = accounts[0]
   const borrower   = accounts[1]
   const agent      = accounts[2]
@@ -80,7 +74,7 @@ contract("Usdc", accounts => {
 
   beforeEach(async function () {
     currentTime = await time.latest();
-    // btcPrice = await fetchCoin('bitcoin')
+
     btcPrice = '9340.23'
 
     col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
