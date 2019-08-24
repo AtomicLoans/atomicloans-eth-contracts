@@ -205,20 +205,24 @@ contract("E2E", accounts => {
     if (blockHeight < 101) {
       await bitcoin.client.chain.generateBlock(101)
     } else {
-      try {
+      const latestBlockHash = await bitcoin.client.getMethod('jsonrpc')('getblockhash', blockHeight)
+      const latestBlock = await bitcoin.client.getMethod('jsonrpc')('getblock', latestBlockHash)
+
+      let btcTime = latestBlock.time
+      const ethTime = await getCurrentTime()
+
+      await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+      await bitcoin.client.chain.generateBlock(6)
+
+      if (btcTime > ethTime) {
+        await time.increase(btcTime - ethTime)
+      }
+
+      while (ethTime > btcTime && (ethTime - btcTime) >= toSecs({ hours: 2 })) {
+        await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
         await bitcoin.client.chain.generateBlock(6)
-      } catch(e) {
-        const latestBlockHash = await bitcoin.client.getMethod('jsonrpc')('getblockhash', blockHeight)
-        const latestBlock = await bitcoin.client.getMethod('jsonrpc')('getblock', latestBlockHash)
-
-        let btcTime = latestBlock.time
-        const ethTime = await getCurrentTime()
-
-        while (ethTime > btcTime && (ethTime - btcTime) >= toSecs({ hours: 2 })) {
-          await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
-          await bitcoin.client.chain.generateBlock(6)
-          btcTime += toSecs({ hours: 1, minutes: 59 })
-        }
+        btcTime += toSecs({ hours: 1, minutes: 59 })
+        console.log('testing3')
       }
     }
 
