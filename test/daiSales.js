@@ -17,13 +17,7 @@ const utils = require('./helpers/Utils.js');
 const { rateToSec, numToBytes32 } = utils;
 const { toWei, fromWei, hexToNumberString } = web3.utils;
 
-const API_ENDPOINT_COIN = "https://atomicloans.io/marketcap/api/v1/"
 const BTC_TO_SAT = 10**8
-
-async function fetchCoin(coinName) {
-  const url = `${API_ENDPOINT_COIN}${coinName}/`;
-  return (await axios.get(url)).data[0].price_usd; // this returns a promise - stored in 'request'
-}
 
 async function approveAndTransfer(token, spender, contract, amount) {
   await token.transfer(spender, amount)
@@ -131,7 +125,10 @@ contract("Sales", accounts => {
     lendSecs.push(ensure0x(sec))
     lendSechs.push(ensure0x(sha256(sec)))
   }
-  const lendpubk = '034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'
+
+  const borpubk = '02b4c50d2b6bdc9f45b9d705eeca37e811dfdeb7365bf42f82222f7a4a89868703'
+  const lendpubk = '03dc23d80e1cf6feadf464406e299ac7fec9ea13c51dfd9abd970758bf33d89bb6'
+  const agentpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
 
   let borSecs = []
   let borSechs = []
@@ -161,7 +158,7 @@ contract("Sales", accounts => {
 
   beforeEach(async function () {
     currentTime = await time.latest();
-    // btcPrice = await fetchCoin('bitcoin')
+
     btcPrice = '9340.23'
 
     col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
@@ -192,14 +189,11 @@ contract("Sales", accounts => {
     this.fund = await this.funds.createCustom.call(...fundParams)
     await this.funds.createCustom(...fundParams)
 
-    // Generate lender secret hashes
-    await this.funds.generate(lendSechs)
-
     // Generate agent secret hashes
     await this.funds.generate(agentSechs, { from: agent })
 
     // Set Lender PubKey
-    await this.funds.setPubKey(ensure0x(lendpubk))
+    await this.funds.setPubKey(ensure0x(agentpubk), { from: agent })
 
     // Push funds to loan fund
     await this.token.approve(this.funds.address, toWei('100', 'ether'))
@@ -212,7 +206,8 @@ contract("Sales", accounts => {
       toWei(loanReq.toString(), 'ether'),
       col,
       toSecs({days: 2}),
-      borSechs,
+      [ ...borSechs, ...lendSechs ],
+      ensure0x(borpubk),
       ensure0x(lendpubk)
     ]
 

@@ -17,13 +17,7 @@ const utils = require('./helpers/Utils.js');
 const { rateToSec, numToBytes32 } = utils;
 const { toWei, fromWei } = web3.utils;
 
-const API_ENDPOINT_COIN = "https://atomicloans.io/marketcap/api/v1/"
 const BTC_TO_SAT = 10**8
-
-async function fetchCoin(coinName) {
-  const url = `${API_ENDPOINT_COIN}${coinName}/`;
-  return (await axios.get(url)).data[0].price_usd; // this returns a promise - stored in 'request'
-}
 
 contract("Funds", accounts => {
   const lender = accounts[0]
@@ -45,7 +39,10 @@ contract("Funds", accounts => {
     lendSecs.push(ensure0x(sec))
     lendSechs.push(ensure0x(sha256(sec)))
   }
-  const lendpubk = '034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'
+  
+  const borpubk = '02b4c50d2b6bdc9f45b9d705eeca37e811dfdeb7365bf42f82222f7a4a89868703'
+  const lendpubk = '03dc23d80e1cf6feadf464406e299ac7fec9ea13c51dfd9abd970758bf33d89bb6'
+  const agentpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
 
   let borSecs = []
   let borSechs = []
@@ -65,7 +62,7 @@ contract("Funds", accounts => {
 
   beforeEach(async function () {
     currentTime = await time.latest();
-    // btcPrice = await fetchCoin('bitcoin')
+
     btcPrice = '9340.23'
 
     this.funds = await Funds.deployed();
@@ -174,8 +171,8 @@ contract("Funds", accounts => {
       // Generate agent secret hashes
       await this.funds.generate(agentSechs, { from: agent })
 
-      // Set Lender PubKey
-      await this.funds.setPubKey(ensure0x(lendpubk))
+      // Set Agent PubKey
+      await this.funds.setPubKey(ensure0x(agentpubk), { from: agent })
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
@@ -190,7 +187,8 @@ contract("Funds", accounts => {
         toWei(loanReq.toString(), 'ether'),
         col,
         toSecs({days: 2}),
-        borSechs,
+        [ ...borSechs, ...lendSechs ],
+        ensure0x(borpubk),
         ensure0x(lendpubk)
       ]
 
@@ -340,6 +338,126 @@ contract("Funds", accounts => {
   describe('setLoans', function() {
     it('should not allow setLoans to be called twice', async function() {
       await expectRevert(this.funds.setLoans(this.loans.address), 'VM Exception while processing transaction: revert')
+    })
+  })
+  
+  describe('setUtilizationInterestDivisor', function() {
+    it('should fail if set by non deployer', async function() {
+      await expectRevert(this.funds.setUtilizationInterestDivisor(toWei('10.5', 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should set utilizationInterestDivisor if called by deployer', async function() {
+      const expectedUtilizationInterestDivisor = toWei('10.5', 'gether')
+      await this.funds.setUtilizationInterestDivisor(expectedUtilizationInterestDivisor)
+
+      const actualUtilizationInterestdivisor = await this.funds.utilizationInterestDivisor.call()
+
+      assert.equal(expectedUtilizationInterestDivisor, actualUtilizationInterestdivisor)
+    })
+  })
+
+  describe('setMaxUtilizationDelta', function() {
+    it('should fail if set by non deployer', async function() {
+      await expectRevert(this.funds.setMaxUtilizationDelta(toWei('0.095', 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should set maxUtilizationDelta if called by deployer', async function() {
+      const expectedMaxUtilizationDelta = toWei('0.095', 'gether')
+      await this.funds.setMaxUtilizationDelta(expectedMaxUtilizationDelta)
+
+      const actualMaxUtilizationDelta = await this.funds.maxUtilizationDelta.call()
+
+      assert.equal(expectedMaxUtilizationDelta, actualMaxUtilizationDelta)
+    })
+  })
+
+  describe('setGlobalInterestRateNumerator', function() {
+    it('should fail if set by non deployer', async function() {
+      await expectRevert(this.funds.setGlobalInterestRateNumerator(toWei('0.095', 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should set maxUtilizationDelta if called by deployer', async function() {
+      const expectedGlobalInterestRateNumerator = toWei('0.095', 'gether')
+      await this.funds.setGlobalInterestRateNumerator(expectedGlobalInterestRateNumerator)
+
+      const actualGlobalInterestRateNumerator = await this.funds.globalInterestRateNumerator.call()
+
+      assert.equal(expectedGlobalInterestRateNumerator, actualGlobalInterestRateNumerator)
+    })
+  })
+
+  describe('setGlobalInterestRate', function() {
+    it('should fail if set by non deployer', async function() {
+      await expectRevert(this.funds.setGlobalInterestRate(toWei('0.1', 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should set globalInterestRate if called by deployer', async function() {
+      const expectedGlobalInterestRate = toWei('0.1', 'gether')
+      await this.funds.setGlobalInterestRate(expectedGlobalInterestRate)
+
+      const actualGlobalInterestRate = await this.funds.globalInterestRate.call()
+
+      assert.equal(expectedGlobalInterestRate, actualGlobalInterestRate)
+    })
+  })
+
+  describe('setMaxInterestRateNumerator', function() {
+    it('should fail if set by non deployer', async function() {
+      await expectRevert(this.funds.setMaxInterestRateNumerator(toWei('0.18', 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should set globalInterestRate if called by deployer', async function() {
+      const expectedMaxInterestRateNumerator = toWei('0.18', 'gether')
+      await this.funds.setMaxInterestRateNumerator(expectedMaxInterestRateNumerator)
+
+      const actualMaxInterestRateNumerator = await this.funds.maxInterestRateNumerator.call()
+
+      assert.equal(expectedMaxInterestRateNumerator, actualMaxInterestRateNumerator)
+    })
+  })
+
+  describe('setMinInterestRateNumerator', function() {
+    it('should fail if set by non deployer', async function() {
+      await expectRevert(this.funds.setMinInterestRateNumerator(toWei('0.025', 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should set globalInterestRate if called by deployer', async function() {
+      const expectedMinInterestRateNumerator = toWei('0.025', 'gether')
+      await this.funds.setMinInterestRateNumerator(expectedMinInterestRateNumerator)
+
+      const actualMinInterestRateNumerator = await this.funds.minInterestRateNumerator.call()
+
+      assert.equal(expectedMinInterestRateNumerator, actualMinInterestRateNumerator)
+    })
+  })
+
+  describe('setInterestUpdateDelay', function() {
+    it('should fail if set by non deployer', async function() {
+      await expectRevert(this.funds.setInterestUpdateDelay(toSecs({ days: 2 }), { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should set globalInterestRate if called by deployer', async function() {
+      const expectedInterestUpdateDelay = toSecs({ days: 2 })
+      await this.funds.setInterestUpdateDelay(expectedInterestUpdateDelay)
+
+      const actualInterestUpdateDelay = await this.funds.interestUpdateDelay.call()
+
+      assert.equal(expectedInterestUpdateDelay, actualInterestUpdateDelay)
+    })
+  })
+
+  describe('setDefaultAgentFee', function() {
+    it('should fail if set by non deployer', async function() {
+      await expectRevert(this.funds.setDefaultAgentFee(toWei(rateToSec('0.5'), 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+    })
+
+    it('should set defaultAgentFee if called by deployer', async function() {
+      const expectedDefaultAgentFee = toWei(rateToSec('0.5'), 'gether')
+      await this.funds.setDefaultAgentFee(expectedDefaultAgentFee)
+
+      const actualDefaultAgentFee = await this.funds.defaultAgentFee.call()
+
+      assert.equal(expectedDefaultAgentFee, actualDefaultAgentFee)
     })
   })
 })

@@ -11,7 +11,6 @@ contract Funds is DSMath, ALCompound {
 
     uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;  // 140% (1.4x in RAY) minimum collateralization ratio
     uint256 public constant DEFAULT_LIQUIDATION_PENALTY = 1000000000937303470807876289; // 3% (3 in RAY) liquidation penalty
-    uint256 public constant DEFAULT_AGENT_FEE = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional agent fee // needs to be editable but there needs to be a maximum
     uint256 public constant DEFAULT_MIN_LOAN_AMT = 10000000000000000000; // Min 10 WAD
     uint256 public constant DEFAULT_MAX_LOAN_AMT = 2**256-1; // Max 2**256
     uint256 public constant DEFAULT_MIN_LOAN_DUR = 21600; // 6 hours
@@ -32,7 +31,6 @@ contract Funds is DSMath, ALCompound {
     uint256 public marketLiquidity;
     uint256 public totalBorrow;
     uint256 public globalInterestRateNumerator;
-
     uint256 public lastUtilizationRatio;
     uint256 public globalInterestRate;
     uint256 public maxUtilizationDelta;
@@ -40,6 +38,7 @@ contract Funds is DSMath, ALCompound {
     uint256 public maxInterestRateNumerator;
     uint256 public minInterestRateNumerator;
     uint256 public interestUpdateDelay;
+    uint256 public defaultAgentFee;
 
     ERC20 public token;
     uint256 public decimals;
@@ -95,6 +94,7 @@ contract Funds is DSMath, ALCompound {
         maxInterestRateNumerator    = 182321557320989604265864303; // ~20%  ( (e^(ln(1.200)/(60*60*24*365)) - 1) * (60*60*24*365) )
         minInterestRateNumerator    =  24692612600038629323181834; // ~2.5% ( (e^(ln(1.025)/(60*60*24*365)) - 1) * (60*60*24*365) )
         interestUpdateDelay = 86400; // 1 DAY
+        defaultAgentFee = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional agent fee
         globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
 
         // utilizationInterestDivisor calculation (this is aiming for utilizationInterestDivisor to allow max change from 10% APR to be 11% APR despite using compound interest)
@@ -190,6 +190,13 @@ contract Funds is DSMath, ALCompound {
         require(msg.sender == deployer);
         interestUpdateDelay = interestUpdateDelay_;
     }
+
+    // TODO: test
+    function setDefaultAgentFee(uint256 defaultAgentFee_) external {
+        require(msg.sender == deployer);
+        require(defaultAgentFee_ <= 1000000000315522921573372069); // ~1%
+        defaultAgentFee = defaultAgentFee_;
+    }
     // ======================================================================
 
     /**
@@ -267,7 +274,7 @@ contract Funds is DSMath, ALCompound {
      */
     function fee(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].fee; }
-        else                    { return DEFAULT_AGENT_FEE; }
+        else                    { return defaultAgentFee; }
     }
 
     /**
@@ -454,8 +461,13 @@ contract Funds is DSMath, ALCompound {
      * @param amount_ Amount of tokens to request
      * @param collateral_ Amount of collateral to deposit in satoshis
      * @param loanDur_ Length of loan request in seconds
-     * @param secretHashes_ 4 secretHashes to be used in atomic loan process
-     * @param pubKey_ Bitcoin public key to use for refunding collateral
+     * @param secretHashes_ 4 Borrower Secret Hashes and 4 Lender Secret Hashes
+     * @param pubKeyA_ Borrower Bitcoin public key to use for refunding collateral
+     * @param pubKeyB_ Lender Bitcoin public key to use for refunding collateral
+     *
+     *        Note: Borrower client should verify params after Ethereum tx
+     *              confirmation before locking Bitcoin.
+     *
      */
     function request(
         bytes32             fund,
@@ -463,8 +475,9 @@ contract Funds is DSMath, ALCompound {
         uint256             amount_,
         uint256             collateral_,
         uint256             loanDur_,
-        bytes32[4] calldata secretHashes_,
-        bytes      calldata pubKey_
+        bytes32[8] calldata secretHashes_,
+        bytes      calldata pubKeyA_,
+        bytes      calldata pubKeyB_
     ) external returns (bytes32 loanIndex) {
         require(msg.sender == lender(fund));
         require(amount_    <= balance(fund));
@@ -474,23 +487,8 @@ contract Funds is DSMath, ALCompound {
         require(loanDur_   <= maxLoanDur(fund));
 
         loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_);
-        loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKey_);
-        
-        if (funds[fund].compoundEnabled) {
-            uint256 cBalanceBefore = cToken.balanceOf(address(this));
-            redeemUnderlying(address(cToken), amount_);
-            uint256 cBalanceAfter = cToken.balanceOf(address(this));
-            uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
-            funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
-            if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
-        } else {
-            funds[fund].balance = sub(funds[fund].balance, amount_);
-            if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_); }
-        }
-        if (!custom(fund)) {
-            totalBorrow = add(totalBorrow, amount_);
-            calcGlobalInterest();
-        }
+        loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);
+        loanUpdateMarketLiquidity(fund, amount_);
         loans.fund(loanIndex);
     }
 
@@ -650,25 +648,51 @@ contract Funds is DSMath, ALCompound {
 
     /*
      * @dev Takes loan request Bitcoin parameters, sets loan Public Keys and Secret Hashes
+     * @param fund The Id of the Loan Fund
      * @param loan The Id of the Loan
-     * @param secretHashes_ 4 secretHashes to be used in atomic loan process
-     * @param pubKey_ Bitcoin public key to use for refunding collateral
+     * @param secretHashes_ 4 Borrower Secret Hashes and 4 Lender Secret Hashes
+     * @param pubKeyA_ Borrower Bitcoin public key to use for refunding collateral
+     * @param pubKeyB_ Lender Bitcoin public key to use for refunding collateral
      */
-    function loanSetSecretHashes(        // Loan Set Secret Hashes
-        bytes32           fund,          // Fund Index
-        bytes32           loan,          // Loan Index
-        bytes32[4] memory secretHashes_, // 4 Secret Hashes
-        bytes      memory pubKey_        // Public Key
-    ) private { // Loan set Secret Hash and PubKey
+    function loanSetSecretHashes(
+        bytes32           fund,
+        bytes32           loan,
+        bytes32[8] memory secretHashes_,
+        bytes      memory pubKeyA_,
+        bytes      memory pubKeyB_
+    ) private {
         loans.setSecretHashes(
             loan,
-            secretHashes_,
-            getSecretHashesForLoan(lender(fund)),
+            [ secretHashes_[0], secretHashes_[1], secretHashes_[2], secretHashes_[3] ],
+            [ secretHashes_[4], secretHashes_[5], secretHashes_[6], secretHashes_[7] ],
             getSecretHashesForLoan(agent(fund)),
-            pubKey_,
-            pubKeys[lender(fund)],
+            pubKeyA_,
+            pubKeyB_,
             pubKeys[agent(fund)]
         );
+    }
+
+    /*
+     * @dev Updates market liquidity based on amount of tokens being requested to borrow
+     * @param fund Loan Id of the Loan Fund
+     * @param amount The amount of tokens that are being requested
+     */
+    function loanUpdateMarketLiquidity(bytes32 fund, uint256 amount) private {
+        if (funds[fund].compoundEnabled) {
+            uint256 cBalanceBefore = cToken.balanceOf(address(this));
+            redeemUnderlying(address(cToken), amount);
+            uint256 cBalanceAfter = cToken.balanceOf(address(this));
+            uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
+            funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
+            if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
+        } else {
+            funds[fund].balance = sub(funds[fund].balance, amount);
+            if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount); }
+        }
+        if (!custom(fund)) {
+            totalBorrow = add(totalBorrow, amount);
+            calcGlobalInterest();
+        }
     }
 
     /*

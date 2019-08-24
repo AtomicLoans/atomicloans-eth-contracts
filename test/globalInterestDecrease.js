@@ -41,12 +41,15 @@ contract("Interest", accounts => {
 
   let lendSecs = []
   let lendSechs = []
-  for (let i = 0; i < 44; i++) {
+  for (let i = 0; i < 4; i++) {
     let sec = sha256(Math.random().toString())
     lendSecs.push(ensure0x(sec))
     lendSechs.push(ensure0x(sha256(sec)))
   }
-  const lendpubk = '034f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'
+  
+  const borpubk = '02b4c50d2b6bdc9f45b9d705eeca37e811dfdeb7365bf42f82222f7a4a89868703'
+  const lendpubk = '03dc23d80e1cf6feadf464406e299ac7fec9ea13c51dfd9abd970758bf33d89bb6'
+  const agentpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
 
   let borSecs = []
   let borSechs = []
@@ -156,7 +159,7 @@ contract("Interest", accounts => {
 
   beforeEach(async function () {
     currentTime = await time.latest();
-    // btcPrice = await fetchCoin('bitcoin')
+
     btcPrice = '9340.23'
 
     col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
@@ -183,16 +186,13 @@ contract("Interest", accounts => {
     this.fund2 = await this.funds.create.call(...fundParams, { from: lender2 })
     await this.funds.create(...fundParams, { from: lender2 })
 
-    // Generate lender secret hashes
-    await this.funds.generate(lendSechs)
-
     // Generate agent secret hashes
     await this.funds.generate(agentSechs, { from: agent })
 
     // Set Lender PubKey
     await this.funds.setPubKey(ensure0x(lendpubk))
     await this.funds.setPubKey(ensure0x(lendpubk), { from: lender2 })
-    await this.funds.setPubKey(ensure0x(lendpubk), { from: agent })
+    await this.funds.setPubKey(ensure0x(agentpubk), { from: agent })
 
     // Push funds to loan fund
     await this.token.approve(this.funds.address, toWei('1300', 'ether'))
@@ -223,7 +223,8 @@ contract("Interest", accounts => {
         toWei(loanReq3.toString(), 'ether'),
         col,
         toSecs({days: 10}),
-        borSechs,
+        [ ...borSechs, ...lendSechs ],
+        ensure0x(borpubk),
         ensure0x(lendpubk)
       ]
 
@@ -405,7 +406,8 @@ contract("Interest", accounts => {
         toWei(loanReq4.toString(), 'ether'),
         col,
         toSecs({days: 10}),
-        borSechs7,
+        [ ...borSechs7, ...lendSechs ],
+        ensure0x(borpubk),
         ensure0x(lendpubk)
       ]
 

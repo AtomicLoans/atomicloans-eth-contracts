@@ -21,7 +21,6 @@ const utils = require('./helpers/Utils.js');
 const { rateToSec, numToBytes32 } = utils;
 const { toWei, fromWei, hexToNumberString } = web3.utils;
 
-const API_ENDPOINT_COIN = "https://atomicloans.io/marketcap/api/v1/"
 const BTC_TO_SAT = 10**8
 
 async function approveAndTransfer(token, spender, contract, amount) {
@@ -222,7 +221,6 @@ contract("E2E", accounts => {
         await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
         await bitcoin.client.chain.generateBlock(6)
         btcTime += toSecs({ hours: 1, minutes: 59 })
-        console.log('testing3')
       }
     }
 
@@ -266,14 +264,8 @@ contract("E2E", accounts => {
     this.fund = await this.funds.createCustom.call(...fundParams)
     await this.funds.createCustom(...fundParams)
 
-    // Generate lender secret hashes
-    await this.funds.generate(lendSechs)
-
     // Generate agent secret hashes
     await this.funds.generate(agentSechs, { from: agent })
-
-    // Set Lender PubKey
-    await this.funds.setPubKey(ensure0x(lenderBTC.pubKey))
 
     // Set Lender PubKey
     await this.funds.setPubKey(ensure0x(agentBTC.pubKey), { from: agent })
@@ -288,8 +280,9 @@ contract("E2E", accounts => {
       toWei(loanReq.toString(), 'ether'),
       col,
       toSecs({days: 2}),
-      borSechs,
-      ensure0x(borrowerBTC.pubKey.toString('hex'))
+      [ ...borSechs, ...lendSechs ],
+      ensure0x(borrowerBTC.pubKey.toString('hex')),
+      ensure0x(lenderBTC.pubKey.toString('hex'))
     ]
 
     this.loan = await this.funds.request.call(...loanParams)
