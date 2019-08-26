@@ -394,7 +394,7 @@
     debug "^4.1.1"
     lodash "^4.17.13"
 
-"@liquality/crypto@^0.2.10", "@liquality/crypto@^0.2.11":
+"@liquality/crypto@^0.2.11":
   version "0.2.11"
   resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.2.11.tgz#2cef0518898e382bbde432d075bb5a45d25a55e0"
   integrity sha512-l4o5R4VV0/DlfRQjhH10dczLUmFzaZpDGT30kS5//uKNVATQOEsnaMU5h1CTGhbJPHAXbzNxGNdf08GvHvk07w==
@@ -520,16 +520,6 @@
     "@liquality/ethereum-utils" "^0.3.2"
     "@liquality/provider" "^0.3.2"
     "@liquality/utils" "^0.3.2"
-
-"@liquality/ethereum-utils@^0.2.10":
-  version "0.2.11"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.2.11.tgz#419e0a082e81b590d203cfaa5d07da971a430dc6"
-  integrity sha512-Y77fyI3PTscc3ujjySpFutKXj7TEHKAdWO4fkPDqN7Wgi2FPXCf/BUyatr2ye8G0Yl5cWmfQffcrGczxT5xS4g==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.2.11"
-    "@liquality/schema" "^0.2.11"
-    eip55 "^1.0.3"
 
 "@liquality/ethereum-utils@^0.3.2":
   version "0.3.2"
