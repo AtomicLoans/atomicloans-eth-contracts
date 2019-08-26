@@ -49,7 +49,7 @@ Actions:
 
 Getters:
 
-   agent               optional automated agent
+   arbiter             optional automated arbiter
    balance             amount of unused funds deposited in loan fund
    lender              loan fund owner
    fee                 optional automation fee
@@ -92,13 +92,13 @@ Actions:
 Getters:
 
    acceptExpiration      acceptance expirataion
-   agent                 optional automation agent address
+   arbiter               optional automation arbiter address
    approveExpiration     approval expiraation
    liquidationExpiration liquidation expiration
    borrower              borrower address
    collateral            collateral amount
    collateralValue       current collateral value
-   fee                   optional fee paid to automator agent if address not 0x0
+   fee                   optional fee paid to automator arbiter if address not 0x0
    interest              loan interest rate
    lender                lender address
    liquidationRatio      liquidation ratio
@@ -136,13 +136,13 @@ Actions:
 Getters:
 
    accepted              discountBuy accepted
-   agent                 optional automated agent
-   agentSigs             agent refundable and seizable signatures
+   arbiter               optional automated arbiter
+   arbiterSigs           arbiter refundable and seizable signatures
    discountBuy           discount purchase of collateral by liquidator
    liquidator            address of individual that liquidates the loan position when it's not safe
    borrower              address borrower
    borrowerSigs          borrower refundable and seizable signatures
-   hasSecrets            2 of 3 secrets from bor, lend, and agent are correct
+   hasSecrets            2 of 3 secrets from bor, lend, and arbiter are correct
    lender                address lender
    lenderSigs            lender refundable and seizable signatures
    next                  get the last liquidation id by loan

@@ -38,7 +38,7 @@ contract Funds is DSMath, ALCompound {
     uint256 public maxInterestRateNumerator;
     uint256 public minInterestRateNumerator;
     uint256 public interestUpdateDelay;
-    uint256 public defaultAgentFee;
+    uint256 public defaultArbiterFee;
 
     ERC20 public token;
     uint256 public decimals;
@@ -58,7 +58,7 @@ contract Funds is DSMath, ALCompound {
      * @member penalty Liquidation Penalty Rate of Loan Fund in RAY per second
      * @member fee Optional Automation Fee Rate of Loan Fund in RAY per second
      * @member liquidationRatio Liquidation Ratio of Loan Fund in RAY
-     * @member agent Optional address of Automator Agent
+     * @member arbiter Optional address of Automator Arbiter
      * @member balance Amount of non-borrowed tokens in Loan Fund
      * @member cBalance Amount of non-borrowed cTokens in Loan Fund
      * @member custom Indicator that this Loan Fund is custom and does not use global settings
@@ -74,7 +74,7 @@ contract Funds is DSMath, ALCompound {
         uint256  penalty;
         uint256  fee;
         uint256  liquidationRatio;
-        address  agent;
+        address  arbiter;
         uint256  balance;
         uint256  cBalance;
         bool     custom;
@@ -94,7 +94,7 @@ contract Funds is DSMath, ALCompound {
         maxInterestRateNumerator    = 182321557320989604265864303; // ~20%  ( (e^(ln(1.200)/(60*60*24*365)) - 1) * (60*60*24*365) )
         minInterestRateNumerator    =  24692612600038629323181834; // ~2.5% ( (e^(ln(1.025)/(60*60*24*365)) - 1) * (60*60*24*365) )
         interestUpdateDelay = 86400; // 1 DAY
-        defaultAgentFee = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional agent fee
+        defaultArbiterFee = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional arbiter fee
         globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
 
         // utilizationInterestDivisor calculation (this is aiming for utilizationInterestDivisor to allow max change from 10% APR to be 11% APR despite using compound interest)
@@ -191,11 +191,13 @@ contract Funds is DSMath, ALCompound {
         interestUpdateDelay = interestUpdateDelay_;
     }
 
-    // TODO: test
-    function setDefaultAgentFee(uint256 defaultAgentFee_) external {
+    /**
+     * @dev Sets the Default Arbiter Fee
+     */
+    function setDefaultArbiterFee(uint256 defaultArbiterFee_) external {
         require(msg.sender == deployer);
-        require(defaultAgentFee_ <= 1000000000315522921573372069); // ~1%
-        defaultAgentFee = defaultAgentFee_;
+        require(defaultArbiterFee_ <= 1000000000315522921573372069); // ~1%
+        defaultArbiterFee = defaultArbiterFee_;
     }
     // ======================================================================
 
@@ -274,7 +276,7 @@ contract Funds is DSMath, ALCompound {
      */
     function fee(bytes32 fund) public view returns (uint256) {
         if (funds[fund].custom) { return funds[fund].fee; }
-        else                    { return defaultAgentFee; }
+        else                    { return defaultArbiterFee; }
     }
 
     /**
@@ -288,12 +290,12 @@ contract Funds is DSMath, ALCompound {
     }
 
     /**
-     * @notice Get the agent for a Loan Fund
+     * @notice Get the arbiter for a Loan Fund
      * @param fund The Id of a Loan Fund
-     * @return The address of the agent for a Loan fund
+     * @return The address of the arbiter for a Loan fund
      */
-    function agent(bytes32 fund)   public view returns (address) {
-        return funds[fund].agent;
+    function arbiter(bytes32 fund)   public view returns (address) {
+        return funds[fund].arbiter;
     }
 
     /**
@@ -321,7 +323,7 @@ contract Funds is DSMath, ALCompound {
     /**
      * @notice Lenders create Loan Fund using Global Protocol parameters and deposit assets
      * @param maxLoanDur_ Max Loan Duration of Loan Fund in seconds
-     * @param agent_  Optional address of agent
+     * @param arbiter_  Optional address of arbiter
      * @param compoundEnabled_ Indicator whether excess funds should be lent on Compound
      * @param amount_ Amount of tokens to be deposited on creation
      * @return The Id of a Loan Fund
@@ -331,7 +333,7 @@ contract Funds is DSMath, ALCompound {
      */
     function create(
         uint256  maxLoanDur_,
-        address  agent_,
+        address  arbiter_,
         bool     compoundEnabled_,
         uint256  amount_
     ) external returns (bytes32 fund) { 
@@ -341,7 +343,7 @@ contract Funds is DSMath, ALCompound {
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
         funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].agent            = agent_;
+        funds[fund].arbiter            = arbiter_;
         funds[fund].custom           = false;
         funds[fund].compoundEnabled  = compoundEnabled_;
         fundOwner[msg.sender]        = funds[fund];
@@ -354,7 +356,7 @@ contract Funds is DSMath, ALCompound {
      * @param maxLoanAmt_ Maximum amount of tokens that can be borrowed from Loan Fund
      * @param minLoanDur_ Minimum length of loan that can be requested from Loan Fund in seconds
      * @param maxLoanDur_ Maximum length of loan that can be requested from Loan Fund in seconds
-     * @param agent_  Optional address of agent
+     * @param arbiter_  Optional address of arbiter
      * @param compoundEnabled_ Indicator whether excess funds should be lent on Compound
      * @param amount_ Amount of tokens to be deposited on creation
      * @return The Id of a Loan Fund
@@ -371,7 +373,7 @@ contract Funds is DSMath, ALCompound {
         uint256  interest_,
         uint256  penalty_,
         uint256  fee_,
-        address  agent_,
+        address  arbiter_,
         bool     compoundEnabled_,
         uint256  amount_
     ) external returns (bytes32 fund) {
@@ -388,7 +390,7 @@ contract Funds is DSMath, ALCompound {
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
-        funds[fund].agent            = agent_;
+        funds[fund].arbiter            = arbiter_;
         funds[fund].custom           = true;
         funds[fund].compoundEnabled  = compoundEnabled_;
         fundOwner[msg.sender]        = funds[fund];
@@ -427,7 +429,7 @@ contract Funds is DSMath, ALCompound {
      * @param penalty_ The liquidation penalty rate per second for a Loan Fund in RAY per second
      * @param fee_ The optional automation fee rate of Loan Fund in RAY per second
      * @param liquidationRatio_ The liquidation ratio of Loan Fund in RAY
-     * @param agent_ The address of the agent for a Loan fund
+     * @param arbiter_ The address of the arbiter for a Loan fund
      *
      *        Note: msg.sender must be the lender of the Loan Fund
      */
@@ -441,7 +443,7 @@ contract Funds is DSMath, ALCompound {
         uint256  penalty_,
         uint256  fee_,
         uint256  liquidationRatio_,
-        address  agent_
+        address  arbiter_
     ) external {
         require(msg.sender == lender(fund));
         funds[fund].minLoanAmt       = minLoanAmt_;
@@ -452,7 +454,7 @@ contract Funds is DSMath, ALCompound {
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
-        funds[fund].agent            = agent_;
+        funds[fund].arbiter            = arbiter_;
     }
 
     /**
@@ -527,7 +529,7 @@ contract Funds is DSMath, ALCompound {
     }
 
     /**
-     * @notice Set Lender or Agent Bitcoin Public Key
+     * @notice Set Lender or Arbiter Bitcoin Public Key
      * @param pubKey Bitcoin Public Key
      */
     function setPubKey(bytes calldata pubKey) external { // Set PubKey for Fund
@@ -640,7 +642,7 @@ contract Funds is DSMath, ALCompound {
     ) private returns (bytes32 loanIndex) {
         loanIndex = loans.create(
             now + loanDur_,
-            [ borrower_, lender(fund), funds[fund].agent],
+            [ borrower_, lender(fund), funds[fund].arbiter],
             [ amount_, calcInterest(amount_, interest(fund), loanDur_), calcInterest(amount_, penalty(fund), loanDur_), calcInterest(amount_, fee(fund), loanDur_), collateral_, liquidationRatio(fund)],
             fund
         );
@@ -665,10 +667,10 @@ contract Funds is DSMath, ALCompound {
             loan,
             [ secretHashes_[0], secretHashes_[1], secretHashes_[2], secretHashes_[3] ],
             [ secretHashes_[4], secretHashes_[5], secretHashes_[6], secretHashes_[7] ],
-            getSecretHashesForLoan(agent(fund)),
+            getSecretHashesForLoan(arbiter(fund)),
             pubKeyA_,
             pubKeyB_,
-            pubKeys[agent(fund)]
+            pubKeys[arbiter(fund)]
         );
     }
 
@@ -697,7 +699,7 @@ contract Funds is DSMath, ALCompound {
 
     /*
      * @dev Get the next 4 secret hashes required for loan
-     * @param addr Address of Lender or Agent
+     * @param addr Address of Lender or Arbiter
      */
     function getSecretHashesForLoan(address addr) private returns (bytes32[4] memory) {
         secretHashIndex[addr] = add(secretHashIndex[addr], 4);

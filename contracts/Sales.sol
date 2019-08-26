@@ -19,7 +19,7 @@ contract Sales is DSMath {
 	mapping (bytes32 => Sale)       public sales;        // Auctions
 	mapping (bytes32 => Sig)        public borrowerSigs; // Borrower Signatures
 	mapping (bytes32 => Sig)        public lenderSigs;   // Lender Signatures
-	mapping (bytes32 => Sig)        public agentSigs;    // Lender Signatures
+	mapping (bytes32 => Sig)        public arbiterSigs;    // Lender Signatures
 	mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
     uint256                         public saleIndex;    // Auction Index
 
@@ -34,7 +34,7 @@ contract Sales is DSMath {
      * @member liquidator The address of the liquidator (party that buys the Bitcoin collateral at a discount)
      * @member borrower The address of the borrower
      * @member lender The address of the lender
-     * @member agent The address of the agent
+     * @member arbiter The address of the arbiter
      * @member createAt The creation timestamp of the sale
      * @member pubKeyHash The Bitcoin Public Key Hash of the liquidator
      * @member set Indicates that the sale at this specific index has been opened
@@ -47,7 +47,7 @@ contract Sales is DSMath {
         address    liquidator;
         address    borrower;
         address    lender;
-        address    agent;
+        address    arbiter;
         uint256    createdAt;
         bytes20    pubKeyHash;
         bool       set;
@@ -115,11 +115,11 @@ contract Sales is DSMath {
      * @param loanIndex The Id of the Loan
      * @param borrower The address of the borrower
      * @param lender The address of the lender
-     * @param agent The address of the agent
+     * @param arbiter The address of the arbiter
      * @param liquidator The address of the liquidator
      * @param secretHashA The Secret Hash of the Borrower for the current sale number
      * @param secretHashB The Secret Hash of the Lender for the current sale number
-     * @param secretHashC The Secret Hash of the Agent for the current sale number
+     * @param secretHashC The Secret Hash of the Arbiter for the current sale number
      * @param secretHashD the Secret Hash of the Liquidator
      * @param pubKeyHash The Bitcoin Public Key Hash of the Liquidator
      * @return sale The Id of the sale
@@ -128,7 +128,7 @@ contract Sales is DSMath {
     	bytes32 loanIndex,
     	address borrower,
     	address lender,
-        address agent,
+        address arbiter,
         address liquidator,
     	bytes32 secretHashA,
     	bytes32 secretHashB,
@@ -142,7 +142,7 @@ contract Sales is DSMath {
         sales[sale].loanIndex   = loanIndex;
         sales[sale].borrower    = borrower;
         sales[sale].lender      = lender;
-        sales[sale].agent       = agent;
+        sales[sale].arbiter       = arbiter;
         sales[sale].liquidator  = liquidator;
         sales[sale].createdAt   = now;
         sales[sale].pubKeyHash  = pubKeyHash;
@@ -177,9 +177,9 @@ contract Sales is DSMath {
 		} else if (msg.sender == sales[sale].lender) {
 			lenderSigs[sale].refundableSig = refundableSig;
 			lenderSigs[sale].seizableSig   = seizableSig;
-		} else if (msg.sender == sales[sale].agent) {
-			agentSigs[sale].refundableSig = refundableSig;
-			agentSigs[sale].seizableSig   = seizableSig;
+		} else if (msg.sender == sales[sale].arbiter) {
+			arbiterSigs[sale].refundableSig = refundableSig;
+			arbiterSigs[sale].seizableSig   = seizableSig;
 		} else {
 			revert();
 		}
@@ -188,7 +188,7 @@ contract Sales is DSMath {
     /**
      * @notice Provide secret to enable liquidator to claim collateral
      * @param sale The Id of the sale
-     * @param secret_ The secret provided by the borrower, lender, agent, or liquidator
+     * @param secret_ The secret provided by the borrower, lender, arbiter, or liquidator
      */
 	function provideSecret(bytes32 sale, bytes32 secret_) external {
 		require(sales[sale].set);
@@ -229,8 +229,8 @@ contract Sales is DSMath {
         available = sub(available, amount);
 
         if (available >= add(loans.fee(sales[sale].loanIndex), loans.penalty(sales[sale].loanIndex))) {
-            if (sales[sale].agent != address(0)) {
-                require(token.transfer(sales[sale].agent, loans.fee(sales[sale].loanIndex)));
+            if (sales[sale].arbiter != address(0)) {
+                require(token.transfer(sales[sale].arbiter, loans.fee(sales[sale].loanIndex)));
             }
             require(token.approve(address(med), loans.penalty(sales[sale].loanIndex)));
             med.push(loans.penalty(sales[sale].loanIndex), token);

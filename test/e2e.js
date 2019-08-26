@@ -103,10 +103,10 @@ function getCollateralSatAmounts(collateralValue, owedToLender, btcPrice, unit) 
 }
 
 async function getPubKeys(contract, instance) {
-  let { borrowerPubKey, lenderPubKey, agentPubKey } = await contract.pubKeys.call(instance)
+  let { borrowerPubKey, lenderPubKey, arbiterPubKey } = await contract.pubKeys.call(instance)
   borrowerPubKey = remove0x(borrowerPubKey)
   lenderPubKey = remove0x(lenderPubKey)
-  agentPubKey = remove0x(agentPubKey)
+  agentPubKey = remove0x(arbiterPubKey)
 
   return { borrowerPubKey, lenderPubKey, agentPubKey }
 }
@@ -193,12 +193,12 @@ stablecoins.forEach((stablecoin) => {
   contract(`${name} End to end (BTC/ETH)`, accounts => {
     const lender = accounts[0]
     const borrower = accounts[1]
-    const agent = accounts[2]
+    const arbiter = accounts[2]
     const liquidator = accounts[3]
     const liquidator2 = accounts[4]
     const liquidator3 = accounts[5]
 
-    let lenderBTC, borrowerBTC, agentBTC
+    let lenderBTC, borrowerBTC, arbiterBTC
 
     let currentTime
     let btcPrice
@@ -223,12 +223,12 @@ stablecoins.forEach((stablecoin) => {
       borSechs.push(ensure0x(sha256(sec)))
     }
 
-    let agentSecs = []
-    let agentSechs = []
+    let arbiterSecs = []
+    let arbiterSechs = []
     for (let i = 0; i < 4; i++) {
       let sec = sha256(Math.random().toString())
-      agentSecs.push(ensure0x(sec))
-      agentSechs.push(ensure0x(sha256(sec)))
+      arbiterSecs.push(ensure0x(sec))
+      arbiterSechs.push(ensure0x(sha256(sec)))
     }
 
     let liquidatorSecs = []
@@ -269,7 +269,7 @@ stablecoins.forEach((stablecoin) => {
 
       lenderBTC = await getUnusedPubKeyAndAddress()
       borrowerBTC = await getUnusedPubKeyAndAddress()
-      agentBTC = await getUnusedPubKeyAndAddress()
+      arbiterBTC = await getUnusedPubKeyAndAddress()
       liquidatorBTC = await getUnusedPubKeyAndAddress()
       liquidatorBTC2 = await getUnusedPubKeyAndAddress()
       liquidatorBTC3 = await getUnusedPubKeyAndAddress()
@@ -301,7 +301,7 @@ stablecoins.forEach((stablecoin) => {
         toWei(rateToSec('16.5'), 'gether'), // 16.50%
         toWei(rateToSec('3'), 'gether'), //  3.00%
         toWei(rateToSec('0.75'), 'gether'), //  0.75%
-        agent,
+        arbiter,
         false,
         0
       ]
@@ -309,11 +309,11 @@ stablecoins.forEach((stablecoin) => {
       this.fund = await this.funds.createCustom.call(...fundParams)
       await this.funds.createCustom(...fundParams)
 
-      // Generate agent secret hashes
-      await this.funds.generate(agentSechs, { from: agent })
+      // Generate arbiter secret hashes
+      await this.funds.generate(arbiterSechs, { from: arbiter })
 
       // Set Lender PubKey
-      await this.funds.setPubKey(ensure0x(agentBTC.pubKey), { from: agent })
+      await this.funds.setPubKey(ensure0x(arbiterBTC.pubKey), { from: arbiter })
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', unit))
@@ -344,6 +344,7 @@ stablecoins.forEach((stablecoin) => {
 
         const colParams = await getCollateralParams(collateralSatValues, this.loans, this.loan)
         const lockParams = [colParams.values, colParams.pubKeys, colParams.secretHashes, colParams.expirations]
+
         const lockTxHash = await bitcoin.client.loan.collateral.lock(...lockParams)
 
         await bitcoin.client.chain.generateBlock(1)

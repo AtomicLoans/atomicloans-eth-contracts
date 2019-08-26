@@ -64,7 +64,7 @@ stablecoins.forEach((stablecoin) => {
   contract(`${name} Funds`, accounts => {
     const lender = accounts[0]
     const borrower = accounts[1]
-    const agent = accounts[2]
+    const arbiter = accounts[2]
     const lender2 = accounts[3]
     const lender3 = accounts[4]
 
@@ -84,7 +84,7 @@ stablecoins.forEach((stablecoin) => {
     
     const borpubk = '02b4c50d2b6bdc9f45b9d705eeca37e811dfdeb7365bf42f82222f7a4a89868703'
     const lendpubk = '03dc23d80e1cf6feadf464406e299ac7fec9ea13c51dfd9abd970758bf33d89bb6'
-    const agentpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
+    const arbiterpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
 
     let borSecs = []
     let borSechs = []
@@ -94,12 +94,12 @@ stablecoins.forEach((stablecoin) => {
       borSechs.push(ensure0x(sha256(sec)))
     }
 
-    let agentSecs = []
-    let agentSechs = []
+    let arbiterSecs = []
+    let arbiterSechs = []
     for (let i = 0; i < 4; i++) {
       let sec = sha256(Math.random().toString())
-      agentSecs.push(ensure0x(sec))
-      agentSechs.push(ensure0x(sha256(sec)))
+      arbiterSecs.push(ensure0x(sec))
+      arbiterSechs.push(ensure0x(sha256(sec)))
     }
 
     beforeEach(async function () {
@@ -124,7 +124,7 @@ stablecoins.forEach((stablecoin) => {
         toWei(rateToSec('16.5'), 'gether'), // 16.50%
         toWei(rateToSec('3'), 'gether'), //  3.00%
         toWei(rateToSec('0.75'), 'gether'), //  0.75%
-        agent, 
+        arbiter, 
         false,
         0
       ]
@@ -137,7 +137,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if user tries to create two loan funds', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          agent,
+          arbiter,
           false,
           0
         ]
@@ -159,7 +159,7 @@ stablecoins.forEach((stablecoin) => {
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
           toWei(rateToSec('0.75'), 'gether'), //  0.75%
-          agent,
+          arbiter,
           false,
           0
         ]
@@ -198,11 +198,11 @@ stablecoins.forEach((stablecoin) => {
 
     describe('push funds', function() {
       it('should allow anyone to push funds to loan fund', async function() {
-        await this.token.transfer(agent, toWei('100', unit))
+        await this.token.transfer(arbiter, toWei('100', unit))
 
         // Push funds to loan fund
-        await this.token.approve(this.funds.address, toWei('100', unit), { from: agent })
-        await this.funds.deposit(this.fund, toWei('100', unit), { from: agent })
+        await this.token.approve(this.funds.address, toWei('100', unit), { from: arbiter })
+        await this.funds.deposit(this.fund, toWei('100', unit), { from: arbiter })
 
         const bal = await this.token.balanceOf.call(this.funds.address)
 
@@ -213,11 +213,11 @@ stablecoins.forEach((stablecoin) => {
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
 
-        // Generate agent secret hashes
-        await this.funds.generate(agentSechs, { from: agent })
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
 
-        // Set Agent PubKey
-        await this.funds.setPubKey(ensure0x(agentpubk), { from: agent })
+        // Set Arbiter PubKey
+        await this.funds.setPubKey(ensure0x(arbiterpubk), { from: arbiter })
 
         // Push funds to loan fund
         await this.token.approve(this.funds.address, toWei('100', unit))
@@ -273,7 +273,7 @@ stablecoins.forEach((stablecoin) => {
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
           toWei(rateToSec('0.75'), 'gether'), //  0.75%
-          agent,
+          arbiter,
           false,
           0
         ]
@@ -311,7 +311,7 @@ stablecoins.forEach((stablecoin) => {
           toWei(rateToSec('2.75'), 'gether'), //  3.00%
           toWei(rateToSec('0.5'), 'gether'), //  0.75%
           toWei('1.5', 'gether'), // 150% collateralization ratio
-          agent
+          arbiter
         ]
 
         await this.funds.update(this.fund, ...fundParams)
@@ -341,8 +341,8 @@ stablecoins.forEach((stablecoin) => {
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
 
-        // Generate agent secret hashes
-        await this.funds.generate(agentSechs, { from: agent })
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
 
         // Set Lender PubKey
         await this.funds.setPubKey(ensure0x(lendpubk))
@@ -365,8 +365,8 @@ stablecoins.forEach((stablecoin) => {
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
 
-        // Generate agent secret hashes
-        await this.funds.generate(agentSechs, { from: agent })
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
 
         // Set Lender PubKey
         await this.funds.setPubKey(ensure0x(lendpubk))
@@ -376,7 +376,7 @@ stablecoins.forEach((stablecoin) => {
         await this.funds.deposit(this.fund, toWei('100', unit))
 
         // Pull funds from loan fund
-        await expectRevert(this.funds.withdraw(this.fund, toWei('50', unit), { from: agent }), 'VM Exception while processing transaction: revert')
+        await expectRevert(this.funds.withdraw(this.fund, toWei('50', unit), { from: arbiter }), 'VM Exception while processing transaction: revert')
       })
     })
 
@@ -491,18 +491,18 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
-    describe('setDefaultAgentFee', function() {
+    describe('setDefaultArbiterFee', function() {
       it('should fail if set by non deployer', async function() {
-        await expectRevert(this.funds.setDefaultAgentFee(toWei(rateToSec('0.5'), 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+        await expectRevert(this.funds.setDefaultArbiterFee(toWei(rateToSec('0.5'), 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
       })
 
-      it('should set defaultAgentFee if called by deployer', async function() {
-        const expectedDefaultAgentFee = toWei(rateToSec('0.5'), 'gether')
-        await this.funds.setDefaultAgentFee(expectedDefaultAgentFee)
+      it('should set defaultArbiterFee if called by deployer', async function() {
+        const expectedDefaultArbiterFee = toWei(rateToSec('0.5'), 'gether')
+        await this.funds.setDefaultArbiterFee(expectedDefaultArbiterFee)
 
-        const actualDefaultAgentFee = await this.funds.defaultAgentFee.call()
+        const actualDefaultArbiterFee = await this.funds.defaultArbiterFee.call()
 
-        assert.equal(expectedDefaultAgentFee, actualDefaultAgentFee)
+        assert.equal(expectedDefaultArbiterFee, actualDefaultArbiterFee)
       })
     })
   })

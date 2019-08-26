@@ -37,20 +37,20 @@ contract Loans is DSMath {
      * @notice Container for loan information
      * @member borrower The address of the borrower
      * @member lender The address of the lender
-     * @member agent The address of the agent
+     * @member arbiter The address of the arbiter
      * @member createAt The creation timestamp of the loan
      * @member loanExpiration The timestamp for the end of the loan
      * @member principal The amount of principal in tokens to be paid back at the end of the loan
      * @member interest The amount of interest in tokens to be paid back by the end of the loan
      * @member penalty The amount of tokens to be paid as a penalty for defaulting or allowing the loan to be liquidated
-     * @member fee The amount of tokens paid to the agent
+     * @member fee The amount of tokens paid to the arbiter
      * @member collateral The amount of collateral in satoshis
      * @member liquidationRatio The ratio of collateral to debt where the loan can be liquidated
      */
     struct Loan {
     	address borrower;
         address lender;
-        address agent;
+        address arbiter;
         uint256 createdAt;
         uint256 loanExpiration;
         uint256 principal;
@@ -65,7 +65,7 @@ contract Loans is DSMath {
      * @notice Container for Bitcoin public key information
      * @member borrowerPubKey Borrower Bitcoin Public Key
      * @member lenderPubKey Lender Bitcoin Public Key
-     * @member agentPubKey Agent Bitcoin Public Key
+     * @member arbiterPubKey Arbiter Bitcoin Public Key
      *
      *         Note: This struct is unnecessary for the Ethereum
      *               contract itself, but is used as a point of 
@@ -75,19 +75,19 @@ contract Loans is DSMath {
     struct PubKeys {
         bytes   borrowerPubKey;
         bytes   lenderPubKey;
-        bytes   agentPubKey;
+        bytes   arbiterPubKey;
     }
 
     /**
-     * @notice Container for borrower, lender, and agent Secret Hashes
+     * @notice Container for borrower, lender, and arbiter Secret Hashes
      * @member secretHashA1 Borrower Secret Hash for the loan
      * @member secretHashAs Borrower Secret Hashes for up to three liquidations
      * @member secretHashB1 Lender Secret Hash for the loan
      * @member secretHashBs Lender Secret Hashes for up to three liquidations
-     * @member secretHashC1 Agent Secret Hash for the loan
-     * @member secretHashCs Agent Secret Hashes for up to three liquidations
+     * @member secretHashC1 Arbiter Secret Hash for the loan
+     * @member secretHashCs Arbiter Secret Hashes for up to three liquidations
      * @member withdrawSecret Secret A1 when revealed by borrower
-     * @member acceptSecret Secret B1 or Secret C1 when revelaed by the lender or agent
+     * @member acceptSecret Secret B1 or Secret C1 when revelaed by the lender or arbiter
      * @member set Secret Hashes set for particular loan
      */
     struct SecretHashes {
@@ -128,8 +128,8 @@ contract Loans is DSMath {
         return loans[loan].lender;
     }
 
-    function agent(bytes32 loan)  public view returns (address) {
-        return loans[loan].agent;
+    function arbiter(bytes32 loan)  public view returns (address) {
+        return loans[loan].arbiter;
     }
 
     function approveExpiration(bytes32 loan) public view returns (uint256) { // Approval Expiration
@@ -263,8 +263,8 @@ contract Loans is DSMath {
     /**
      * @notice Creates a new loan agreement
      * @param loanExpiration_ The timestamp for the end of the loan
-     * @param usrs_ Array of three addresses containing the borrower, lender, and optional agent address
-     * @param vals_ Array of six uints containing loan principal, interest, liquidation penalty, optional agent fee, collateral amount, liquidation ratio
+     * @param usrs_ Array of three addresses containing the borrower, lender, and optional arbiter address
+     * @param vals_ Array of six uints containing loan principal, interest, liquidation penalty, optional arbiter fee, collateral amount, liquidation ratio
      * @param fundIndex_ The optional Fund Index
      */
     function create(
@@ -280,7 +280,7 @@ contract Loans is DSMath {
         loans[loan].loanExpiration   = loanExpiration_;
         loans[loan].borrower         = usrs_[0];
         loans[loan].lender           = usrs_[1];
-        loans[loan].agent            = usrs_[2];
+        loans[loan].arbiter            = usrs_[2];
         loans[loan].principal        = vals_[0];
         loans[loan].interest         = vals_[1];
         loans[loan].penalty          = vals_[2];
@@ -296,19 +296,19 @@ contract Loans is DSMath {
      * @param loan The Id of the Loan
      * @param borrowerSecretHashes Borrower secret hashes
      * @param lenderSecretHashes Lender secret hashes
-     * @param agentSecretHashes Agent secret hashes
+     * @param arbiterSecretHashes Arbiter secret hashes
      * @param borrowerPubKey_ Borrower Bitcoin Public Key
      * @param lenderPubKey_ Lender Bitcoin Public Key
-     * @param agentPubKey_ Agent Bitcoin Public Key
+     * @param arbiterPubKey_ Arbiter Bitcoin Public Key
      */
     function setSecretHashes(
     	bytes32             loan,
         bytes32[4] calldata borrowerSecretHashes,
         bytes32[4] calldata lenderSecretHashes,
-        bytes32[4] calldata agentSecretHashes,
+        bytes32[4] calldata arbiterSecretHashes,
 		bytes      calldata borrowerPubKey_,
         bytes      calldata lenderPubKey_,
-        bytes      calldata agentPubKey_
+        bytes      calldata arbiterPubKey_
 	) external returns (bool) {
 		require(!secretHashes[loan].set);
 		require(msg.sender == loans[loan].borrower || msg.sender == loans[loan].lender || msg.sender == address(funds));
@@ -316,11 +316,11 @@ contract Loans is DSMath {
 		secretHashes[loan].secretHashAs = [ borrowerSecretHashes[1], borrowerSecretHashes[2], borrowerSecretHashes[3] ];
 		secretHashes[loan].secretHashB1 = lenderSecretHashes[0];
 		secretHashes[loan].secretHashBs = [ lenderSecretHashes[1], lenderSecretHashes[2], lenderSecretHashes[3] ];
-		secretHashes[loan].secretHashC1 = agentSecretHashes[0];
-		secretHashes[loan].secretHashCs = [ agentSecretHashes[1], agentSecretHashes[2], agentSecretHashes[3] ];
+		secretHashes[loan].secretHashC1 = arbiterSecretHashes[0];
+		secretHashes[loan].secretHashCs = [ arbiterSecretHashes[1], arbiterSecretHashes[2], arbiterSecretHashes[3] ];
 		pubKeys[loan].borrowerPubKey    = borrowerPubKey_;
 		pubKeys[loan].lenderPubKey      = lenderPubKey_;
-        pubKeys[loan].agentPubKey       = agentPubKey_;
+        pubKeys[loan].arbiterPubKey       = arbiterPubKey_;
         secretHashes[loan].set          = true;
 	}
 
@@ -421,7 +421,7 @@ contract Loans is DSMath {
     function accept(bytes32 loan, bytes32 secret) public {
         require(!off(loan));
         require(bools[loan].withdrawn == false   || bools[loan].paid == true);
-        require(msg.sender == loans[loan].lender || msg.sender == loans[loan].agent);
+        require(msg.sender == loans[loan].lender || msg.sender == loans[loan].arbiter);
         require(sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashB1 || sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashC1);
         require(now                              <= acceptExpiration(loan));
         require(bools[loan].sale                 == false);
@@ -445,7 +445,7 @@ contract Loans is DSMath {
                 }
                 funds.deposit(fundIndex[loan], owedToLender(loan));
             }
-            require(token.transfer(loans[loan].agent, fee(loan)));
+            require(token.transfer(loans[loan].arbiter, fee(loan)));
         }
     }
 
@@ -479,7 +479,7 @@ contract Loans is DSMath {
         require(token.transferFrom(msg.sender, address(sales), ddiv(discountCollateralValue(loan))));
         SecretHashes storage h = secretHashes[loan];
         uint256 i = sales.next(loan);
-		sale_ = sales.create(loan, loans[loan].borrower, loans[loan].lender, loans[loan].agent, msg.sender, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i], secretHash, pubKeyHash);
+		sale_ = sales.create(loan, loans[loan].borrower, loans[loan].lender, loans[loan].arbiter, msg.sender, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i], secretHash, pubKeyHash);
         if (bools[loan].sale == false) { require(token.transfer(address(sales), repaid(loan))); }
 		bools[loan].sale = true;
     }

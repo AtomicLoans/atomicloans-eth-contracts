@@ -67,7 +67,7 @@ stablecoins.forEach((stablecoin) => {
 
     const lender     = accounts[0]
     const borrower   = accounts[1]
-    const agent      = accounts[2]
+    const arbiter      = accounts[2]
     const liquidator = accounts[3]
     const lender2    = accounts[4]
 
@@ -91,7 +91,7 @@ stablecoins.forEach((stablecoin) => {
     
     const borpubk = '02b4c50d2b6bdc9f45b9d705eeca37e811dfdeb7365bf42f82222f7a4a89868703'
     const lendpubk = '03dc23d80e1cf6feadf464406e299ac7fec9ea13c51dfd9abd970758bf33d89bb6'
-    const agentpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
+    const arbiterpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
 
     let borSecs = []
     let borSechs = []
@@ -181,12 +181,12 @@ stablecoins.forEach((stablecoin) => {
       borSechs11.push(ensure0x(sha256(sec)))
     }
 
-    let agentSecs = []
-    let agentSechs = []
+    let arbiterSecs = []
+    let arbiterSechs = []
     for (let i = 0; i < 44; i++) {
       let sec = sha256(Math.random().toString())
-      agentSecs.push(ensure0x(sec))
-      agentSechs.push(ensure0x(sha256(sec)))
+      arbiterSecs.push(ensure0x(sec))
+      arbiterSechs.push(ensure0x(sha256(sec)))
     }
 
     let liquidatorSecs = []
@@ -218,7 +218,7 @@ stablecoins.forEach((stablecoin) => {
 
       const fundParams = [
         toSecs({days: 366}),
-        agent,
+        arbiter,
         false,
         0
       ]
@@ -229,13 +229,13 @@ stablecoins.forEach((stablecoin) => {
       this.fund2 = await this.funds.create.call(...fundParams, { from: lender2 })
       await this.funds.create(...fundParams, { from: lender2 })
 
-      // Generate agent secret hashes
-      await this.funds.generate(agentSechs, { from: agent })
+      // Generate arbiter secret hashes
+      await this.funds.generate(arbiterSechs, { from: arbiter })
 
       // Set Lender PubKey
       await this.funds.setPubKey(ensure0x(lendpubk))
       await this.funds.setPubKey(ensure0x(lendpubk), { from: lender2 })
-      await this.funds.setPubKey(ensure0x(agentpubk), { from: agent })
+      await this.funds.setPubKey(ensure0x(arbiterpubk), { from: arbiter })
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('1300', unit))

@@ -72,10 +72,10 @@ async function getContracts(stablecoin, accounts) {
   }
 }
 
-async function createFund(_this, agent, account, amount, compoundEnabled) {
+async function createFund(_this, arbiter, account, amount, compoundEnabled) {
   const fundParams = [
     toSecs({days: 366}),
-    agent, 
+    arbiter, 
     compoundEnabled,
     0
   ]
@@ -91,12 +91,12 @@ async function createFund(_this, agent, account, amount, compoundEnabled) {
   return fund
 }
 
-async function createCompoundEnabledFund(_this, agent, account, amount) {
-  return createFund(_this, agent, account, amount, true)
+async function createCompoundEnabledFund(_this, arbiter, account, amount) {
+  return createFund(_this, arbiter, account, amount, true)
 }
 
-async function createCompoundDisabledFund(_this, agent, account, amount) {
-  return createFund(_this, agent, account, amount, false)
+async function createCompoundDisabledFund(_this, arbiter, account, amount) {
+  return createFund(_this, arbiter, account, amount, false)
 }
 
 stablecoins.forEach((stablecoin) => {
@@ -105,7 +105,7 @@ stablecoins.forEach((stablecoin) => {
   contract(`${name} Compound`, accounts => {
     const lender = accounts[0]
     const borrower = accounts[1]
-    const agent = accounts[2]
+    const arbiter = accounts[2]
     const lender2 = accounts[3]
 
     let currentTime
@@ -125,7 +125,7 @@ stablecoins.forEach((stablecoin) => {
     
     const borpubk = '02b4c50d2b6bdc9f45b9d705eeca37e811dfdeb7365bf42f82222f7a4a89868703'
     const lendpubk = '03dc23d80e1cf6feadf464406e299ac7fec9ea13c51dfd9abd970758bf33d89bb6'
-    const agentpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
+    const arbiterpubk = '02688ce4b6ca876d3e0451e6059c34df4325745c1f7299ebc108812032106eaa32'
 
     let borSecs = []
     let borSechs = []
@@ -135,12 +135,12 @@ stablecoins.forEach((stablecoin) => {
       borSechs.push(ensure0x(sha256(sec)))
     }
 
-    let agentSecs = []
-    let agentSechs = []
+    let arbiterSecs = []
+    let arbiterSechs = []
     for (let i = 0; i < 4; i++) {
       let sec = sha256(Math.random().toString())
-      agentSecs.push(ensure0x(sec))
-      agentSechs.push(ensure0x(sha256(sec)))
+      arbiterSecs.push(ensure0x(sec))
+      arbiterSechs.push(ensure0x(sha256(sec)))
     }
 
     beforeEach(async function () {
@@ -166,7 +166,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          agent, 
+          arbiter, 
           true,
           0
         ]
@@ -196,20 +196,20 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(expectedCErc20TokenBalanceChange, actualCErc20TokenBalanceChange)
         assert.equal(expectedLenderTokenBalanceChange, actualLenderTokenBalanceChange)
 
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
 
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         assert.equal(0, borrow)
 
         await time.increase(toSecs({ hours: 1 }))
@@ -233,24 +233,24 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should update marketLiquidity to include interest gained from Compound', async function() {
-        this.fund = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
+        this.fund = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
         await this.token.approve(this.funds.address, toWei('200', unit))
         await this.funds.deposit(this.fund, toWei('100', unit))
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
         assert.equal(borrow, 0)
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
         await time.increase(toSecs({ hours: 1 }))
 
@@ -275,7 +275,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          agent, 
+          arbiter, 
           true,
           0
         ]
@@ -289,20 +289,20 @@ stablecoins.forEach((stablecoin) => {
         await this.funds.deposit(this.fund, toWei('100', unit))
         const cErc20BalAfterDeposit1 = await this.cErc20.balanceOf.call(this.funds.address)
 
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
 
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         assert.equal(0, borrow)
 
         await time.increase(toSecs({ hours: 1 }))
@@ -326,24 +326,24 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should update marketLiquidity to include interest gained from Compound', async function() {
-        this.fund = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
+        this.fund = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
         await this.token.approve(this.funds.address, toWei('200', unit))
         await this.funds.deposit(this.fund, toWei('100', unit))
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
         assert.equal(borrow, 0)
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
         await time.increase(toSecs({ hours: 1 }))
 
@@ -367,7 +367,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          agent, 
+          arbiter, 
           true,
           0
         ]
@@ -381,20 +381,20 @@ stablecoins.forEach((stablecoin) => {
         await this.funds.deposit(this.fund, toWei('80', unit))
         const cErc20BalAfterDeposit1 = await this.cErc20.balanceOf.call(this.funds.address)
 
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
 
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         assert.equal(0, borrow)
 
         await time.increase(toSecs({ hours: 1 }))
@@ -405,11 +405,11 @@ stablecoins.forEach((stablecoin) => {
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
 
-        // Generate agent secret hashes
-        await this.funds.generate(agentSechs, { from: agent })
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
 
         // Set Lender PubKey
-        await this.funds.setPubKey(ensure0x(agentpubk), { from: agent })
+        await this.funds.setPubKey(ensure0x(arbiterpubk), { from: arbiter })
 
         const loanParams = [
           this.fund,
@@ -439,32 +439,32 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should update marketLiquidity to include interest gained from Compound', async function() {
-        this.fund = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
+        this.fund = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
         await this.token.approve(this.funds.address, toWei('200', unit))
         await this.funds.deposit(this.fund, toWei('100', unit))
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
         assert.equal(borrow, 0)
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
         await time.increase(toSecs({ hours: 1 }))
 
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
 
-        // Generate agent secret hashes
-        await this.funds.generate(agentSechs, { from: agent })
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
 
         // Set Lender PubKey
         await this.funds.setPubKey(ensure0x(lendpubk))
@@ -500,23 +500,23 @@ stablecoins.forEach((stablecoin) => {
 
     describe('enableCompound', function() {
       it('should properly convert DAI to cDAI at the current exchangeRate and update token and cToken balances', async function() {
-        this.fund  = await createCompoundDisabledFund(this, agent, lender, toWei('100', unit))
-        this.fund2 = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
+        this.fund  = await createCompoundDisabledFund(this, arbiter, lender, toWei('100', unit))
+        this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
         assert.equal(borrow, 0)
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
         await time.increase(toSecs({ hours: 1 }))
 
@@ -552,23 +552,23 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should transfer tokenMarketLiquidity to cTokenMarketLiquidity at DAI to cDAI exchangeRate', async function() {
-        this.fund  = await createCompoundDisabledFund(this, agent, lender, toWei('100', unit))
-        this.fund2 = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
+        this.fund  = await createCompoundDisabledFund(this, arbiter, lender, toWei('100', unit))
+        this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
         assert.equal(borrow, 0)
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
         await time.increase(toSecs({ hours: 1 }))
 
@@ -613,23 +613,23 @@ stablecoins.forEach((stablecoin) => {
 
     describe('disableCompound', function() {
       it('should properly convert cDAI to DAI at the current exchangeRate and update token and cToken balances', async function() {
-        this.fund  = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
-        this.fund2 = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
+        this.fund  = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
+        this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
         assert.equal(borrow, 0)
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
         await time.increase(toSecs({ hours: 1 }))
 
@@ -665,23 +665,23 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should transfer cTokenMarketLiquidity to tokenMarketLiquidity at cDAI to DAI exchangeRate', async function() {
-        this.fund  = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
-        this.fund2 = await createCompoundEnabledFund(this, agent, lender, toWei('100', unit))
+        this.fund  = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
+        this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
-        await web3.eth.sendTransaction({ to: agent, from: lender, value: toWei('1', 'ether')})
-        await this.cEther.mint({ from: agent, value: toWei('1', 'ether')})
+        await web3.eth.sendTransaction({ to: arbiter, from: lender, value: toWei('1', 'ether')})
+        await this.cEther.mint({ from: arbiter, value: toWei('1', 'ether')})
 
-        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: agent })
+        const enterCEtherMarket = await this.comptroller.enterMarkets.call([this.cEther.address], { from: arbiter })
         assert.equal(enterCEtherMarket, 0)
-        await this.comptroller.enterMarkets([this.cEther.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cEther.address], { from: arbiter })
 
-        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: agent })
+        const enterCErc20Market = await this.comptroller.enterMarkets.call([this.cErc20.address], { from: arbiter })
         assert.equal(enterCErc20Market, 0)
-        await this.comptroller.enterMarkets([this.cErc20.address], { from: agent })
+        await this.comptroller.enterMarkets([this.cErc20.address], { from: arbiter })
 
-        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: agent })
+        const borrow = await this.cErc20.borrow.call(toWei('10', unit), { from: arbiter })
         assert.equal(borrow, 0)
-        await this.cErc20.borrow(toWei('10', unit), { from: agent })
+        await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
         await time.increase(toSecs({ hours: 1 }))
 
