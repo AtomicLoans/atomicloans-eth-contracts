@@ -7,7 +7,7 @@ import './DSMath.sol';
 
 pragma solidity ^0.5.8;
 
-contract Sales is DSMath { // Auctions
+contract Sales is DSMath {
 	Loans loans;
 	Medianizer med;
 
@@ -27,25 +27,47 @@ contract Sales is DSMath { // Auctions
 
     ERC20 public token;
 
+    /**
+     * @notice Container for the sale information
+     * @member loanIndex The Id of the loan
+     * @member discountBuy The amount in tokens that the Bitcoin collateral was bought for at discount
+     * @member liquidator The address of the liquidator (party that buys the Bitcoin collateral at a discount)
+     * @member borrower The address of the borrower
+     * @member lender The address of the lender
+     * @member agent The address of the agent
+     * @member createAt The creation timestamp of the sale
+     * @member pubKeyHash The Bitcoin Public Key Hash of the liquidator
+     * @member set Indicates that the sale at this specific index has been opened
+     * @member accepted Indicates that the discountBuy has been accepted
+     * @member off Indicates that the is failed
+     */
     struct Sale {
-        bytes32    loanIndex;   // Loan Index
-        uint256    discountBuy; // Amount collateral was bought for at discount
-        address    liquidator;  // Party who buys the collateral at a discount
-        address    borrower;    // Borrower
-        address    lender;      // Lender
-        address    agent;       // Optional Automated Agent
-        uint256    createdAt;   // Created At
-        bytes20    pubKeyHash;  // Liquidator PubKey Hash
-        bool       set;         // Sale at index opened
-        bool       accepted;    // discountBuy accepted
+        bytes32    loanIndex;
+        uint256    discountBuy;
+        address    liquidator;
+        address    borrower;
+        address    lender;
+        address    agent;
+        uint256    createdAt;
+        bytes20    pubKeyHash;
+        bool       set;
+        bool       accepted;
         bool       off;
     }
 
+    /**
+     * @notice Container for the Bitcoin refundable and seizable signature information
+     * @member refundableSig The Bitcoin refundable signature to move collateral to swap P2SH
+     * @member seizableSig The Bitcoin seizable signature to move collateral to swap P2SH
+     */
     struct Sig {
-        bytes refundableSig;  // Borrower Refundable Signature
-        bytes seizableSig;  // Borrower Seizable Signature
+        bytes refundableSig;
+        bytes seizableSig;
     }
 
+    /**
+     * @notice Container for the Bitcoin Secret and Secret Hashes information
+     */
     struct SecretHash {
         bytes32 secretHashA; // Secret Hash A
         bytes32 secretA;     // Secret A
@@ -88,19 +110,33 @@ contract Sales is DSMath { // Auctions
     	return saleIndexByLoan[loan].length;
     }
 
+    /**
+     * @dev Creates a new sale (called by the Loans contract)
+     * @param loanIndex The Id of the Loan
+     * @param borrower The address of the borrower
+     * @param lender The address of the lender
+     * @param agent The address of the agent
+     * @param liquidator The address of the liquidator
+     * @param secretHashA The Secret Hash of the Borrower for the current sale number
+     * @param secretHashB The Secret Hash of the Lender for the current sale number
+     * @param secretHashC The Secret Hash of the Agent for the current sale number
+     * @param secretHashD the Secret Hash of the Liquidator
+     * @param pubKeyHash The Bitcoin Public Key Hash of the Liquidator
+     * @return sale The Id of the sale
+     */
     function create(
-    	bytes32 loanIndex,   // Loan Index
-    	address borrower,    // Address Borrower
-    	address lender,      // Address Lender
-        address agent,       // Optional Address automated agent
-        address liquidator,  // Liquidator address
-    	bytes32 secretHashA, // Secret Hash A
-    	bytes32 secretHashB, // Secret Hash B
-    	bytes32 secretHashC, // Secret Hash C
-        bytes32 secretHashD, // Secret Hash D
-        bytes20 pubKeyHash   // Liquidator PubKeyHash
+    	bytes32 loanIndex,
+    	address borrower,
+    	address lender,
+        address agent,
+        address liquidator,
+    	bytes32 secretHashA,
+    	bytes32 secretHashB,
+    	bytes32 secretHashC,
+        bytes32 secretHashD,
+        bytes20 pubKeyHash
 	) external returns(bytes32 sale) {
-    	require(msg.sender == deployer);
+    	require(msg.sender == address(loans));
     	saleIndex = add(saleIndex, 1);
         sale = bytes32(saleIndex);
         sales[sale].loanIndex   = loanIndex;
@@ -119,10 +155,19 @@ contract Sales is DSMath { // Auctions
         saleIndexByLoan[loanIndex].push(sale);
     }
 
-	function provideSig(              // Provide Signature to move collateral to collateral swap
-		bytes32        sale,          // Auction Index
-		bytes calldata refundableSig, // Refundable Signature
-		bytes calldata seizableSig    // Seizable Signature
+    /**
+     * @notice Provide Bitcoin signatures for moving collateral to collateral swap script
+     * @param sale The Id of the sale
+     * @param refundableSig The Bitcoin refundable collateral signature
+     * @param seizableSig The Bitcoin seizable collateral signature
+     *
+     *         Note: More info on the collateral swap script can be seen here:
+                     https://github.com/AtomicLoans/chainabstractionlayer-loans
+     */
+	function provideSig(
+		bytes32        sale,
+		bytes calldata refundableSig,
+		bytes calldata seizableSig
 	) external {
 		require(sales[sale].set);
 		require(now < settlementExpiration(sale));
@@ -140,7 +185,12 @@ contract Sales is DSMath { // Auctions
 		}
 	}
 
-	function provideSecret(bytes32 sale, bytes32 secret_) external { // Provide Secret
+    /**
+     * @notice Provide secret to enable liquidator to claim collateral
+     * @param sale The Id of the sale
+     * @param secret_ The secret provided by the borrower, lender, agent, or liquidator
+     */
+	function provideSecret(bytes32 sale, bytes32 secret_) external {
 		require(sales[sale].set);
 		if      (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashA) { secretHashes[sale].secretA = secret_; }
         else if (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashB) { secretHashes[sale].secretB = secret_; }
@@ -149,7 +199,11 @@ contract Sales is DSMath { // Auctions
         else                                                                          { revert(); }
 	}
 
-	function hasSecrets(bytes32 sale) public view returns (bool) { // 2 of 3 secrets
+    /**
+     * @dev Indicates that two of Secret A, Secret B, Secret C have been submitted
+     * @param sale The Id of the sale
+     */
+	function hasSecrets(bytes32 sale) public view returns (bool) {
 		uint8 numCorrectSecrets = 0;
 		if (sha256(abi.encodePacked(secretHashes[sale].secretA)) == secretHashes[sale].secretHashA) { numCorrectSecrets = numCorrectSecrets + 1; }
 		if (sha256(abi.encodePacked(secretHashes[sale].secretB)) == secretHashes[sale].secretHashB) { numCorrectSecrets = numCorrectSecrets + 1; }
@@ -157,7 +211,11 @@ contract Sales is DSMath { // Auctions
 		return (numCorrectSecrets >= 2);
 	}
 
-	function accept(bytes32 sale) external { // Withdraw DiscountBuy (Accept DiscountBuy and disperse funds to rightful parties)
+    /**
+     * @notice Accept discount buy by liquidator and disperse funds to rightful parties
+     * @param sale The Id of the sale
+     */
+	function accept(bytes32 sale) external {
         require(!accepted(sale));
         require(!off(sale));
 		require(hasSecrets(sale));
@@ -186,7 +244,11 @@ contract Sales is DSMath { // Auctions
         if (available > 0) { require(token.transfer(sales[sale].borrower, available)); }
 	}
 
-	function refund(bytes32 sale) external { // Refund DiscountBuy
+    /**
+     * @notice Refund discount buy to liquidator
+     * @param sale The Id of the sale
+     */
+	function refund(bytes32 sale) external {
         require(!accepted(sale));
         require(!off(sale));
 		require(now > settlementExpiration(sale));

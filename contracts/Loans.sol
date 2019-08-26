@@ -48,44 +48,76 @@ contract Loans is DSMath {
      * @member liquidationRatio The ratio of collateral to debt where the loan can be liquidated
      */
     struct Loan {
-    	address borrower;         // Address Borrower
-        address lender;           // Address Lender
-        address agent;            // Optional Address automated agent
-        uint256 createdAt;        // Created At
-        uint256 loanExpiration;   // Loan Expiration
-        uint256 principal;        // Principal
-        uint256 interest;         // Interest
-        uint256 penalty;          // Liquidation Penalty
-        uint256 fee;              // Optional fee paid to auto if address not 0x0
-        uint256 collateral;       // Collateral
-        uint256 liquidationRatio; // Liquidation Ratio
+    	address borrower;
+        address lender;
+        address agent;
+        uint256 createdAt;
+        uint256 loanExpiration;
+        uint256 principal;
+        uint256 interest;
+        uint256 penalty;
+        uint256 fee;
+        uint256 collateral;
+        uint256 liquidationRatio;
     }
 
+    /**
+     * @notice Container for Bitcoin public key information
+     * @member borrowerPubKey Borrower Bitcoin Public Key
+     * @member lenderPubKey Lender Bitcoin Public Key
+     * @member agentPubKey Agent Bitcoin Public Key
+     *
+     *         Note: This struct is unnecessary for the Ethereum
+     *               contract itself, but is used as a point of 
+     *               reference for generating the correct P2SH for
+     *               locking Bitcoin collateral
+     */
     struct PubKeys {
-        bytes   borrowerPubKey;   // Borrower PubKey
-        bytes   lenderPubKey;     // Lender PubKey
-        bytes   agentPubKey;      // Agent PubKey
+        bytes   borrowerPubKey;
+        bytes   lenderPubKey;
+        bytes   agentPubKey;
     }
 
+    /**
+     * @notice Container for borrower, lender, and agent Secret Hashes
+     * @member secretHashA1 Borrower Secret Hash for the loan
+     * @member secretHashAs Borrower Secret Hashes for up to three liquidations
+     * @member secretHashB1 Lender Secret Hash for the loan
+     * @member secretHashBs Lender Secret Hashes for up to three liquidations
+     * @member secretHashC1 Agent Secret Hash for the loan
+     * @member secretHashCs Agent Secret Hashes for up to three liquidations
+     * @member withdrawSecret Secret A1 when revealed by borrower
+     * @member acceptSecret Secret B1 or Secret C1 when revelaed by the lender or agent
+     * @member set Secret Hashes set for particular loan
+     */
     struct SecretHashes {
-    	bytes32    secretHashA1;   // Secret Hash A1
-    	bytes32[3] secretHashAs;   // Secret Hashes A2, A3, A4 (for Sales)
-    	bytes32    secretHashB1;   // Secret Hash B1
-    	bytes32[3] secretHashBs;   // Secret Hashes B2, B3, B4 (for Sales)
-    	bytes32    secretHashC1;   // Secret Hash C1
-    	bytes32[3] secretHashCs;   // Secret Hashes C2, C3, C4 (for Sales)
-        bytes32    withdrawSecret; // Secret A1
-        bytes32    acceptSecret;   // Secret B1 or Secret C1
-    	bool       set;            // Secret Hashes set
+    	bytes32    secretHashA1;
+    	bytes32[3] secretHashAs;
+    	bytes32    secretHashB1;
+    	bytes32[3] secretHashBs;
+    	bytes32    secretHashC1;
+    	bytes32[3] secretHashCs;
+        bytes32    withdrawSecret;
+        bytes32    acceptSecret;
+    	bool       set;
     }
 
+    /**
+     * @notice Container for states of loan agreement
+     * @member funded Indicates that the loan has been funded with tokens
+     * @member approved Indicates that the lender has approved locking of the Bitcoin collateral
+     * @member withdrawn Indicates that the borrower has withdrawn the tokens from the contract
+     * @member sale Indicates that the collateral liquidation process has started
+     * @member paid Indicates that the loan has been repaid
+     * @member off Indicates that the loan has been cancelled or the loan repayment has been accepted
+     */
     struct Bools {
-    	bool funded;        // Loan Funded
-    	bool approved;      // Approve locking of collateral
-    	bool withdrawn;     // Loan Withdrawn
-    	bool sale;          // Collateral Liquidation Started
-    	bool paid;          // Loan Repaid
-    	bool off;           // Loan Finished (Repayment accepted or cancelled)
+    	bool funded;
+    	bool approved;
+    	bool withdrawn;
+    	bool sale;
+    	bool paid;
+    	bool off;
     }
 
     function borrower(bytes32 loan) public view returns (address) {
@@ -218,17 +250,28 @@ contract Loans is DSMath {
         require(token.approve(address(funds), 2**256-1));
     }
 
+    /**
+     * @dev Sets Sales contract
+     * @param sales_ Address of Sales contract
+     */
     function setSales(Sales sales_) external {
         require(msg.sender == deployer);
         require(address(sales) == address(0));
         sales = sales_;
     }
     
-    function create(                         // Create new Loan
-        uint256             loanExpiration_, // Loan Expiration
-        address[3] calldata usrs_,           // Borrower, Lender, Optional Automated Agent Addresses
-        uint256[6] calldata vals_,           // Principal, Interest, Liquidation Penalty, Optional Automation Fee, Collaateral Amount, Liquidation Ratio
-        bytes32             fundIndex_       // Optional Fund Index
+    /**
+     * @notice Creates a new loan agreement
+     * @param loanExpiration_ The timestamp for the end of the loan
+     * @param usrs_ Array of three addresses containing the borrower, lender, and optional agent address
+     * @param vals_ Array of six uints containing loan principal, interest, liquidation penalty, optional agent fee, collateral amount, liquidation ratio
+     * @param fundIndex_ The optional Fund Index
+     */
+    function create(
+        uint256             loanExpiration_,
+        address[3] calldata usrs_,
+        uint256[6] calldata vals_,
+        bytes32             fundIndex_
     ) external returns (bytes32 loan) {
         if (fundIndex_ != bytes32(0)) { require(funds.lender(fundIndex_) == usrs_[1]); }
         loanIndex = add(loanIndex, 1);
@@ -248,14 +291,24 @@ contract Loans is DSMath {
         secretHashes[loan].set       = false;
     }
 
-    function setSecretHashes(                     // Set Secret Hashes for Loan
-    	bytes32             loan,                 // Loan index
-        bytes32[4] calldata borrowerSecretHashes, // Borrower Secret Hashes
-        bytes32[4] calldata lenderSecretHashes,   // Lender Secret Hashes
-        bytes32[4] calldata agentSecretHashes,    // Agent Secret Hashes
-		bytes      calldata borrowerPubKey_,      // Borrower Pubkey
-        bytes      calldata lenderPubKey_,        // Lender Pubkey
-        bytes      calldata agentPubKey_          // Agent Pubkey
+    /**
+     * @notice Set Secret Hashes for loan agreement
+     * @param loan The Id of the Loan
+     * @param borrowerSecretHashes Borrower secret hashes
+     * @param lenderSecretHashes Lender secret hashes
+     * @param agentSecretHashes Agent secret hashes
+     * @param borrowerPubKey_ Borrower Bitcoin Public Key
+     * @param lenderPubKey_ Lender Bitcoin Public Key
+     * @param agentPubKey_ Agent Bitcoin Public Key
+     */
+    function setSecretHashes(
+    	bytes32             loan,
+        bytes32[4] calldata borrowerSecretHashes,
+        bytes32[4] calldata lenderSecretHashes,
+        bytes32[4] calldata agentSecretHashes,
+		bytes      calldata borrowerPubKey_,
+        bytes      calldata lenderPubKey_,
+        bytes      calldata agentPubKey_
 	) external returns (bool) {
 		require(!secretHashes[loan].set);
 		require(msg.sender == loans[loan].borrower || msg.sender == loans[loan].lender || msg.sender == address(funds));
@@ -271,13 +324,21 @@ contract Loans is DSMath {
         secretHashes[loan].set          = true;
 	}
 
-	function fund(bytes32 loan) external { // Fund Loan
+    /**
+     * @notice Lender sends tokens to the loan agreement
+     * @param loan The Id of the Loan
+     */
+	function fund(bytes32 loan) external {
 		require(secretHashes[loan].set);
     	require(bools[loan].funded == false);
     	require(token.transferFrom(msg.sender, address(this), principal(loan)));
     	bools[loan].funded = true;
     }
 
+    /**
+     * @notice Lender approves locking of Bitcoin collateral
+     * @param loan The Id of the Loan
+     */
     function approve(bytes32 loan) external { // Approve locking of collateral
     	require(bools[loan].funded == true);
     	require(loans[loan].lender == msg.sender);
@@ -285,7 +346,12 @@ contract Loans is DSMath {
     	bools[loan].approved = true;
     }
 
-    function withdraw(bytes32 loan, bytes32 secretA1) external { // Withdraw
+    /**
+     * @notice Borrower withdraws loan
+     * @param loan The Id of the Loan
+     * @param secretA1 Secret A1 provided by the borrower
+     */
+    function withdraw(bytes32 loan, bytes32 secretA1) external {
     	require(!off(loan));
     	require(bools[loan].funded == true);
     	require(bools[loan].approved == true);
@@ -295,8 +361,14 @@ contract Loans is DSMath {
         secretHashes[loan].withdrawSecret = secretA1;
     }
 
-    function repay(bytes32 loan, uint256 amount) external { // Repay Loan
-        // require(msg.sender                == loans[loan].borrower); // NOTE: this is not necessary. Anyone can pay off the loan
+    /**
+     * @notice Lender sends tokens to the loan agreement
+     * @param loan The Id of the Loan
+     * @param amount The amount of tokens to repay
+     *
+     *        Note: Anyone can repay the loan
+     */
+    function repay(bytes32 loan, uint256 amount) external {
     	require(!off(loan));
         require(!sale(loan));
     	require(bools[loan].withdrawn     == true);
@@ -309,7 +381,14 @@ contract Loans is DSMath {
     	}
     }
 
-    function refund(bytes32 loan) external { // Refund payback
+    /**
+     * @notice Borrower refunds tokens in the case that Lender doesn't accept loan repayment
+     * @dev Send tokens back to the Borrower, and close Loan
+     * @param loan The Id of the Loan
+     *
+     *        Note: If Lender does not accept repayment, liquidation cannot occur
+     */
+    function refund(bytes32 loan) external {
     	require(!off(loan));
         require(!sale(loan));
     	require(now              >  acceptExpiration(loan));
@@ -323,11 +402,23 @@ contract Loans is DSMath {
         }
     }
 
+    /**
+     * @notice Lender cancels loan after Borrower locks collateral
+     * @dev Lender cancels loan and principal is sent back to the Lender / Loan Fund
+     * @param loan The Id of the Loan
+     * @param secret Secret B1 revealed by the Lender
+     */
     function cancel(bytes32 loan, bytes32 secret) external {
-        accept(loan, secret); // Default to true for returning funds to Fund
+        accept(loan, secret);
     }
 
-    function accept(bytes32 loan, bytes32 secret) public { // Accept or Cancel // Bool fund set true if lender wants fund to return to fund
+    /**
+     * @notice Lender accepts loan repayment
+     * @dev Lender accepts loan repayment and principal + interest are sent back to the Lender / Loan Fund
+     * @param loan The Id of the Loan
+     * @param secret Secret B1 revealed by the Lender
+     */
+    function accept(bytes32 loan, bytes32 secret) public {
         require(!off(loan));
         require(bools[loan].withdrawn == false   || bools[loan].paid == true);
         require(msg.sender == loans[loan].lender || msg.sender == loans[loan].agent);
@@ -358,7 +449,14 @@ contract Loans is DSMath {
         }
     }
 
-    function liquidate(bytes32 loan, bytes32 secretHash, bytes20 pubKeyHash) external returns (bytes32 sale_) { // Start Liquidation
+    /**
+     * @notice Any third party starts liquidation of the Bitcoin collateral by providing tokens with the intention to buy at a discount
+     * @param loan The Id of the Loan
+     * @param secretHash The Secret Hash D1 provided by the liquidator
+     * @param pubKeyHash The Bitcoin Public Key Hash of the liquidator
+     * @return sale_ The Id of the Sale (Liquidation)
+     */
+    function liquidate(bytes32 loan, bytes32 secretHash, bytes20 pubKeyHash) external returns (bytes32 sale_) {
     	require(!off(loan));
         require(bools[loan].withdrawn == true);
         require(msg.sender != loans[loan].borrower && msg.sender != loans[loan].lender);
