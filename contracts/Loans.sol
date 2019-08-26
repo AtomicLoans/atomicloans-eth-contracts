@@ -33,6 +33,20 @@ contract Loans is DSMath {
 
     address deployer;
 
+    /**
+     * @notice Container for loan information
+     * @member borrower The address of the borrower
+     * @member lender The address of the lender
+     * @member agent The address of the agent
+     * @member createAt The creation timestamp of the loan
+     * @member loanExpiration The timestamp for the end of the loan
+     * @member principal The amount of principal in tokens to be paid back at the end of the loan
+     * @member interest The amount of interest in tokens to be paid back by the end of the loan
+     * @member penalty The amount of tokens to be paid as a penalty for defaulting or allowing the loan to be liquidated
+     * @member fee The amount of tokens paid to the agent
+     * @member collateral The amount of collateral in satoshis
+     * @member liquidationRatio The ratio of collateral to debt where the loan can be liquidated
+     */
     struct Loan {
     	address borrower;         // Address Borrower
         address lender;           // Address Lender

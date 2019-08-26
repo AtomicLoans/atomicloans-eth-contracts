@@ -52,15 +52,18 @@ module.exports = function(deployer, network, accounts) {
     await unitroller._setPendingImplementation(comptroller.address)
     await unitroller._acceptImplementation()
     await comptroller._setLiquidationIncentive(toWei('1.05', 'ether'))
-    await comptroller._setMaxAssets(5)
+    await comptroller._setMaxAssets(10)
 
     await deployer.deploy(CErc20, dai.address, comptroller.address, daiInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Dai', 'cDAI', '8')
     var cdai = await CErc20.deployed()
+
+    var cusdc = await CErc20.new(usdc.address, comptroller.address, usdcInterestRateModel.address, toWei('0.2', 'finney'), 'Compound Usdc', 'cUSDC', '8')
 
     await deployer.deploy(CEther, comptroller.address, ethInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Ether', 'cETH', '8')
     var ceth = await CEther.deployed()
 
     await comptroller._supportMarket(cdai.address)
+    await comptroller._supportMarket(cusdc.address)
     await comptroller._supportMarket(ceth.address)
 
     await deployer.deploy(PriceOracle, accounts[0], dai.address, makerMedianizer.address, usdc.address, makerMedianizer.address)
@@ -70,13 +73,18 @@ module.exports = function(deployer, network, accounts) {
     var priceOracleProxy = await PriceOracleProxy.deployed()
 
     await priceOracle.setPrices([padLeft(numberToHex(1), 40)], [toWei('0.0049911026', 'ether')])
+    await priceOracle.setPrices([padLeft(numberToHex(2), 40)], [toWei('0.0049911026', 'ether')])
 
     await comptroller._setPriceOracle(priceOracleProxy.address)
-
-    const cdaiPrice = await priceOracleProxy.getUnderlyingPrice(cdai.address)
-    const cethPrice = await priceOracleProxy.getUnderlyingPrice(ceth.address)
-
     await comptroller._setCollateralFactor(ceth.address, toWei('0.75', 'ether'))
+
+    await comptroller.enterMarkets([cdai.address, cusdc.address, ceth.address])
+
+    await dai.approve(cdai.address, toWei('100', 'ether'))
+    await cdai.mint(toWei('100', 'ether'))
+
+    await usdc.approve(cusdc.address, toWei('100', 'mwei'))
+    await cusdc.mint(toWei('100', 'mwei'))
 
     // Deploy example Medianizer
     await deployer.deploy(Medianizer);
