@@ -23,6 +23,7 @@ contract Funds is DSMath, ALCompound {
     
     mapping (bytes32 => Fund)      public funds;
     mapping (address => Fund)      public fundOwner;
+    mapping (bytes32 => Bools)     public bools;
     uint256                        public fundIndex;
 
     uint256 public lastGlobalInterestUpdated;
@@ -70,6 +71,7 @@ contract Funds is DSMath, ALCompound {
         uint256  maxLoanAmt;
         uint256  minLoanDur;
         uint256  maxLoanDur;
+        uint256  maxFundDur;
         uint256  interest;
         uint256  penalty;
         uint256  fee;
@@ -77,6 +79,9 @@ contract Funds is DSMath, ALCompound {
         address  arbiter;
         uint256  balance;
         uint256  cBalance;
+    }
+
+    struct Bools {
         bool     custom;
         bool     compoundEnabled;
     }
@@ -216,7 +221,7 @@ contract Funds is DSMath, ALCompound {
      * @return The minimum amount of tokens that can be requested from a Loan Fund
      */
     function minLoanAmt(bytes32 fund) public view returns (uint256) {
-        if (funds[fund].custom) { return funds[fund].minLoanAmt; }
+        if (bools[fund].custom) { return funds[fund].minLoanAmt; }
         else                    { return div(DEFAULT_MIN_LOAN_AMT, (10 ** sub(18, decimals))); }
     }
 
@@ -226,7 +231,7 @@ contract Funds is DSMath, ALCompound {
      * @return The maximum amount of tokens that can be requested from a Loan Fund
      */
     function maxLoanAmt(bytes32 fund) public view returns (uint256) {
-        if (funds[fund].custom) { return funds[fund].maxLoanAmt; }
+        if (bools[fund].custom) { return funds[fund].maxLoanAmt; }
         else                    { return DEFAULT_MAX_LOAN_AMT; }
     }
 
@@ -236,7 +241,7 @@ contract Funds is DSMath, ALCompound {
      * @return The minimum duration loan that can be requested from a Loan Fund
      */
     function minLoanDur(bytes32 fund) public view returns (uint256) {
-        if (funds[fund].custom) { return funds[fund].minLoanDur; }
+        if (bools[fund].custom) { return funds[fund].minLoanDur; }
         else                    { return DEFAULT_MIN_LOAN_DUR; }
     }
 
@@ -250,12 +255,21 @@ contract Funds is DSMath, ALCompound {
     }
 
     /**
+     * @notice Get maximum loan duration able to be requested by a 'borrower'
+     * @param fund The Id of a Loan Fund
+     * @return The maximum duration loan that can be requested from a Loan Fund
+     */
+    function maxFundDur(bytes32 fund) public view returns (uint256) {
+        return funds[fund].maxFundDur;
+    }
+
+    /**
      * @notice Get the interest rate for a Loan Fund
      * @param fund The Id of a Loan Fund
      * @return The interest rate per second for a Loan Fund in RAY per second
      */
     function interest(bytes32 fund) public view returns (uint256) {
-        if (funds[fund].custom) { return funds[fund].interest; }
+        if (bools[fund].custom) { return funds[fund].interest; }
         else                    { return globalInterestRate; }
     }
 
@@ -265,7 +279,7 @@ contract Funds is DSMath, ALCompound {
      * @return The liquidation penalty rate per second for a Loan Fund in RAY per second
      */
     function penalty(bytes32 fund) public view returns (uint256) {
-        if (funds[fund].custom) { return funds[fund].penalty; }
+        if (bools[fund].custom) { return funds[fund].penalty; }
         else                    { return DEFAULT_LIQUIDATION_PENALTY; }
     }
 
@@ -275,7 +289,7 @@ contract Funds is DSMath, ALCompound {
      * @return The optional automation fee rate of Loan Fund in RAY per second
      */
     function fee(bytes32 fund) public view returns (uint256) {
-        if (funds[fund].custom) { return funds[fund].fee; }
+        if (bools[fund].custom) { return funds[fund].fee; }
         else                    { return defaultArbiterFee; }
     }
 
@@ -285,7 +299,7 @@ contract Funds is DSMath, ALCompound {
      * @return The liquidation ratio of Loan Fund in RAY
      */
     function liquidationRatio(bytes32 fund) public view returns (uint256) {
-        if (funds[fund].custom) { return funds[fund].liquidationRatio; }
+        if (bools[fund].custom) { return funds[fund].liquidationRatio; }
         else                    { return DEFAULT_LIQUIDATION_RATIO; }
     }
 
@@ -304,7 +318,7 @@ contract Funds is DSMath, ALCompound {
      * @return The amount of tokens remaining in Loan Fund
      */
     function balance(bytes32 fund) public returns (uint256) {
-        if (funds[fund].compoundEnabled) {
+        if (bools[fund].compoundEnabled) {
             return wmul(funds[fund].cBalance, cToken.exchangeRateCurrent());
         } else {
             return funds[fund].balance;
@@ -317,7 +331,7 @@ contract Funds is DSMath, ALCompound {
      * @return The indicator of whether a Loan Fund is custom or not
      */
     function custom(bytes32 fund) public view returns (bool) {
-        return funds[fund].custom;
+        return bools[fund].custom;
     }
 
     /**
@@ -333,6 +347,7 @@ contract Funds is DSMath, ALCompound {
      */
     function create(
         uint256  maxLoanDur_,
+        uint256  maxFundDur_,
         address  arbiter_,
         bool     compoundEnabled_,
         uint256  amount_
@@ -343,9 +358,10 @@ contract Funds is DSMath, ALCompound {
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
         funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].arbiter            = arbiter_;
-        funds[fund].custom           = false;
-        funds[fund].compoundEnabled  = compoundEnabled_;
+        funds[fund].maxFundDur       = maxFundDur_;
+        funds[fund].arbiter          = arbiter_;
+        bools[fund].custom           = false;
+        bools[fund].compoundEnabled  = compoundEnabled_;
         fundOwner[msg.sender]        = funds[fund];
         if (amount_ > 0) { deposit(fund, amount_); }
     }
@@ -369,6 +385,7 @@ contract Funds is DSMath, ALCompound {
         uint256  maxLoanAmt_,
         uint256  minLoanDur_,
         uint256  maxLoanDur_,
+        uint256  maxFundDur_,
         uint256  liquidationRatio_,
         uint256  interest_,
         uint256  penalty_,
@@ -386,13 +403,14 @@ contract Funds is DSMath, ALCompound {
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
         funds[fund].maxLoanDur       = maxLoanDur_;
+        funds[fund].maxFundDur       = maxFundDur_;
         funds[fund].interest         = interest_;
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
-        funds[fund].arbiter            = arbiter_;
-        funds[fund].custom           = true;
-        funds[fund].compoundEnabled  = compoundEnabled_;
+        funds[fund].arbiter          = arbiter_;
+        bools[fund].custom           = true;
+        bools[fund].compoundEnabled  = compoundEnabled_;
         fundOwner[msg.sender]        = funds[fund];
         if (amount_ > 0) { deposit(fund, amount_); }
     }
@@ -406,7 +424,7 @@ contract Funds is DSMath, ALCompound {
      */
     function deposit(bytes32 fund, uint256 amount) public {
         require(token.transferFrom(msg.sender, address(this), amount));
-        if (funds[fund].compoundEnabled) {
+        if (bools[fund].compoundEnabled) {
             mintCToken(address(token), address(cToken), amount);
             uint256 cTokenToAdd = div(mul(amount, WAD), cToken.exchangeRateCurrent());
             funds[fund].cBalance = add(funds[fund].cBalance, cTokenToAdd);
@@ -439,6 +457,7 @@ contract Funds is DSMath, ALCompound {
         uint256  maxLoanAmt_,
         uint256  minLoanDur_,
         uint256  maxLoanDur_,
+        uint256  maxFundDur_,
         uint256  interest_,
         uint256  penalty_,
         uint256  fee_,
@@ -450,11 +469,12 @@ contract Funds is DSMath, ALCompound {
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
         funds[fund].maxLoanDur       = maxLoanDur_;
+        funds[fund].maxFundDur       = maxFundDur_;
         funds[fund].interest         = interest_;
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
-        funds[fund].arbiter            = arbiter_;
+        funds[fund].arbiter          = arbiter_;
     }
 
     /**
@@ -486,7 +506,12 @@ contract Funds is DSMath, ALCompound {
         require(amount_    >= minLoanAmt(fund));
         require(amount_    <= maxLoanAmt(fund));
         require(loanDur_   >= minLoanDur(fund));
-        require(loanDur_   <= maxLoanDur(fund));
+
+        if (maxLoanDur(fund) > 0) {
+            require(loanDur_       <= maxLoanDur(fund));
+        } else {
+            require(now + loanDur_ <= maxFundDur(fund));
+        }
 
         loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);
@@ -502,7 +527,7 @@ contract Funds is DSMath, ALCompound {
     function withdraw(bytes32 fund, uint256 amount) external {
         require(msg.sender     == lender(fund));
         require(balance(fund)  >= amount);
-        if (funds[fund].compoundEnabled) {
+        if (bools[fund].compoundEnabled) {
             uint256 cBalanceBefore = cToken.balanceOf(address(this));
             redeemUnderlying(address(cToken), amount);
             uint256 cBalanceAfter = cToken.balanceOf(address(this));
@@ -542,7 +567,7 @@ contract Funds is DSMath, ALCompound {
      */
     function enableCompound(bytes32 fund) external {
         require(compoundSet);
-        require(funds[fund].compoundEnabled == false);
+        require(bools[fund].compoundEnabled == false);
         require(msg.sender == lender(fund));
         uint256 cBalanceBefore = cToken.balanceOf(address(this));
         mintCToken(address(token), address(cToken), funds[fund].balance);
@@ -550,7 +575,7 @@ contract Funds is DSMath, ALCompound {
         uint256 cTokenToReturn = sub(cBalanceAfter, cBalanceBefore);
         tokenMarketLiquidity = sub(tokenMarketLiquidity, funds[fund].balance);
         cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToReturn);
-        funds[fund].compoundEnabled = true;
+        bools[fund].compoundEnabled = true;
         funds[fund].balance = 0;
         funds[fund].cBalance = cTokenToReturn;
     }
@@ -560,7 +585,7 @@ contract Funds is DSMath, ALCompound {
      * @param fund The Id of a Loan Fund
      */
     function disableCompound(bytes32 fund) external {
-        require(funds[fund].compoundEnabled);
+        require(bools[fund].compoundEnabled);
         require(msg.sender == lender(fund));
         uint256 balanceBefore = token.balanceOf(address(this));
         redeemCToken(address(cToken), funds[fund].cBalance);
@@ -568,7 +593,7 @@ contract Funds is DSMath, ALCompound {
         uint256 tokenToReturn = sub(balanceAfter, balanceBefore);
         tokenMarketLiquidity = add(tokenMarketLiquidity, tokenToReturn);
         cTokenMarketLiquidity = sub(cTokenMarketLiquidity, funds[fund].cBalance);
-        funds[fund].compoundEnabled = false;
+        bools[fund].compoundEnabled = false;
         funds[fund].cBalance = 0;
         funds[fund].balance = tokenToReturn;
     }
@@ -680,7 +705,7 @@ contract Funds is DSMath, ALCompound {
      * @param amount The amount of tokens that are being requested
      */
     function loanUpdateMarketLiquidity(bytes32 fund, uint256 amount) private {
-        if (funds[fund].compoundEnabled) {
+        if (bools[fund].compoundEnabled) {
             uint256 cBalanceBefore = cToken.balanceOf(address(this));
             redeemUnderlying(address(cToken), amount);
             uint256 cBalanceAfter = cToken.balanceOf(address(this));

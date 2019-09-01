@@ -134,6 +134,7 @@ stablecoins.forEach((stablecoin) => {
         toWei('100', unit),
         toSecs({days: 1}),
         toSecs({days: 366}),
+        0,
         toWei('1.5', 'gether'), // 150% collateralization ratio
         toWei(rateToSec('16.5'), 'gether'), // 16.50%
         toWei(rateToSec('3'), 'gether'), //  3.00%

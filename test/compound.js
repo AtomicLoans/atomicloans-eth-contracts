@@ -75,6 +75,7 @@ async function getContracts(stablecoin, accounts) {
 async function createFund(_this, arbiter, account, amount, compoundEnabled) {
   const fundParams = [
     toSecs({days: 366}),
+    0,
     arbiter, 
     compoundEnabled,
     0
@@ -166,6 +167,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
+          0,
           arbiter, 
           true,
           0
@@ -275,6 +277,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
+          0,
           arbiter, 
           true,
           0
@@ -367,6 +370,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
+          0,
           arbiter, 
           true,
           0
@@ -525,7 +529,8 @@ stablecoins.forEach((stablecoin) => {
 
         const tokenBalanceBefore = await this.token.balanceOf.call(this.funds.address)
         const cErc20BalanceBefore = await this.cErc20.balanceOf.call(this.funds.address)
-        const { compoundEnabled: isCompoundEnabledBefore, cBalance: cBalanceBefore, balance: balanceBefore } = await this.funds.funds.call(this.fund)
+        const { balance: balanceBefore, cBalance: cBalanceBefore } = await this.funds.funds.call(this.fund)
+        const { compoundEnabled: isCompoundEnabledBefore } = await this.funds.bools.call(this.fund)
         assert.equal(false, isCompoundEnabledBefore)
         assert.equal(0, cBalanceBefore)
 
@@ -535,7 +540,8 @@ stablecoins.forEach((stablecoin) => {
 
         const tokenBalanceAfter = await this.token.balanceOf.call(this.funds.address)
         const cErc20BalanceAfter = await this.cErc20.balanceOf.call(this.funds.address)
-        const { compoundEnabled: isCompoundEnabledAfter, cBalance: cBalanceAfter, balance: balanceAfter } = await this.funds.funds.call(this.fund)
+        const { balance: balanceAfter, cBalance: cBalanceAfter } = await this.funds.funds.call(this.fund)
+        const { compoundEnabled: isCompoundEnabledAfter } = await this.funds.bools.call(this.fund)
         assert.equal(true, isCompoundEnabledAfter)
         assert.equal(0, balanceAfter)
 
@@ -577,7 +583,8 @@ stablecoins.forEach((stablecoin) => {
 
         const tokenBalanceBefore = await this.token.balanceOf.call(this.funds.address)
         const cErc20BalanceBefore = await this.cErc20.balanceOf.call(this.funds.address)
-        const { compoundEnabled: isCompoundEnabledBefore, cBalance: cBalanceBefore, balance: balanceBefore } = await this.funds.funds.call(this.fund)
+        const { balance: balanceBefore, cBalance: cBalanceBefore } = await this.funds.funds.call(this.fund)
+        const { compoundEnabled: isCompoundEnabledBefore } = await this.funds.bools.call(this.fund)
         assert.equal(false, isCompoundEnabledBefore)
         assert.equal(0, cBalanceBefore)
 
@@ -590,7 +597,8 @@ stablecoins.forEach((stablecoin) => {
 
         const tokenBalanceAfter = await this.token.balanceOf.call(this.funds.address)
         const cErc20BalanceAfter = await this.cErc20.balanceOf.call(this.funds.address)
-        const { compoundEnabled: isCompoundEnabledAfter, cBalance: cBalanceAfter, balance: balanceAfter } = await this.funds.funds.call(this.fund)
+        const { balance: balanceAfter, cBalance: cBalanceAfter } = await this.funds.funds.call(this.fund)
+        const { compoundEnabled: isCompoundEnabledAfter } = await this.funds.bools.call(this.fund)
         assert.equal(true, isCompoundEnabledAfter)
         assert.equal(0, balanceAfter)
 
@@ -638,7 +646,8 @@ stablecoins.forEach((stablecoin) => {
 
         const tokenBalanceBefore = await this.token.balanceOf.call(this.funds.address)
         const cErc20BalanceBefore = await this.cErc20.balanceOf.call(this.funds.address)
-        const { compoundEnabled: isCompoundEnabledBefore, cBalance: cBalanceBefore, balance: balanceBefore } = await this.funds.funds.call(this.fund)
+        const { balance: balanceBefore, cBalance: cBalanceBefore } = await this.funds.funds.call(this.fund)
+        const { compoundEnabled: isCompoundEnabledBefore } = await this.funds.bools.call(this.fund)
         assert.equal(true, isCompoundEnabledBefore)
         assert.equal(0, balanceBefore)
 
@@ -648,7 +657,8 @@ stablecoins.forEach((stablecoin) => {
 
         const tokenBalanceAfter = await this.token.balanceOf.call(this.funds.address)
         const cErc20BalanceAfter = await this.cErc20.balanceOf.call(this.funds.address)
-        const { compoundEnabled: isCompoundEnabledAfter, cBalance: cBalanceAfter, balance: balanceAfter } = await this.funds.funds.call(this.fund)
+        const { balance: balanceAfter, cBalance: cBalanceAfter } = await this.funds.funds.call(this.fund)
+        const { compoundEnabled: isCompoundEnabledAfter } = await this.funds.bools.call(this.fund)
         assert.equal(false, isCompoundEnabledAfter)
         assert.equal(0, cBalanceAfter)
 
@@ -690,7 +700,8 @@ stablecoins.forEach((stablecoin) => {
 
         const tokenBalanceBefore = await this.token.balanceOf.call(this.funds.address)
         const cErc20BalanceBefore = await this.cErc20.balanceOf.call(this.funds.address)
-        const { compoundEnabled: isCompoundEnabledBefore, cBalance: cBalanceBefore, balance: balanceBefore } = await this.funds.funds.call(this.fund)
+        const { balance: balanceBefore, cBalance: cBalanceBefore } = await this.funds.funds.call(this.fund)
+        const { compoundEnabled: isCompoundEnabledBefore } = await this.funds.bools.call(this.fund)
         assert.equal(true, isCompoundEnabledBefore)
         assert.equal(0, balanceBefore)
 
@@ -703,7 +714,8 @@ stablecoins.forEach((stablecoin) => {
 
         const tokenBalanceAfter = await this.token.balanceOf.call(this.funds.address)
         const cErc20BalanceAfter = await this.cErc20.balanceOf.call(this.funds.address)
-        const { compoundEnabled: isCompoundEnabledAfter, cBalance: cBalanceAfter, balance: balanceAfter } = await this.funds.funds.call(this.fund)
+        const { balance: balanceAfter, cBalance: cBalanceAfter } = await this.funds.funds.call(this.fund)
+        const { compoundEnabled: isCompoundEnabledAfter } = await this.funds.bools.call(this.fund)
         assert.equal(false, isCompoundEnabledAfter)
         assert.equal(0, cBalanceAfter)
 

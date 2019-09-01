@@ -218,6 +218,7 @@ stablecoins.forEach((stablecoin) => {
 
       const fundParams = [
         toSecs({days: 366}),
+        0,
         arbiter,
         false,
         0

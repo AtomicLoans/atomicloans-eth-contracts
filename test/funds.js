@@ -58,6 +58,12 @@ async function getContracts(stablecoin) {
   }
 }
 
+async function getCurrentTime() {
+  const latestBlockNumber = await web3.eth.getBlockNumber()
+  const latestBlockTimestamp = (await web3.eth.getBlock(latestBlockNumber)).timestamp
+  return latestBlockTimestamp
+}
+
 stablecoins.forEach((stablecoin) => {
   const { name, unit } = stablecoin
 
@@ -120,6 +126,7 @@ stablecoins.forEach((stablecoin) => {
         toWei('100', unit),
         toSecs({days: 1}),
         toSecs({days: 366}),
+        0,
         toWei('1.5', 'gether'), // 150% collateralization ratio
         toWei(rateToSec('16.5'), 'gether'), // 16.50%
         toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -137,6 +144,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if user tries to create two loan funds', async function() {
         const fundParams = [
           toSecs({days: 366}),
+          0,
           arbiter,
           false,
           0
@@ -155,6 +163,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
+          0,
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -269,6 +278,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
+          0,
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -307,6 +317,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('99', unit),
           toSecs({days: 2}),
           toSecs({days: 364}),
+          0,
           toWei(rateToSec('16'), 'gether'), // 16.0%
           toWei(rateToSec('2.75'), 'gether'), //  3.00%
           toWei(rateToSec('0.5'), 'gether'), //  0.75%
@@ -377,6 +388,89 @@ stablecoins.forEach((stablecoin) => {
 
         // Pull funds from loan fund
         await expectRevert(this.funds.withdraw(this.fund, toWei('50', unit), { from: arbiter }), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('maxFundDuration', function () {
+      it('should succeed if expiry of Fund is set after loan request', async function() {
+        await this.token.approve(this.funds.address, toWei('100', unit))
+
+        const fundParams = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          0,
+          parseInt(fromWei(currentTime, 'wei')) + toSecs({days: 30}),
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter,
+          false,
+          toWei('100', unit)
+        ]
+
+        this.fund2 = await this.funds.createCustom.call(...fundParams)
+        await this.funds.createCustom(...fundParams)
+
+        await this.funds.generate(arbiterSechs, { from: arbiter })
+
+        // request collateralization ratio 2
+        const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
+
+        const loanParams = [
+          this.fund2,
+          borrower,
+          toWei(loanReq.toString(), unit),
+          col,
+          toSecs({days: 2}),
+          [ ...borSechs, ...lendSechs ],
+          ensure0x(borpubk),
+          ensure0x(lendpubk)
+        ]
+
+        this.loan = await this.funds.request.call(...loanParams)
+        await this.funds.request(...loanParams)
+      })
+
+      it('should fail if expiry of Fund is set before loan request', async function() {
+        await this.token.approve(this.funds.address, toWei('100', unit))
+
+        const fundParams = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          0,
+          parseInt(fromWei(currentTime, 'wei')) + toSecs({days: 30}),
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter,
+          false,
+          toWei('100', unit)
+        ]
+
+        this.fund2 = await this.funds.createCustom.call(...fundParams)
+        await this.funds.createCustom(...fundParams)
+
+        await this.funds.generate(arbiterSechs, { from: arbiter })
+
+        // request collateralization ratio 2
+        const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
+
+        const loanParams = [
+          this.fund2,
+          borrower,
+          toWei(loanReq.toString(), unit),
+          col,
+          toSecs({days: 31}),
+          [ ...borSechs, ...lendSechs ],
+          ensure0x(borpubk),
+          ensure0x(lendpubk)
+        ]
+
+        await expectRevert(this.funds.request(...loanParams), 'VM Exception while processing transaction: revert')
       })
     })
 
