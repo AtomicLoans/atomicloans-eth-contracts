@@ -101,6 +101,26 @@ module.exports = function(deployer, network, accounts) {
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
 
-    await deployer.deploy(ALCompound, comptroller.address);
+    const usdcFunds = await Funds.new(usdc.address, '6')
+    await usdcFunds.setCompound(cusdc.address, comptroller.address)
+
+    const usdcLoans = await Loans.new(usdcFunds.address, medianizer.address, usdc.address, '6')
+    const usdcSales = await Sales.new(usdcLoans.address, medianizer.address, usdc.address)
+
+    await usdcFunds.setLoans(usdcLoans.address)
+    await usdcLoans.setSales(usdcSales.address)
+
+    await deployer.deploy(ALCompound, comptroller.address)
+
+    console.log('daiAddress', dai.address)
+    console.log('usdcAddress', usdc.address)
+
+    console.log('daiFunds Address', funds.address)
+    console.log('daiLoans Address', loans.address)
+    console.log('daiSales Address', sales.address)
+
+    console.log('usdcFunds Address', usdcFunds.address)
+    console.log('usdcLoans Address', usdcLoans.address)
+    console.log('usdcSales Address', usdcSales.address)
   })
 };
