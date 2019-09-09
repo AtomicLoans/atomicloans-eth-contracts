@@ -22,7 +22,7 @@ contract Funds is DSMath, ALCompound {
     mapping (address => bytes)     public pubKeys;  // User A Coin PubKeys
     
     mapping (bytes32 => Fund)      public funds;
-    mapping (address => Fund)      public fundOwner;
+    mapping (address => bytes32)   public fundOwner;
     mapping (bytes32 => Bools)     public bools;
     uint256                        public fundIndex;
 
@@ -352,7 +352,7 @@ contract Funds is DSMath, ALCompound {
         bool     compoundEnabled_,
         uint256  amount_
     ) external returns (bytes32 fund) { 
-        require(fundOwner[msg.sender].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
+        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -362,7 +362,7 @@ contract Funds is DSMath, ALCompound {
         funds[fund].arbiter          = arbiter_;
         bools[fund].custom           = false;
         bools[fund].compoundEnabled  = compoundEnabled_;
-        fundOwner[msg.sender]        = funds[fund];
+        fundOwner[msg.sender]        = bytes32(fundIndex);
         if (amount_ > 0) { deposit(fund, amount_); }
     }
 
@@ -394,7 +394,7 @@ contract Funds is DSMath, ALCompound {
         bool     compoundEnabled_,
         uint256  amount_
     ) external returns (bytes32 fund) {
-        require(fundOwner[msg.sender].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
+        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -411,7 +411,7 @@ contract Funds is DSMath, ALCompound {
         funds[fund].arbiter          = arbiter_;
         bools[fund].custom           = true;
         bools[fund].compoundEnabled  = compoundEnabled_;
-        fundOwner[msg.sender]        = funds[fund];
+        fundOwner[msg.sender]        = bytes32(fundIndex);
         if (amount_ > 0) { deposit(fund, amount_); }
     }
 
