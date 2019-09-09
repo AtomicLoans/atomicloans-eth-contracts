@@ -1,7 +1,7 @@
 module.exports = {
   bitcoin: {
     rpc: {
-      host: 'http://localhost:18332',
+      host: 'http://localhost:18443',
       username: 'bitcoin',
       password: 'local321'
     },
