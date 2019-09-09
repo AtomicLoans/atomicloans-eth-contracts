@@ -11,15 +11,15 @@ contract Sales is DSMath {
 	Loans loans;
 	Medianizer med;
 
-    uint256 public constant SWAP_EXP = 7200;                      // Swap Expiration
-    uint256 public constant SETTLEMENT_EXP = 14400;               // Settlement Expiration
+    uint256 public constant SWAP_EXP = 2 hours;       // Swap Expiration
+    uint256 public constant SETTLEMENT_EXP = 4 hours; // Settlement Expiration
 
 	address public deployer; // Only the Loans contract can edit data
 
 	mapping (bytes32 => Sale)       public sales;        // Auctions
 	mapping (bytes32 => Sig)        public borrowerSigs; // Borrower Signatures
 	mapping (bytes32 => Sig)        public lenderSigs;   // Lender Signatures
-	mapping (bytes32 => Sig)        public arbiterSigs;    // Lender Signatures
+	mapping (bytes32 => Sig)        public arbiterSigs;  // Lender Signatures
 	mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
     uint256                         public saleIndex;    // Auction Index
 

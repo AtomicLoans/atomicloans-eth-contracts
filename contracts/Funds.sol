@@ -9,12 +9,12 @@ pragma solidity ^0.5.8;
 contract Funds is DSMath, ALCompound {
     Loans loans;
 
-    uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;  // 140% (1.4x in RAY) minimum collateralization ratio
+    uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;   // 140% (1.4x in RAY) minimum collateralization ratio
     uint256 public constant DEFAULT_LIQUIDATION_PENALTY = 1000000000937303470807876289; // 3% (3 in RAY) liquidation penalty
-    uint256 public constant DEFAULT_MIN_LOAN_AMT = 10000000000000000000; // Min 10 WAD
+    uint256 public constant DEFAULT_MIN_LOAN_AMT = 10 ether; // Min 10 WAD
     uint256 public constant DEFAULT_MAX_LOAN_AMT = 2**256-1; // Max 2**256
-    uint256 public constant DEFAULT_MIN_LOAN_DUR = 21600; // 6 hours
-    uint256 public constant NUM_SECONDS_IN_YEAR = 31536000;
+    uint256 public constant DEFAULT_MIN_LOAN_DUR = 6 hours;  // 6 hours
+    uint256 public constant NUM_SECONDS_IN_YEAR = 365 days;
 
     mapping (address => bytes32[]) public secretHashes;    // User secret hashes
     mapping (address => uint256)   public secretHashIndex; // User secret hash index

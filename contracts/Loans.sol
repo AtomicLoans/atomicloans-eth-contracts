@@ -13,10 +13,10 @@ contract Loans is DSMath {
     Medianizer med;
     Sales sales;
 
-    uint256 public constant APPROVE_EXP_THRESHOLD = 7200;    // approval expiration threshold
-    uint256 public constant ACCEPT_EXP_THRESHOLD = 172800;   // acceptance expiration threshold
-    uint256 public constant LIQUIDATION_EXP_THRESHOLD = 604800;  // liquidation expiration threshold
-    uint256 public constant SEIZURE_EXP_THRESHOLD = 172800;      // seizable expiration threshold
+    uint256 public constant APPROVE_EXP_THRESHOLD = 2 hours;    // approval expiration threshold
+    uint256 public constant ACCEPT_EXP_THRESHOLD = 2 days;      // acceptance expiration threshold
+    uint256 public constant LIQUIDATION_EXP_THRESHOLD = 7 days; // liquidation expiration threshold
+    uint256 public constant SEIZURE_EXP_THRESHOLD = 2 days;     // seizable expiration threshold
     uint256 public constant LIQUIDATION_DISCOUNT = 930000000000000000; // 93% (7% discount)
 
     mapping (bytes32 => Loan)         public loans;
