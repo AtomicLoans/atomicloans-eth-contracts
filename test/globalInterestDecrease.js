@@ -172,7 +172,8 @@ contract("Interest", accounts => {
 
     const fundParams = [
       toSecs({days: 366}),
-      agent
+      agent,
+      false
     ]
 
     this.fund = await this.funds.create.call(...fundParams)

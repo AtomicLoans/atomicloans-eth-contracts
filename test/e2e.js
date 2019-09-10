@@ -122,7 +122,7 @@ async function increaseTime(seconds) {
 
   await bitcoin.client.getMethod('jsonrpc')('setmocktime', currentTime)
 
-  await bitcoin.client.chain.generateBlock(6)
+  await bitcoin.client.chain.generateBlock(10)
 }
 
 function getVinRedeemScript (vin) {
@@ -202,6 +202,8 @@ contract("E2E", accounts => {
     const blockHeight = await bitcoin.client.chain.getBlockHeight()
     if (blockHeight < 101) {
       await bitcoin.client.chain.generateBlock(101)
+    } else {
+      await bitcoin.client.chain.generateBlock(6)
     }
 
     lenderBTC = await getUnusedPubKeyAndAddress()
@@ -238,7 +240,8 @@ contract("E2E", accounts => {
       toWei(rateToSec('16.5'), 'gether'), // 16.50%
       toWei(rateToSec('3'), 'gether'), //  3.00%
       toWei(rateToSec('0.75'), 'gether'), //  0.75%
-      agent
+      agent,
+      false
     ]
 
     this.fund = await this.funds.createCustom.call(...fundParams)

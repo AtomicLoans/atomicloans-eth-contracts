@@ -1,22 +1,95 @@
-var ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
+const { toWei, fromWei, padLeft, numberToHex } = web3.utils;
+
+var ExampleDaiCoin = artifacts.require("./ExampleDaiCoin.sol");
+var ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
 var Medianizer = artifacts.require('./MedianizerExample.sol');
 var Funds = artifacts.require('./Funds.sol');
 var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
 
-module.exports = function(deployer) {
+var DAIInterestRateModel = artifacts.require('./DAIInterestRateModel.sol')
+var ETHInterestRateModel = artifacts.require('./ETHInterestRateModel.sol')
+var Unitroller = artifacts.require('./Unitroller.sol')
+var Comptroller = artifacts.require('./Comptroller.sol')
+var CErc20 = artifacts.require('./CErc20.sol')
+var CEther = artifacts.require('./CEther.sol')
+var PriceOracleProxy = artifacts.require('./PriceOracleProxy.sol')
+var PriceOracle = artifacts.require('./_PriceOracle.sol')
+var MakerMedianizer = artifacts.require('./_MakerMedianizer.sol')
+
+var ALCompound = artifacts.require('./ALCompound.sol')
+
+module.exports = function(deployer, network, accounts) {
   deployer.then(async () => {
-    await deployer.deploy(ExampleCoin);
-    var token = await ExampleCoin.deployed();
+    // Deploy Example DAI
+    await deployer.deploy(ExampleDaiCoin);
+    var dai = await ExampleDaiCoin.deployed();
+
+    // Deploy Example USDC
+    await deployer.deploy(ExampleUsdcCoin);
+    var usdc = await ExampleUsdcCoin.deployed();
+
+    await deployer.deploy(MakerMedianizer)
+    var makerMedianizer = await MakerMedianizer.deployed();
+
+    await makerMedianizer.poke(padLeft(numberToHex(toWei('200', 'ether')), 64))
+
+    // Deploy cDAI
+    await deployer.deploy(DAIInterestRateModel, toWei('0.05', 'ether'), toWei('0.12', 'ether'))
+    await deployer.deploy(ETHInterestRateModel, toWei('0', 'ether'), toWei('0.2', 'ether'))
+    var daiInterestRateModel = await DAIInterestRateModel.deployed()
+    var ethInterestRateModel = await ETHInterestRateModel.deployed()
+
+    await deployer.deploy(Unitroller)
+    var unitroller = await Unitroller.deployed()
+
+    await deployer.deploy(Comptroller)
+    var comptroller = await Comptroller.deployed()
+
+    await unitroller._setPendingImplementation(comptroller.address)
+    await unitroller._acceptImplementation()
+    await comptroller._setLiquidationIncentive(toWei('1.05', 'ether'))
+    await comptroller._setMaxAssets(5)
+
+    await deployer.deploy(CErc20, dai.address, comptroller.address, daiInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Dai', 'cDAI', '8')
+    var cdai = await CErc20.deployed()
+
+    await deployer.deploy(CEther, comptroller.address, ethInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Ether', 'cETH', '8')
+    var ceth = await CEther.deployed()
+
+    await comptroller._supportMarket(cdai.address)
+    await comptroller._supportMarket(ceth.address)
+
+    await deployer.deploy(PriceOracle, accounts[0], dai.address, makerMedianizer.address, usdc.address, makerMedianizer.address)
+    var priceOracle = await PriceOracle.deployed()
+
+    await deployer.deploy(PriceOracleProxy, comptroller.address, priceOracle.address, ceth.address)
+    var priceOracleProxy = await PriceOracleProxy.deployed()
+
+    await priceOracle.setPrices([padLeft(numberToHex(1), 40)], [toWei('0.0049911026', 'ether')])
+
+    await comptroller._setPriceOracle(priceOracleProxy.address)
+
+    const cdaiPrice = await priceOracleProxy.getUnderlyingPrice(cdai.address)
+    const cethPrice = await priceOracleProxy.getUnderlyingPrice(ceth.address)
+
+    await comptroller._setCollateralFactor(ceth.address, toWei('0.75', 'ether'))
+
+    // Deploy example Medianizer
     await deployer.deploy(Medianizer);
     var medianizer = await Medianizer.deployed();
-    await deployer.deploy(Funds, token.address);
+
+    // // Deploy Atomic Loan Contracts
+    await deployer.deploy(Funds, dai.address);
     var funds = await Funds.deployed();
-    await deployer.deploy(Loans, funds.address, medianizer.address, token.address);
+    await funds.setCompound(cdai.address, comptroller.address);
+    await deployer.deploy(Loans, funds.address, medianizer.address, dai.address);
     var loans = await Loans.deployed();
-    await deployer.deploy(Sales, loans.address, medianizer.address, token.address);
+    await deployer.deploy(Sales, loans.address, medianizer.address, dai.address);
     var sales = await Sales.deployed();
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
+
+    await deployer.deploy(ALCompound, comptroller.address);
   })
 };

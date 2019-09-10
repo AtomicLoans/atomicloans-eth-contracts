@@ -28,9 +28,9 @@ contract DSMath {
         return x >= y ? x : y;
     }
 
-    uint constant COL = 10 ** 8;
-    uint constant WAD = 10 ** 18;
-    uint constant RAY = 10 ** 27;
+    uint constant COL  = 10 ** 8;
+    uint constant WAD  = 10 ** 18;
+    uint constant RAY  = 10 ** 27;
 
     function cmul(uint x, uint y) public pure returns (uint z) {
         z = add(mul(x, y), COL / 2) / COL;
