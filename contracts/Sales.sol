@@ -191,8 +191,14 @@ contract Sales is DSMath {
      * @notice Provide secret to enable liquidator to claim collateral
      * @param secret_ The secret provided by the borrower, lender, arbiter, or liquidator
      */
-    function provideSecret(bytes32 secret_) external {
-        revealed[sha256(abi.encodePacked(secret_))] = true;
+    function provideSecret(bytes32 sale, bytes32 secret_) external {
+        require(sales[sale].set);
+        bytes32 secretHash = sha256(abi.encodePacked(secret_));
+        revealed[secretHash] = true;
+        if (secretHash == secretHashes[sale].secretHashA) { secretHashes[sale].secretA = secret_; }
+        if (secretHash == secretHashes[sale].secretHashB) { secretHashes[sale].secretB = secret_; }
+        if (secretHash == secretHashes[sale].secretHashC) { secretHashes[sale].secretC = secret_; }
+        if (secretHash == secretHashes[sale].secretHashD) { secretHashes[sale].secretD = secret_; }
     }
 
     /**
