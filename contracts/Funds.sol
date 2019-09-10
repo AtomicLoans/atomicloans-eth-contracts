@@ -454,6 +454,7 @@ contract Funds is DSMath, ALCompound {
         address  arbiter_
     ) public {
         require(msg.sender == lender(fund));
+        require(ensureNotZero(maxLoanDur_) != 2**256-1 || ensureNotZero(fundExpiry_) != 2**256-1); // Make sure someone can't request a loan for eternity
         funds[fund].maxLoanDur       = maxLoanDur_;
         funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].arbiter          = arbiter_;

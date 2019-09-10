@@ -183,6 +183,51 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(maxLoanDur, BigNumber(2).pow(256).minus(1).toFixed())
         assert.equal(fundExpiry, newFundExpiry)
       })
+
+      it('should fail in updating non-custom loan fund with 2**256-1 maxLoanDur and fundExpiry', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        this.fund3 = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        const fundParams3 = [
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter
+        ]
+
+        await expectRevert(this.funds.update(this.fund3, ...fundParams3), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail creating loan fund with 2**256-1 fundExpiry and maxLoanDur', async function() {
+        const fundParams = [
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        await expectRevert(this.funds.create(...fundParams), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail creating loan fund with 0 fundExpiry and maxLoanDur', async function() {
+        const fundParams = [
+          0,
+          0,
+          arbiter,
+          false,
+          0
+        ]
+
+        await expectRevert(this.funds.create(...fundParams), 'VM Exception while processing transaction: revert')
+      })
     })
 
     describe('createCustom', function() {
@@ -205,6 +250,44 @@ stablecoins.forEach((stablecoin) => {
         await this.funds.createCustom(...fundParams, { from: lender3 })
 
         await expectRevert(this.funds.createCustom(...fundParams, { from: lender3 }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail creating custom loan fund with 2**256-1 fundExpiry and maxLoanDur', async function() {
+        const fundParams = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter,
+          false,
+          0
+        ]
+
+        await expectRevert(this.funds.createCustom(...fundParams), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail creating custom loan fund with 0 fundExpiry and maxLoanDur', async function() {
+        const fundParams = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          0,
+          0,
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter,
+          false,
+          0
+        ]
+
+        await expectRevert(this.funds.createCustom(...fundParams), 'VM Exception while processing transaction: revert')
       })
     })
 
@@ -373,6 +456,23 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(penalty, toWei(rateToSec('2.75'), 'gether'))
         assert.equal(fee, toWei(rateToSec('0.5'), 'gether'))
         assert.equal(liquidationRatio, toWei('1.5', 'gether'))
+      })
+
+      it('should fail changing of fund details with 2**256-1 fundExpiry and maxLoanDur', async function() {
+        const fundParams = [
+          toWei('2', unit),
+          toWei('99', unit),
+          toSecs({days: 2}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          toWei(rateToSec('16'), 'gether'), // 16.0%
+          toWei(rateToSec('2.75'), 'gether'), //  3.00%
+          toWei(rateToSec('0.5'), 'gether'), //  0.75%
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          arbiter
+        ]
+
+        await expectRevert(this.funds.updateCustom(this.fund, ...fundParams), 'VM Exception while processing transaction: revert')
       })
     })
 
