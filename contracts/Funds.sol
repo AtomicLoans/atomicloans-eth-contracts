@@ -71,7 +71,7 @@ contract Funds is DSMath, ALCompound {
         uint256  maxLoanAmt;
         uint256  minLoanDur;
         uint256  maxLoanDur;
-        uint256  maxFundDur;
+        uint256  fundExpiry;
         uint256  interest;
         uint256  penalty;
         uint256  fee;
@@ -259,8 +259,8 @@ contract Funds is DSMath, ALCompound {
      * @param fund The Id of a Loan Fund
      * @return The maximum duration loan that can be requested from a Loan Fund
      */
-    function maxFundDur(bytes32 fund) public view returns (uint256) {
-        return funds[fund].maxFundDur;
+    function fundExpiry(bytes32 fund) public view returns (uint256) {
+        return funds[fund].fundExpiry;
     }
 
     /**
@@ -347,7 +347,7 @@ contract Funds is DSMath, ALCompound {
      */
     function create(
         uint256  maxLoanDur_,
-        uint256  maxFundDur_,
+        uint256  fundExpiry_,
         address  arbiter_,
         bool     compoundEnabled_,
         uint256  amount_
@@ -358,7 +358,7 @@ contract Funds is DSMath, ALCompound {
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
         funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].maxFundDur       = maxFundDur_;
+        funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].arbiter          = arbiter_;
         bools[fund].custom           = false;
         bools[fund].compoundEnabled  = compoundEnabled_;
@@ -385,7 +385,7 @@ contract Funds is DSMath, ALCompound {
         uint256  maxLoanAmt_,
         uint256  minLoanDur_,
         uint256  maxLoanDur_,
-        uint256  maxFundDur_,
+        uint256  fundExpiry_,
         uint256  liquidationRatio_,
         uint256  interest_,
         uint256  penalty_,
@@ -403,7 +403,7 @@ contract Funds is DSMath, ALCompound {
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
         funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].maxFundDur       = maxFundDur_;
+        funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].interest         = interest_;
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
@@ -457,7 +457,7 @@ contract Funds is DSMath, ALCompound {
         uint256  maxLoanAmt_,
         uint256  minLoanDur_,
         uint256  maxLoanDur_,
-        uint256  maxFundDur_,
+        uint256  fundExpiry_,
         uint256  interest_,
         uint256  penalty_,
         uint256  fee_,
@@ -469,7 +469,7 @@ contract Funds is DSMath, ALCompound {
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
         funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].maxFundDur       = maxFundDur_;
+        funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].interest         = interest_;
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
@@ -510,7 +510,7 @@ contract Funds is DSMath, ALCompound {
         if (maxLoanDur(fund) > 0) {
             require(loanDur_       <= maxLoanDur(fund));
         } else {
-            require(now + loanDur_ <= maxFundDur(fund));
+            require(now + loanDur_ <= fundExpiry(fund));
         }
 
         loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_);
