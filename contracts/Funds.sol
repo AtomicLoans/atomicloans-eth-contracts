@@ -32,7 +32,7 @@ contract Funds is DSMath {
         uint256  fee;              // Optional Automation Fee in RAY
         uint256  liquidationRatio; // Liquidation Ratio in RAY
         address  agent;            // Optional Automator Agent
-        uint256  balance;          // Locked amount in fund (in TOK)
+        uint256  balance;          // Locked amount in fund (in token)
     }
 
     constructor(ERC20 token_) public {

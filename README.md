@@ -82,7 +82,7 @@ Actions:
    cancel                cancel loan and remove funds
    create                create new loan
    fund                  fund loan
-   liquidate             auction loan collateral in case of liquidation or default
+   liquidate             liquidate loan collateral in case of loan position being not safe or default
    refund                refund debt repayment 
    repay                 repay debt
    setSecretHashes       set secret hashes for loan
@@ -94,7 +94,7 @@ Getters:
    acceptExpiration      acceptance expirataion
    agent                 optional automation agent address
    approveExpiration     approval expiraation
-   biddingExpiration     bidding expiration
+   liquidationExpiration liquidation expiration
    borrower              borrower address
    collateral            collateral amount
    collateralValue       current collateral value
@@ -105,7 +105,7 @@ Getters:
    minCollateralValue    minimum collateral value to be safe
    off                   loan repayment accepted or loan cancelled
    owedForLiquidation    deductible amount from collateral in the case of liquidation
-   owedForLoan           prin + interest + fee
+   owedForLoan           principal + interest + fee
    owedToLender          amount lent by lender
    penalty               liquidation penalty in case not safe or defaulted
    principal             loan principal
@@ -126,28 +126,27 @@ Vars:
 ```
 Actions:
 
-   accept                withdraw bid (accept bid and disperse funds to rightful parties)
-   create                create new auction (can only be called by loan)
-   offer                 bid on collateral
+   accept                withdraw discountBuy (accept discountBuy and disperse funds to rightful parties)
+   create                create new liquidation (can only be called by loan)
    provideSecret         provide secret
    provideSig            provide signature to move collateral to collateral swap
-   refund                refund bid
+   refund                refund discountBuy
 
 
 Getters:
 
-   accepted              winning bid accepted
+   accepted              discountBuy accepted
    agent                 optional automated agent
    agentSigs             agent refundable and seizable signatures
-   bid                   current bid
-   bidder                address current bidder
+   discountBuy           discount purchase of collateral by liquidator
+   liquidator            address of individual that liquidates the loan position when it's not safe
    borrower              address borrower
    borrowerSigs          borrower refundable and seizable signatures
    hasSecrets            2 of 3 secrets from bor, lend, and agent are correct
    lender                address lender
    lenderSigs            lender refundable and seizable signatures
-   next                  get the last auction id by loan
-   pubKeyHash            bidder pubkeyhash
+   next                  get the last liquidation id by loan
+   pubKeyHash            liquidator pubkeyhash
    salesExpiration       sales expiration
    secretA               Secret A
    secretB               Secret B
@@ -157,12 +156,12 @@ Getters:
    secretHashB           Secret Hash B
    secretHashC           Secret Hash C
    secretHashD           Secret Hash D
-   settlementExpiration  auction settlement expiration
+   settlementExpiration  liquidation settlement expiration
    
    
 Vars:
 
-   saleIndexByLoan       loan auction (find by loanIndex)
+   saleIndexByLoan       loan liquidation (find by loanIndex)
 
 ```
 

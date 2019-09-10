@@ -11,10 +11,8 @@ contract Sales is DSMath { // Auctions
 	Loans loans;
 	Medianizer med;
 
-    uint256 public constant SALES_EXP = 3600;                     // Sales Expiration
     uint256 public constant SWAP_EXP = 7200;                      // Swap Expiration
     uint256 public constant SETTLEMENT_EXP = 14400;               // Settlement Expiration
-    uint256 public constant MINBI = 1005000000000000000000000000; // Minimum Bid Increment in RAY
 
 	address public deployer; // Only the Loans contract can edit data
 
@@ -30,16 +28,16 @@ contract Sales is DSMath { // Auctions
     ERC20 public token;
 
     struct Sale {
-        bytes32    loanIndex;  // Loan Index
-        uint256    bid;        // Current Bid
-        address    bidder;     // Bidder
-        address    borrower;   // Borrower
-        address    lender;     // Lender
-        address    agent;      // Optional Automated Agent
-        uint256    createdAt;  // Created At
-        bytes20    pubKeyHash; // Bidder PubKey Hash
-        bool       set;        // Sale at index opened
-        bool       accepted;   // Winning bid accepted
+        bytes32    loanIndex;   // Loan Index
+        uint256    discountBuy; // Amount collateral was bought for at discount
+        address    liquidator;  // Party who buys the collateral at a discount
+        address    borrower;    // Borrower
+        address    lender;      // Lender
+        address    agent;       // Optional Automated Agent
+        uint256    createdAt;   // Created At
+        bytes20    pubKeyHash;  // Liquidator PubKey Hash
+        bool       set;         // Sale at index opened
+        bool       accepted;    // discountBuy accepted
         bool       off;
     }
 
@@ -59,12 +57,12 @@ contract Sales is DSMath { // Auctions
         bytes32 secretD;     // Secret D
     }
 
-    function bid(bytes32 sale) public view returns (uint256) {
-        return sales[sale].bid;
+    function discountBuy(bytes32 sale) public view returns (uint256) {
+        return sales[sale].discountBuy;
     }
 
-    function bidder(bytes32 sale) public returns (address) {
-        return sales[sale].bidder;
+    function liquidator(bytes32 sale) public returns (address) {
+        return sales[sale].liquidator;
     }
 
     function borrower(bytes32 sale) public returns (address) {
@@ -79,16 +77,12 @@ contract Sales is DSMath { // Auctions
         return sales[sale].agent;
     }
 
-    function salesExpiration(bytes32 sale) public returns (uint256) {
-        return sales[sale].createdAt + SALES_EXP;
-    }
-
     function swapExpiration(bytes32 sale) public returns (uint256) {
-        return sales[sale].createdAt + SALES_EXP + SWAP_EXP;
+        return sales[sale].createdAt + SWAP_EXP;
     }
 
     function settlementExpiration(bytes32 sale) public returns (uint256) {
-        return sales[sale].createdAt + SALES_EXP + SETTLEMENT_EXP;
+        return sales[sale].createdAt + SETTLEMENT_EXP;
     }
 
     function pubKeyHash(bytes32 sale) public returns (bytes20) {
@@ -151,49 +145,31 @@ contract Sales is DSMath { // Auctions
     	address borrower,    // Address Borrower
     	address lender,      // Address Lender
         address agent,       // Optional Address automated agent
+        address liquidator,  // Liquidator address
     	bytes32 secretHashA, // Secret Hash A
     	bytes32 secretHashB, // Secret Hash B
-    	bytes32 secretHashC  // Secret Hash C
+    	bytes32 secretHashC, // Secret Hash C
+        bytes32 secretHashD, // Secret Hash D
+        bytes20 pubKeyHash   // Liquidator PubKeyHash
 	) external returns(bytes32 sale) {
     	require(msg.sender == deployer);
     	saleIndex = add(saleIndex, 1);
         sale = bytes32(saleIndex);
-        sales[sale].loanIndex = loanIndex;
-        sales[sale].borrower  = borrower;
-        sales[sale].lender    = lender;
-        sales[sale].agent     = agent;
-        sales[sale].createdAt = now;
-        sales[sale].set       = true;
+        sales[sale].loanIndex   = loanIndex;
+        sales[sale].borrower    = borrower;
+        sales[sale].lender      = lender;
+        sales[sale].agent       = agent;
+        sales[sale].liquidator  = liquidator;
+        sales[sale].createdAt   = now;
+        sales[sale].pubKeyHash  = pubKeyHash;
+        sales[sale].discountBuy = loans.discountCollateralValue(loanIndex);
+        sales[sale].set         = true;
         secretHashes[sale].secretHashA = secretHashA;
         secretHashes[sale].secretHashB = secretHashB;
         secretHashes[sale].secretHashC = secretHashC;
+        secretHashes[sale].secretHashD = secretHashD;
         saleIndexByLoan[loanIndex].push(sale);
     }
-
-    function offer(         // Bid on Collateral
-    	bytes32 sale,       // Auction Index
-    	uint256 amt,        // Bid Amount
-    	bytes32 secretHash, // Secret Hash
-    	bytes20 pubKeyHash  // PubKeyHash
-	) external {
-        require(msg.sender != borrower(sale) && msg.sender != lender(sale));
-		require(sales[sale].set);
-    	require(now < salesExpiration(sale));
-    	require(amt > sales[sale].bid);
-    	require(token.balanceOf(msg.sender) >= amt);
-    	if (sales[sale].bid > 0) {
-    		require(amt > rmul(sales[sale].bid, MINBI)); // Make sure next bid is at least 0.5% more than the last bid
-    	}
-
-    	require(token.transferFrom(msg.sender, address(this), amt));
-    	if (sales[sale].bid > 0) {
-    		require(token.transfer(sales[sale].bidder, sales[sale].bid));
-    	}
-    	sales[sale].bidder = msg.sender;
-    	sales[sale].bid  = amt;
-    	secretHashes[sale].secretHashD = secretHash;
-    	sales[sale].pubKeyHash = pubKeyHash;
-	}
 
 	function provideSig(              // Provide Signature to move collateral to collateral swap
 		bytes32        sale,          // Auction Index
@@ -233,15 +209,14 @@ contract Sales is DSMath { // Auctions
 		return (numCorrectSecrets >= 2);
 	}
 
-	function accept(bytes32 sale) external { // Withdraw Bid (Accept Bid and disperse funds to rightful parties)
+	function accept(bytes32 sale) external { // Withdraw DiscountBuy (Accept DiscountBuy and disperse funds to rightful parties)
         require(!accepted(sale));
         require(!off(sale));
-		require(now > salesExpiration(sale));
 		require(hasSecrets(sale));
 		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
         sales[sale].accepted = true;
 
-        uint256 available = add(sales[sale].bid, loans.repaid(sales[sale].loanIndex));
+        uint256 available = add(sales[sale].discountBuy, loans.repaid(sales[sale].loanIndex));
         uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
 
         require(token.transfer(sales[sale].lender, amount));
@@ -263,13 +238,13 @@ contract Sales is DSMath { // Auctions
         if (available > 0) { require(token.transfer(sales[sale].borrower, available)); }
 	}
 
-	function refund(bytes32 sale) external { // Refund Bid
+	function refund(bytes32 sale) external { // Refund DiscountBuy
         require(!accepted(sale));
         require(!off(sale));
 		require(now > settlementExpiration(sale));
-		require(sales[sale].bid > 0);
+		require(sales[sale].discountBuy > 0);
         sales[sale].off = true;
-		require(token.transfer(sales[sale].bidder, sales[sale].bid));
+		require(token.transfer(sales[sale].liquidator, sales[sale].discountBuy));
         if (next(sales[sale].loanIndex) == 3) {
             require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)));
         }

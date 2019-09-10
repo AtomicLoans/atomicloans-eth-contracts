@@ -15,7 +15,8 @@ contract Loans is DSMath {
 
     uint256 public constant APPROVE_EXP_THRESHOLD = 7200;    // approval expiration threshold
     uint256 public constant ACCEPT_EXP_THRESHOLD = 172800;   // acceptance expiration threshold
-    uint256 public constant BIDDING_EXP_THRESHOLD = 604800;  // bidding expiration threshold
+    uint256 public constant LIQUIDATION_EXP_THRESHOLD = 604800;  // liquidation expiration threshold
+    uint256 public constant LIQUIDATION_DISCOUNT = 930000000000000000; // 93% (7% discount)
 
     mapping (bytes32 => Loan)         public loans;
     mapping (bytes32 => SecretHashes) public secretHashes; // Secret Hashes
@@ -84,8 +85,8 @@ contract Loans is DSMath {
         return add(loans[loan].loanExpiration, ACCEPT_EXP_THRESHOLD);
     }
 
-    function biddingExpiration(bytes32 loan) public view returns (uint256) { // Bidding Expiration
-        return add(loans[loan].loanExpiration, BIDDING_EXP_THRESHOLD);
+    function liquidationExpiration(bytes32 loan) public view returns (uint256) { // Liquidation Expiration
+        return add(loans[loan].loanExpiration, LIQUIDATION_EXP_THRESHOLD);
     }
 
     function principal(bytes32 loan) public view returns (uint256) {
@@ -156,13 +157,17 @@ contract Loans is DSMath {
         return bools[loan].off;
     }
 
-    function collateralValue(bytes32 loan) public returns (uint256) { // Current Collateral Value
+    function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
         uint256 val = uint(med.read());
         return cmul(val, collateral(loan)); // Multiply value dependent on number of decimals with currency
     }
 
     function minCollateralValue(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
         return rmul(sub(principal(loan), repaid(loan)), liquidationRatio(loan));
+    }
+
+    function discountCollateralValue(bytes32 loan) public view returns (uint256) {
+        return wmul(collateralValue(loan), LIQUIDATION_DISCOUNT);
     }
 
     function safe(bytes32 loan) public returns (bool) { // Loan is safe from Liquidation
@@ -303,9 +308,10 @@ contract Loans is DSMath {
         }
     }
 
-    function liquidate(bytes32 loan) external returns (bytes32 sale) { // Start Auction
+    function liquidate(bytes32 loan, bytes32 secretHash, bytes20 pubKeyHash) external returns (bytes32 sale) { // Start Liquidation
     	require(!off(loan));
         require(bools[loan].withdrawn == true);
+        require(msg.sender != loans[loan].borrower && msg.sender != loans[loan].lender);
     	if (sales.next(loan) == 0) {
     		if (now > loans[loan].loanExpiration) {
 	    		require(bools[loan].paid == false);
@@ -314,13 +320,14 @@ contract Loans is DSMath {
 			}
 		} else {
 			require(sales.next(loan) < 3);
-			require(msg.sender == loans[loan].borrower || msg.sender == loans[loan].lender);
-            require(now > sales.settlementExpiration(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start auction after settlement expiration of pervious auction
-            require(!sales.accepted(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start auction again if previous auction bid wasn't taken
+            require(now > sales.settlementExpiration(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation after settlement expiration of pervious liquidation
+            require(!sales.accepted(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation again if previous liquidation discountBuy wasn't taken
 		}
+        require(token.balanceOf(msg.sender) >= discountCollateralValue(loan));
+        require(token.transferFrom(msg.sender, address(sales), discountCollateralValue(loan)));
         SecretHashes storage h = secretHashes[loan];
         uint256 i = sales.next(loan);
-		sale = sales.create(loan, loans[loan].borrower, loans[loan].lender, loans[loan].agent, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i]);
+		sale = sales.create(loan, loans[loan].borrower, loans[loan].lender, loans[loan].agent, msg.sender, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i], secretHash, pubKeyHash);
         if (bools[loan].sale == false) { require(token.transfer(address(sales), repaid(loan))); }
 		bools[loan].sale = true;
     }
