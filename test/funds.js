@@ -154,6 +154,35 @@ stablecoins.forEach((stablecoin) => {
 
         await expectRevert(this.funds.create(...fundParams, { from: lender2 }), 'VM Exception while processing transaction: revert')
       })
+
+      it('should succeed in updating non-custom loan fund', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          0,
+          arbiter,
+          false,
+          0
+        ]
+
+        this.fund2 = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        const newFundExpiry = Math.floor(Date.now() / 1000) + toSecs({days: 366})
+
+        const fundParams2 = [
+          0,
+          newFundExpiry,
+          arbiter
+        ]
+
+        await this.funds.update(this.fund2, ...fundParams2)
+
+        const maxLoanDur = await this.funds.maxLoanDur.call(this.fund2)
+        const fundExpiry = await this.funds.fundExpiry.call(this.fund2)
+
+        assert.equal(maxLoanDur, 0)
+        assert.equal(fundExpiry, newFundExpiry)
+      })
     })
 
     describe('createCustom', function() {
@@ -325,7 +354,7 @@ stablecoins.forEach((stablecoin) => {
           arbiter
         ]
 
-        await this.funds.update(this.fund, ...fundParams)
+        await this.funds.updateCustom(this.fund, ...fundParams)
 
         const minLoanAmt = await this.funds.minLoanAmt.call(this.fund)
         const maxLoanAmt = await this.funds.maxLoanAmt.call(this.fund)

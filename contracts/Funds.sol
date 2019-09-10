@@ -439,10 +439,32 @@ contract Funds is DSMath, ALCompound {
     /**
      * @notice Users update Loan Fund settings
      * @param fund The Id of a Loan Fund
+     * @param maxLoanDur_ Maximum length of loan that can be requested from Loan Fund in seconds
+     * @param fundExpiry_ Timestamp when all funds should be removable from Loan Fund
+     * @param arbiter_ The address of the arbiter for a Loan fund
+     *
+     *        Note: msg.sender must be the lender of the Loan Fund
+     */
+    function update(
+        bytes32  fund,
+        uint256  maxLoanDur_,
+        uint256  fundExpiry_,
+        address  arbiter_
+    ) public {
+        require(msg.sender == lender(fund));
+        funds[fund].maxLoanDur       = maxLoanDur_;
+        funds[fund].fundExpiry       = fundExpiry_;
+        funds[fund].arbiter          = arbiter_;
+    }
+
+    /**
+     * @notice Users update custom Loan Fund settings
+     * @param fund The Id of a Loan Fund
      * @param minLoanAmt_ Minimum amount of tokens that can be borrowed from Loan Fund
      * @param maxLoanAmt_ Maximum amount of tokens that can be borrowed from Loan Fund
      * @param minLoanDur_ Minimum length of loan that can be requested from Loan Fund in seconds
      * @param maxLoanDur_ Maximum length of loan that can be requested from Loan Fund in seconds
+     * @param fundExpiry_ Timestamp when all funds should be removable from Loan Fund
      * @param interest_ The interest rate per second for a Loan Fund in RAY per second
      * @param penalty_ The liquidation penalty rate per second for a Loan Fund in RAY per second
      * @param fee_ The optional automation fee rate of Loan Fund in RAY per second
@@ -451,7 +473,7 @@ contract Funds is DSMath, ALCompound {
      *
      *        Note: msg.sender must be the lender of the Loan Fund
      */
-    function update(
+    function updateCustom(
         bytes32  fund,
         uint256  minLoanAmt_,
         uint256  maxLoanAmt_,
@@ -464,17 +486,15 @@ contract Funds is DSMath, ALCompound {
         uint256  liquidationRatio_,
         address  arbiter_
     ) external {
-        require(msg.sender == lender(fund));
+        require(bools[fund].custom);
+        update(fund, maxLoanDur_, fundExpiry_, arbiter_);
         funds[fund].minLoanAmt       = minLoanAmt_;
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
-        funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].interest         = interest_;
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
-        funds[fund].arbiter          = arbiter_;
     }
 
     /**
