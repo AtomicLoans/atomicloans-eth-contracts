@@ -353,12 +353,13 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) { 
         require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
+        require(ensureNotZero(maxLoanDur_) != 2**256-1 || ensureNotZero(fundExpiry_) != 2**256-1); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
-        funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].fundExpiry       = fundExpiry_;
+        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_);
+        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_);
         funds[fund].arbiter          = arbiter_;
         bools[fund].custom           = false;
         bools[fund].compoundEnabled  = compoundEnabled_;
@@ -395,6 +396,7 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) {
         require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
+        require(ensureNotZero(maxLoanDur_) != 2**256-1 || ensureNotZero(fundExpiry_) != 2**256-1); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -402,8 +404,8 @@ contract Funds is DSMath, ALCompound {
         funds[fund].minLoanAmt       = minLoanAmt_;
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
-        funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].fundExpiry       = fundExpiry_;
+        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_);
+        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_);
         funds[fund].interest         = interest_;
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
@@ -452,6 +454,7 @@ contract Funds is DSMath, ALCompound {
         address  arbiter_
     ) public {
         require(msg.sender == lender(fund));
+        require(ensureNotZero(maxLoanDur_) != 2**256-1 || ensureNotZero(fundExpiry_) != 2**256-1); // Make sure someone can't request a loan for eternity
         funds[fund].maxLoanDur       = maxLoanDur_;
         funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].arbiter          = arbiter_;
@@ -526,12 +529,7 @@ contract Funds is DSMath, ALCompound {
         require(amount_    >= minLoanAmt(fund));
         require(amount_    <= maxLoanAmt(fund));
         require(loanDur_   >= minLoanDur(fund));
-
-        if (maxLoanDur(fund) > 0) {
-            require(loanDur_       <= maxLoanDur(fund));
-        } else {
-            require(now + loanDur_ <= fundExpiry(fund));
-        }
+        require(loanDur_   <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund));
 
         loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);
@@ -670,6 +668,14 @@ contract Funds is DSMath, ALCompound {
         return sub(rmul(amount, rpow(rate, loanDur)), amount);
     }
 
+    /*
+     * @dev Ensure null values for fundExpiry and maxLoanDur are set to 2**256-1
+     * @param value The value to be sanity checked
+     */
+    function ensureNotZero(uint256 value) public pure returns (uint256) {
+        if (value == 0) { return 2**256-1; }
+        else            { return value; }
+    }
 
     /*
      * @dev Takes loan request parameters, creates loan, and returns loanIndex
