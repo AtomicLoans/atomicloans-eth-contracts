@@ -1,0 +1,59 @@
+// pragma solidity ^0.5.8;
+
+// import "truffle/Assert.sol";
+// import "truffle/DeployedAddresses.sol";
+// import "../contracts/Funds.sol";
+
+// contract TestALCompound is Funds {
+
+//   constructor() public Funds(Funds(DeployedAddresses.Funds()).token(), 18) {
+//     Funds funds = Funds(DeployedAddresses.Funds());
+//     setCompound(funds.cToken(), funds.comptroller());
+//     (bool status,) = address(token).call(abi.encodePacked(bytes4(keccak256("mintTokens()"))));
+//     require(status);
+//   }
+
+//   function testInitialDaiBalance() public {
+//     uint expectedTokenBalance = 10 ether;
+//     uint actualTokenBalance = token.balanceOf(address(this));
+
+//     Assert.equal(expectedTokenBalance, actualTokenBalance, "Contract should have 10 ether worth of tokens initially");
+//   }
+
+//   function testMintCToken() public {
+//     uint tokenAmount = 1 ether;
+//     mintCToken(address(token), address(cToken), tokenAmount);
+
+//     uint expectedCTokenBalance = 5000000000;
+//     uint actualCTokenBalance = cToken.balanceOf(address(this));
+    
+//     Assert.equal(expectedCTokenBalance, actualCTokenBalance, "Contract should have 5 Gwei worth of cTokens");
+//   }
+
+//   function testRedeemUnderlying() public {
+//     uint tokenAmount = 1 ether;
+//     redeemUnderlying(address(cToken), tokenAmount);
+
+//     uint expectedTokenBalance = 10 ether;
+//     uint actualTokenBalance = token.balanceOf(address(this));
+
+//     Assert.equal(expectedTokenBalance, actualTokenBalance, "Contract should have 10 ether worth of tokens after redeeming underlying");
+//   }
+
+//   function testRedeemCToken() public {
+//     uint mintTokenAmount = 1 ether;
+//     mintCToken(address(token), address(cToken), mintTokenAmount);
+
+//     uint redeemCTokenAmount = 5000000000;
+//     uint actualCTokenBalance = cToken.balanceOf(address(this));
+
+//     Assert.equal(redeemCTokenAmount, actualCTokenBalance, "Contract should have 5 Gwei worth of cTokens");
+
+//     redeemCToken(address(cToken), redeemCTokenAmount);
+
+//     uint expectedTokenBalance = 10 ether;
+//     uint actualTokenBalance = token.balanceOf(address(this));
+
+//     Assert.equal(expectedTokenBalance, actualTokenBalance, "Contract should have 10 ether worth of tokens after redeeming underlying");
+//   }
+// }
