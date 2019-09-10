@@ -134,7 +134,7 @@ contract("Funds", accounts => {
       await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
-      await this.funds.update(ensure0x(lendpubk))
+      await this.funds.setPubKey(ensure0x(lendpubk))
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
@@ -207,7 +207,7 @@ contract("Funds", accounts => {
       const newLendpubk = '024f355bdcb7cc0af728ef3cceb9615d90684bb5b2ca5f859ab0f0b704075871aa'
 
       // Set Lender PubKey
-      await this.funds.update(ensure0x(newLendpubk))
+      await this.funds.setPubKey(ensure0x(newLendpubk))
 
       const newPubk = await this.funds.pubKeys.call(lender)
 
@@ -258,7 +258,7 @@ contract("Funds", accounts => {
       await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
-      await this.funds.update(ensure0x(lendpubk))
+      await this.funds.setPubKey(ensure0x(lendpubk))
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))
@@ -282,7 +282,7 @@ contract("Funds", accounts => {
       await this.funds.generate(agentSechs, { from: agent })
 
       // Set Lender PubKey
-      await this.funds.update(ensure0x(lendpubk))
+      await this.funds.setPubKey(ensure0x(lendpubk))
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('100', 'ether'))

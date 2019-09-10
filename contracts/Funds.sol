@@ -128,7 +128,7 @@ contract Funds is DSMath {
         }
     }
 
-    function update(bytes calldata pubKey) external { // Set PubKey for Fund
+    function setPubKey(bytes calldata pubKey) external { // Set PubKey for Fund
         pubKeys[msg.sender] = pubKey;
     }
 
@@ -213,7 +213,8 @@ contract Funds is DSMath {
             getSecretHashesForLoan(lender(fund)),
             getSecretHashesForLoan(agent(fund)),
             pubKey_,
-            pubKeys[lender(fund)]
+            pubKeys[lender(fund)],
+            pubKeys[agent(fund)]
         );
     }
 

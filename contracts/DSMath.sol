@@ -41,6 +41,9 @@ contract DSMath {
     function rmul(uint x, uint y) internal pure returns (uint z) {
         z = add(mul(x, y), RAY / 2) / RAY;
     }
+    function cdiv(uint x, uint y) internal pure returns (uint z) {
+        z = add(mul(x, COL), y / 2) / y;
+    }
     function wdiv(uint x, uint y) internal pure returns (uint z) {
         z = add(mul(x, WAD), y / 2) / y;
     }
