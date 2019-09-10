@@ -25,6 +25,8 @@ contract Sales is DSMath {
 
     mapping (bytes32 => bytes32[])  public saleIndexByLoan; // Loan Auctions (find by loanIndex)
 
+    mapping(bytes32 => bool) revealed;
+
     ERC20 public token;
 
     /**
@@ -187,29 +189,23 @@ contract Sales is DSMath {
 
     /**
      * @notice Provide secret to enable liquidator to claim collateral
-     * @param sale The Id of the sale
      * @param secret_ The secret provided by the borrower, lender, arbiter, or liquidator
      */
-	function provideSecret(bytes32 sale, bytes32 secret_) external {
-		require(sales[sale].set);
-		if      (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashA) { secretHashes[sale].secretA = secret_; }
-        else if (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashB) { secretHashes[sale].secretB = secret_; }
-        else if (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashC) { secretHashes[sale].secretC = secret_; }
-        else if (sha256(abi.encodePacked(secret_)) == secretHashes[sale].secretHashD) { secretHashes[sale].secretD = secret_; }
-        else                                                                          { revert(); }
-	}
+    function provideSecret(bytes32 secret_) external {
+        revealed[sha256(abi.encodePacked(secret_))] = true;
+    }
 
     /**
      * @dev Indicates that two of Secret A, Secret B, Secret C have been submitted
      * @param sale The Id of the sale
      */
-	function hasSecrets(bytes32 sale) public view returns (bool) {
-		uint8 numCorrectSecrets = 0;
-		if (sha256(abi.encodePacked(secretHashes[sale].secretA)) == secretHashes[sale].secretHashA) { numCorrectSecrets = numCorrectSecrets + 1; }
-		if (sha256(abi.encodePacked(secretHashes[sale].secretB)) == secretHashes[sale].secretHashB) { numCorrectSecrets = numCorrectSecrets + 1; }
-		if (sha256(abi.encodePacked(secretHashes[sale].secretC)) == secretHashes[sale].secretHashC) { numCorrectSecrets = numCorrectSecrets + 1; }
-		return (numCorrectSecrets >= 2);
-	}
+    function hasSecrets(bytes32 sale) public view returns (bool) {
+        uint8 numCorrectSecrets = 0;
+        if (revealed[secretHashes[sale].secretHashA]) { numCorrectSecrets += 1; }
+        if (revealed[secretHashes[sale].secretHashB]) { numCorrectSecrets += 1; }
+        if (revealed[secretHashes[sale].secretHashC]) { numCorrectSecrets += 1; }
+        return (numCorrectSecrets >= 2);
+    }
 
     /**
      * @notice Accept discount buy by liquidator and disperse funds to rightful parties
@@ -219,7 +215,7 @@ contract Sales is DSMath {
         require(!accepted(sale));
         require(!off(sale));
 		require(hasSecrets(sale));
-		require(sha256(abi.encodePacked(secretHashes[sale].secretD)) == secretHashes[sale].secretHashD);
+		require(revealed[secretHashes[sale].secretHashD]);
         sales[sale].accepted = true;
 
         uint256 available = add(sales[sale].discountBuy, loans.repaid(sales[sale].loanIndex));

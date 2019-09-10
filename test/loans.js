@@ -248,9 +248,9 @@ stablecoins.forEach((stablecoin) => {
 
         const col = await this.loans.collateral.call(this.loan)
 
-        await this.sales.provideSecret(this.sale, lendSecs[1])
-        await this.sales.provideSecret(this.sale, borSecs[1], { from: borrower })
-        await this.sales.provideSecret(this.sale, liquidatorSecs[0])
+        await this.sales.provideSecret(lendSecs[1])
+        await this.sales.provideSecret(borSecs[1], { from: borrower })
+        await this.sales.provideSecret(liquidatorSecs[0])
 
         await this.sales.accept(this.sale)
 

@@ -75,9 +75,9 @@ async function getUnusedPubKeyAndAddress () {
 }
 
 async function provideSecretsAndAccept(contract, instance, sec1, sec2, sec3) {
-  await contract.provideSecret(instance, sec1)
-  await contract.provideSecret(instance, sec2)
-  await contract.provideSecret(instance, sec3)
+  await contract.provideSecret(sec1)
+  await contract.provideSecret(sec2)
+  await contract.provideSecret(sec3)
   await contract.accept(instance)
 }
 
