@@ -526,12 +526,7 @@ contract Funds is DSMath, ALCompound {
         require(amount_    >= minLoanAmt(fund));
         require(amount_    <= maxLoanAmt(fund));
         require(loanDur_   >= minLoanDur(fund));
-
-        if (maxLoanDur(fund) > 0) {
-            require(loanDur_       <= maxLoanDur(fund));
-        } else {
-            require(now + loanDur_ <= fundExpiry(fund));
-        }
+        require(loanDur_   <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund));
 
         loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);

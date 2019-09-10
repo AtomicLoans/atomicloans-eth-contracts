@@ -75,7 +75,7 @@ async function getContracts(stablecoin, accounts) {
 async function createFund(_this, arbiter, account, amount, compoundEnabled) {
   const fundParams = [
     toSecs({days: 366}),
-    0,
+    BN(2).pow(256).minus(1).toFixed(),
     arbiter, 
     compoundEnabled,
     0
@@ -167,7 +167,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          0,
+          BN(2).pow(256).minus(1).toFixed(),
           arbiter, 
           true,
           0
@@ -277,7 +277,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          0,
+          BN(2).pow(256).minus(1).toFixed(),
           arbiter, 
           true,
           0
@@ -370,7 +370,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          0,
+          BN(2).pow(256).minus(1).toFixed(),
           arbiter, 
           true,
           0

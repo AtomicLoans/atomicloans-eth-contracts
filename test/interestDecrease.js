@@ -218,7 +218,7 @@ stablecoins.forEach((stablecoin) => {
 
       const fundParams = [
         toSecs({days: 366}),
-        0,
+        BigNumber(2).pow(256).minus(1).toFixed(),
         arbiter,
         false,
         0

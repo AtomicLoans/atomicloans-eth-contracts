@@ -126,7 +126,7 @@ stablecoins.forEach((stablecoin) => {
         toWei('100', unit),
         toSecs({days: 1}),
         toSecs({days: 366}),
-        0,
+        BigNumber(2).pow(256).minus(1).toFixed(),
         toWei('1.5', 'gether'), // 150% collateralization ratio
         toWei(rateToSec('16.5'), 'gether'), // 16.50%
         toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -144,7 +144,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if user tries to create two loan funds', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          0,
+          BigNumber(2).pow(256).minus(1).toFixed(),
           arbiter,
           false,
           0
@@ -158,7 +158,7 @@ stablecoins.forEach((stablecoin) => {
       it('should succeed in updating non-custom loan fund', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          0,
+          BigNumber(2).pow(256).minus(1).toFixed(),
           arbiter,
           false,
           0
@@ -170,7 +170,7 @@ stablecoins.forEach((stablecoin) => {
         const newFundExpiry = Math.floor(Date.now() / 1000) + toSecs({days: 366})
 
         const fundParams2 = [
-          0,
+          BigNumber(2).pow(256).minus(1).toFixed(),
           newFundExpiry,
           arbiter
         ]
@@ -180,7 +180,7 @@ stablecoins.forEach((stablecoin) => {
         const maxLoanDur = await this.funds.maxLoanDur.call(this.fund2)
         const fundExpiry = await this.funds.fundExpiry.call(this.fund2)
 
-        assert.equal(maxLoanDur, 0)
+        assert.equal(maxLoanDur, BigNumber(2).pow(256).minus(1).toFixed())
         assert.equal(fundExpiry, newFundExpiry)
       })
     })
@@ -192,7 +192,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          0,
+          BigNumber(2).pow(256).minus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -307,7 +307,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          0,
+          BigNumber(2).pow(256).minus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -346,7 +346,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('99', unit),
           toSecs({days: 2}),
           toSecs({days: 364}),
-          0,
+          BigNumber(2).pow(256).minus(1).toFixed(),
           toWei(rateToSec('16'), 'gether'), // 16.0%
           toWei(rateToSec('2.75'), 'gether'), //  3.00%
           toWei(rateToSec('0.5'), 'gether'), //  0.75%
@@ -428,7 +428,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('1', unit),
           toWei('100', unit),
           toSecs({days: 1}),
-          0,
+          BigNumber(2).pow(256).minus(1).toFixed(),
           parseInt(fromWei(currentTime, 'wei')) + toSecs({days: 30}),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
@@ -469,7 +469,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('1', unit),
           toWei('100', unit),
           toSecs({days: 1}),
-          0,
+          BigNumber(2).pow(256).minus(1).toFixed(),
           parseInt(fromWei(currentTime, 'wei')) + toSecs({days: 30}),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
