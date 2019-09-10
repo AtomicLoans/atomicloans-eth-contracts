@@ -2,8 +2,8 @@
   "name": "atomicloans-solidity",
   "version": "0.1.0",
   "dependencies": {
-    "@liquality/crypto": "^0.3.2",
-    "@liquality/ethereum-utils": "^0.3.2",
+    "@liquality/crypto": "^0.3.3",
+    "@liquality/ethereum-utils": "^0.3.3",
     "@mblackmblack/to-seconds": "^0.1.0",
     "axios": "^0.19.0", 
     "bignumber.js": "^9.0.0",
