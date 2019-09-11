@@ -30,7 +30,7 @@
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {
-    "@atomicloans/loan-bundle": "^0.2.53",
+    "@atomicloans/loan-bundle": "^0.3.1",
     "@atomicloans/provider": "^0.2.48",
     "@codechecks/client": "^0.1.5",
     "@liquality/bundle": "^0.3.2",
