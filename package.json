@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@atomicloans/loan-bundle": "^0.2.53",
-    "@atomicloans/provider": "^0.2.48",
+    "@atomicloans/provider": "^0.3.1",
     "@codechecks/client": "^0.1.5",
     "@liquality/bundle": "^0.3.2",
     "bitcoinjs-lib": "^5.1.3",
