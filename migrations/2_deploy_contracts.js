@@ -112,15 +112,15 @@ module.exports = function(deployer, network, accounts) {
 
     await deployer.deploy(ALCompound, comptroller.address)
 
-    console.log('daiAddress', dai.address)
-    console.log('usdcAddress', usdc.address)
+    console.log(`DAI_ADDRESS=${dai.address}`)
+    console.log(`USDC_ADDRESS=${usdc.address}`)
 
-    console.log('daiFunds Address', funds.address)
-    console.log('daiLoans Address', loans.address)
-    console.log('daiSales Address', sales.address)
+    console.log(`DAI_LOAN_FUNDS_ADDRESS=${funds.address}`)
+    console.log(`DAI_LOAN_LOANS_ADDRESS=${loans.address}`)
+    console.log(`DAI_LOAN_SALES_ADDRESS=${sales.address}`)
 
-    console.log('usdcFunds Address', usdcFunds.address)
-    console.log('usdcLoans Address', usdcLoans.address)
-    console.log('usdcSales Address', usdcSales.address)
+    console.log(`USDC_LOAN_FUNDS_ADDRESS=${usdcFunds.address}`)
+    console.log(`USDC_LOAN_LOANS_ADDRESS=${usdcLoans.address}`)
+    console.log(`USDC_LOAN_SALES_ADDRESS=${usdcSales.address}`)
   })
 };
