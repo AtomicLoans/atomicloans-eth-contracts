@@ -28,6 +28,9 @@ contract Loans is DSMath {
     mapping (bytes32 => uint256)      public repayments;   // Amount paid back in a Loan
     uint256                           public loanIndex;    // Current Loan Index
 
+    mapping (address => bytes32[])    public borrowerLoans;
+    mapping (address => bytes32[])    public lenderLoans;
+
     ERC20 public token; // ERC20 Debt Stablecoin
     uint256 public decimals;
 
@@ -224,6 +227,14 @@ contract Loans is DSMath {
         return div(x, (10 ** sub(18, decimals)));
     }
 
+    function borrowerLoanCount(address borrower_) public view returns (uint256) {
+        return borrowerLoans[borrower_].length;
+    }
+
+    function lenderLoanCount(address lender_) public view returns (uint256) {
+        return lenderLoans[lender_].length;
+    }
+
     function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
         uint256 val = uint(med.read());
         return cmul(val, collateral(loan)); // Multiply value dependent on number of decimals with currency
@@ -289,6 +300,8 @@ contract Loans is DSMath {
         loans[loan].liquidationRatio = vals_[5];
         fundIndex[loan]              = fundIndex_;
         secretHashes[loan].set       = false;
+        borrowerLoans[usrs_[0]].push(bytes32(loanIndex));
+        lenderLoans[usrs_[1]].push(bytes32(loanIndex));
     }
 
     /**
@@ -373,7 +386,7 @@ contract Loans is DSMath {
         require(!sale(loan));
     	require(bools[loan].withdrawn     == true);
     	require(now                       <= loans[loan].loanExpiration);
-    	require(add(amount, repaid(loan))    <= owedForLoan(loan));
+        require(add(amount, repaid(loan)) <= owedForLoan(loan));
     	require(token.transferFrom(msg.sender, address(this), amount));
     	repayments[loan] = add(amount, repayments[loan]);
     	if (repaid(loan) == owedForLoan(loan)) {

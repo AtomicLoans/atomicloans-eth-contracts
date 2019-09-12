@@ -213,6 +213,22 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
+    describe('getters', function() {
+      it('should add borrower to borrowerLoans list after requesting loan', async function() {
+        const borrowerLoanCount = await this.loans.borrowerLoanCount.call(borrower)
+        const borrowerLoan = await this.loans.borrowerLoans.call(borrower, borrowerLoanCount.toNumber() - 1)
+
+        assert.equal(borrowerLoan, this.loan)
+      })
+
+      it('should add lender to lenderLoans list after requesting loan', async function() {
+        const lenderLoanCount = await this.loans.lenderLoanCount.call(lender)
+        const lenderLoan = await this.loans.lenderLoans.call(lender, lenderLoanCount.toNumber() - 1)
+
+        assert.equal(lenderLoan, this.loan)
+      })
+    })
+
     describe('liquidate', function() {
       it('should be safe if above liquidation ratio', async function() {
         await this.loans.approve(this.loan)
