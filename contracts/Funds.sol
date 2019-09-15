@@ -86,6 +86,8 @@ contract Funds is DSMath, ALCompound {
         bool     compoundEnabled;
     }
 
+    event Create(bytes32 fund);
+
     constructor(
         ERC20   token_,
         uint256 decimals_
@@ -365,6 +367,8 @@ contract Funds is DSMath, ALCompound {
         bools[fund].compoundEnabled  = compoundEnabled_;
         fundOwner[msg.sender]        = bytes32(fundIndex);
         if (amount_ > 0) { deposit(fund, amount_); }
+
+        emit Create(fund);
     }
 
     /**
@@ -415,6 +419,8 @@ contract Funds is DSMath, ALCompound {
         bools[fund].compoundEnabled  = compoundEnabled_;
         fundOwner[msg.sender]        = bytes32(fundIndex);
         if (amount_ > 0) { deposit(fund, amount_); }
+
+        emit Create(fund);
     }
 
     /**

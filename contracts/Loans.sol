@@ -123,6 +123,8 @@ contract Loans is DSMath {
     	bool off;
     }
 
+    event Create(bytes32 loan);
+
     function borrower(bytes32 loan) public view returns (address) {
         return loans[loan].borrower;
     }
@@ -138,6 +140,8 @@ contract Loans is DSMath {
     function approveExpiration(bytes32 loan) public view returns (uint256) { // Approval Expiration
         return add(loans[loan].createdAt, APPROVE_EXP_THRESHOLD);
     }
+
+    // TODO: add loanExpiration
 
     function acceptExpiration(bytes32 loan) public view returns (uint256) { // Acceptance Expiration
         return add(loans[loan].loanExpiration, ACCEPT_EXP_THRESHOLD);
@@ -291,7 +295,7 @@ contract Loans is DSMath {
         loans[loan].loanExpiration   = loanExpiration_;
         loans[loan].borrower         = usrs_[0];
         loans[loan].lender           = usrs_[1];
-        loans[loan].arbiter            = usrs_[2];
+        loans[loan].arbiter          = usrs_[2];
         loans[loan].principal        = vals_[0];
         loans[loan].interest         = vals_[1];
         loans[loan].penalty          = vals_[2];
@@ -302,6 +306,8 @@ contract Loans is DSMath {
         secretHashes[loan].set       = false;
         borrowerLoans[usrs_[0]].push(bytes32(loanIndex));
         lenderLoans[usrs_[1]].push(bytes32(loanIndex));
+
+        emit Create(loan);
     }
 
     /**
