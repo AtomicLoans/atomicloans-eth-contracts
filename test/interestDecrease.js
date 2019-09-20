@@ -267,6 +267,7 @@ stablecoins.forEach((stablecoin) => {
           toWei(loanReq3.toString(), unit),
           col,
           toSecs({days: 10}),
+          Math.floor(Date.now() / 1000),
           [ ...borSechs, ...lendSechs ],
           ensure0x(borpubk),
           ensure0x(lendpubk)
@@ -450,6 +451,7 @@ stablecoins.forEach((stablecoin) => {
           toWei(loanReq4.toString(), unit),
           col,
           toSecs({days: 10}),
+          Math.floor(Date.now() / 1000),
           [ ...borSechs7, ...lendSechs ],
           ensure0x(borpubk),
           ensure0x(lendpubk)

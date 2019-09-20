@@ -62,6 +62,7 @@ contract Loans is DSMath {
         uint256 fee;
         uint256 collateral;
         uint256 liquidationRatio;
+        uint256 requestTimestamp;
     }
 
     /**
@@ -285,7 +286,7 @@ contract Loans is DSMath {
     function create(
         uint256             loanExpiration_,
         address[3] calldata usrs_,
-        uint256[6] calldata vals_,
+        uint256[7] calldata vals_,
         bytes32             fundIndex_
     ) external returns (bytes32 loan) {
         if (fundIndex_ != bytes32(0)) { require(funds.lender(fundIndex_) == usrs_[1]); }
@@ -302,6 +303,7 @@ contract Loans is DSMath {
         loans[loan].fee              = vals_[3];
         loans[loan].collateral       = vals_[4];
         loans[loan].liquidationRatio = vals_[5];
+        loans[loan].requestTimestamp = vals_[6];
         fundIndex[loan]              = fundIndex_;
         secretHashes[loan].set       = false;
         borrowerLoans[usrs_[0]].push(bytes32(loanIndex));

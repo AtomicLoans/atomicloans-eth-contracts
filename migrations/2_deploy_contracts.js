@@ -1,5 +1,8 @@
 const { toWei, fromWei, padLeft, numberToHex } = web3.utils;
 
+const toSecs = require('@mblackmblack/to-seconds');
+const BN = require('bignumber.js')
+
 var ExampleDaiCoin = artifacts.require("./ExampleDaiCoin.sol");
 var ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
 var Medianizer = artifacts.require('./MedianizerExample.sol');
@@ -114,6 +117,9 @@ module.exports = function(deployer, network, accounts) {
 
     console.log(`DAI_ADDRESS=${dai.address}`)
     console.log(`USDC_ADDRESS=${usdc.address}`)
+
+    console.log(`CDAI_ADDRESS=${cdai.address}`)
+    console.log(`CUSDC_ADDRESS=${cusdc.address}`)
 
     console.log(`DAI_LOAN_FUNDS_ADDRESS=${funds.address}`)
     console.log(`DAI_LOAN_LOANS_ADDRESS=${loans.address}`)
