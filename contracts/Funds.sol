@@ -526,6 +526,7 @@ contract Funds is DSMath, ALCompound {
         uint256             amount_,
         uint256             collateral_,
         uint256             loanDur_,
+        uint256             requestTimestamp_,
         bytes32[8] calldata secretHashes_,
         bytes      calldata pubKeyA_,
         bytes      calldata pubKeyB_
@@ -537,7 +538,7 @@ contract Funds is DSMath, ALCompound {
         require(loanDur_   >= minLoanDur(fund));
         require(loanDur_   <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund));
 
-        loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_);
+        loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_, requestTimestamp_);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);
         loanUpdateMarketLiquidity(fund, amount_);
         loans.fund(loanIndex);
@@ -647,7 +648,8 @@ contract Funds is DSMath, ALCompound {
         marketLiquidity = add(tokenMarketLiquidity, wmul(cTokenMarketLiquidity, cToken.exchangeRateCurrent()));
 
         if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) {
-            uint256 utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow));
+            uint256 utilizationRatio;
+            if (totalBorrow != 0) { utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow)); }
 
             if (utilizationRatio > lastUtilizationRatio) {
                 uint256 changeUtilizationRatio = sub(utilizationRatio, lastUtilizationRatio);
@@ -695,12 +697,13 @@ contract Funds is DSMath, ALCompound {
         address  borrower_,
         uint256  amount_,
         uint256  collateral_,
-        uint256  loanDur_
+        uint256  loanDur_,
+        uint256  requestTimestamp_
     ) private returns (bytes32 loanIndex) {
         loanIndex = loans.create(
             now + loanDur_,
             [ borrower_, lender(fund), funds[fund].arbiter],
-            [ amount_, calcInterest(amount_, interest(fund), loanDur_), calcInterest(amount_, penalty(fund), loanDur_), calcInterest(amount_, fee(fund), loanDur_), collateral_, liquidationRatio(fund)],
+            [ amount_, calcInterest(amount_, interest(fund), loanDur_), calcInterest(amount_, penalty(fund), loanDur_), calcInterest(amount_, fee(fund), loanDur_), collateral_, liquidationRatio(fund), requestTimestamp_],
             fund
         );
     }
