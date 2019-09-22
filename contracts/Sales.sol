@@ -235,11 +235,11 @@ contract Sales is DSMath {
                 require(token.transfer(sales[sale].arbiter, loans.fee(sales[sale].loanIndex)));
             }
             require(token.approve(address(med), loans.penalty(sales[sale].loanIndex)));
-            med.push(loans.penalty(sales[sale].loanIndex), token);
+            med.fund(loans.penalty(sales[sale].loanIndex), token);
             available = sub(available, add(loans.fee(sales[sale].loanIndex), loans.penalty(sales[sale].loanIndex)));
         } else if (available > 0) {
             require(token.approve(address(med), available));
-            med.push(available, token);
+            med.fund(available, token);
             available = 0;
         }
 

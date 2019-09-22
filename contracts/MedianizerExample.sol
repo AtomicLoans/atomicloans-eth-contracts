@@ -8,7 +8,7 @@ contract MedianizerExample {
     function peek() public view returns (bytes32, bool) {
         return (val,has);
     }
-    function read() public view returns (bytes32) {
+    function read() public returns (bytes32) {
         (bytes32 wut, bool has_) = peek();
         assert(has_);
         return wut;
@@ -17,11 +17,11 @@ contract MedianizerExample {
         val = wut;
         has = true;
     }
-    function void() public { // unset the value
-        has = false;
+    function poke() public {
+        has = true;
     }
 
-    function push(uint256 amt, ERC20 tok) public {
+    function fund(uint256 amt, ERC20 tok) public {
         tok.transferFrom(msg.sender, address(this), amt);
     }
 }

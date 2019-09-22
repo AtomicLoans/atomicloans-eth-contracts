@@ -4,8 +4,8 @@ pragma solidity ^0.5.8;
 
 contract Medianizer {
     function peek() public view returns (bytes32, bool);
-    function read() public view returns (bytes32);
-    function poke(bytes32 wut) public;
-    function void() public;
-    function push(uint256 amt, ERC20 tok) public;
+    function read() public returns (bytes32);
+    function poke() public;
+    function poke(bytes32) public;
+    function fund (uint256 amount, ERC20 token) public;
 }
