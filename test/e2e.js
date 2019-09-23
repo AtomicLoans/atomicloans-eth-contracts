@@ -106,9 +106,9 @@ async function getPubKeys(contract, instance) {
   let { borrowerPubKey, lenderPubKey, arbiterPubKey } = await contract.pubKeys.call(instance)
   borrowerPubKey = remove0x(borrowerPubKey)
   lenderPubKey = remove0x(lenderPubKey)
-  agentPubKey = remove0x(arbiterPubKey)
+  arbiterPubKey = remove0x(arbiterPubKey)
 
-  return { borrowerPubKey, lenderPubKey, agentPubKey }
+  return { borrowerPubKey, lenderPubKey, arbiterPubKey }
 }
 
 async function getSecretHashes(contract, instance) {
