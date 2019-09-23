@@ -35,7 +35,7 @@ module.exports = function(deployer, network, accounts) {
     var usdc = await ExampleUsdcCoin.deployed();
     // const usdc = { address: '0x6e894660985207feb7cf89faf048998c71e8ee89' } // KOVAN - Compound USDC Contract
 
-    // await deployer.deploy(MakerMedianizer) // LOCAL
+    await deployer.deploy(MakerMedianizer) // LOCAL
     var makerMedianizer = await MakerMedianizer.deployed(); // LOCAL
     await makerMedianizer.poke(padLeft(numberToHex(toWei('200', 'ether')), 64)) // LOCAL
     // const makerMedianizer = { address: '0xA944bd4b25C9F186A846fd5668941AA3d3B8425F' } // KOVAN
