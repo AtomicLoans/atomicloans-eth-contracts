@@ -8,6 +8,7 @@
     "axios": "^0.19.0",
     "bignumber.js": "^9.0.0",
     "decimal.js": "^10.2.0",
+    "dotenv": "^8.1.0",
     "lodash": "^4.17.13",
     "openzeppelin-solidity": "^2.2.0",
     "truffle": "^5.0.33",
