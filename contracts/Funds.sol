@@ -337,6 +337,15 @@ contract Funds is DSMath, ALCompound {
     }
 
     /**
+     * @notice Get the number of secretHashes provided per address
+     * @param addr_ The address of the user
+     * @return The length of the secretHashes array for user address
+     */
+    function secretHashesCount(address addr_) external view returns (uint256) {
+        return secretHashes[addr_].length;
+    }
+
+    /**
      * @notice Lenders create Loan Fund using Global Protocol parameters and deposit assets
      * @param maxLoanDur_ Max Loan Duration of Loan Fund in seconds
      * @param arbiter_  Optional address of arbiter

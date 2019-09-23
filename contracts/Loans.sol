@@ -241,8 +241,10 @@ contract Loans is DSMath {
     }
 
     function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
-        uint256 val = uint(med.read());
-        return cmul(val, collateral(loan)); // Multiply value dependent on number of decimals with currency
+        (bytes32 val, bool set) = med.peek();
+        require(set);
+        uint256 price = uint(val);
+        return cmul(price, collateral(loan)); // Multiply value dependent on number of decimals with currency
     }
 
     function minCollateralValue(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
