@@ -15,7 +15,7 @@ module.exports = {
         return new HDWalletProvider(`${process.env.MNEMONIC}`, "https://kovan.infura.io/v3/53bcde36e0404a6da87b71e780783f79")
       },
       network_id: 42,
-      gas: 6690000,
+      gas: 6700000,
       skipDryRun: true
     }
   },
@@ -27,7 +27,7 @@ module.exports = {
           enabled: true,
           runs: 200
         },
-        evmVersion: 'byzantium'
+        evmVersion: 'petersburg'
       },
     },
   },
