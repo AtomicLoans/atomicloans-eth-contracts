@@ -56,13 +56,14 @@ contract Loans is DSMath {
         address arbiter;
         uint256 createdAt;
         uint256 loanExpiration;
+        uint256 requestTimestamp;
+        uint256 closedTimestamp;
         uint256 principal;
         uint256 interest;
         uint256 penalty;
         uint256 fee;
         uint256 collateral;
         uint256 liquidationRatio;
-        uint256 requestTimestamp;
     }
 
     /**
@@ -418,6 +419,7 @@ contract Loans is DSMath {
     	require(bools[loan].paid == true);
     	require(msg.sender       == loans[loan].borrower);
         bools[loan].off = true;
+        loans[loan].closedTimestamp = now;
     	require(token.transfer(loans[loan].borrower, owedForLoan(loan)));
         if (funds.custom(fundIndex[loan]) == false) {
             funds.decreaseTotalBorrow(loans[loan].principal);
@@ -449,6 +451,7 @@ contract Loans is DSMath {
         require(now                              <= acceptExpiration(loan));
         require(bools[loan].sale                 == false);
         bools[loan].off = true;
+        loans[loan].closedTimestamp = now;
         secretHashes[loan].acceptSecret = secret;
         if (bools[loan].withdrawn == false) {
             if (fundIndex[loan] == bytes32(0)) {
