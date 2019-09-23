@@ -1,17 +1,17 @@
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
-import './Funds.sol';
-import './Sales.sol';
+import './FundsInterface.sol';
+import './SalesInterface.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
 
 pragma solidity ^0.5.8;
 
 contract Loans is DSMath {
-    Funds funds;
+    FundsInterface funds;
     Medianizer med;
-    Sales sales;
+    SalesInterface sales;
 
     uint256 public constant APPROVE_EXP_THRESHOLD = 2 hours;    // approval expiration threshold
     uint256 public constant ACCEPT_EXP_THRESHOLD = 2 days;      // acceptance expiration threshold
@@ -259,7 +259,7 @@ contract Loans is DSMath {
         return collateralValue(loan) >= minCollateralValue(loan);
     }
 
-    constructor (Funds funds_, Medianizer med_, ERC20 token_, uint256 decimals_) public {
+    constructor (FundsInterface funds_, Medianizer med_, ERC20 token_, uint256 decimals_) public {
         deployer = msg.sender;
     	funds    = funds_;
     	med      = med_;
@@ -272,7 +272,7 @@ contract Loans is DSMath {
      * @dev Sets Sales contract
      * @param sales_ Address of Sales contract
      */
-    function setSales(Sales sales_) external {
+    function setSales(SalesInterface sales_) external {
         require(msg.sender == deployer);
         require(address(sales) == address(0));
         sales = sales_;

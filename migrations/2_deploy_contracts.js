@@ -26,17 +26,19 @@ var ALCompound = artifacts.require('./ALCompound.sol')
 module.exports = function(deployer, network, accounts) {
   deployer.then(async () => {
     // Deploy Example DAI
-    await deployer.deploy(ExampleDaiCoin);
-    var dai = await ExampleDaiCoin.deployed();
+    await deployer.deploy(ExampleDaiCoin); // LOCAL
+    var dai = await ExampleDaiCoin.deployed(); // LOCAL
+    // const dai = { address: '0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99' } // KOVAN - Compound DAI Contract
 
     // Deploy Example USDC
     await deployer.deploy(ExampleUsdcCoin);
     var usdc = await ExampleUsdcCoin.deployed();
+    // const usdc = { address: '0x6e894660985207feb7cf89faf048998c71e8ee89' } // KOVAN - Compound USDC Contract
 
-    await deployer.deploy(MakerMedianizer)
-    var makerMedianizer = await MakerMedianizer.deployed();
-
-    await makerMedianizer.poke(padLeft(numberToHex(toWei('200', 'ether')), 64))
+    await deployer.deploy(MakerMedianizer) // LOCAL
+    var makerMedianizer = await MakerMedianizer.deployed(); // LOCAL
+    await makerMedianizer.poke(padLeft(numberToHex(toWei('200', 'ether')), 64)) // LOCAL
+    // const makerMedianizer = { address: '0xA944bd4b25C9F186A846fd5668941AA3d3B8425F' } // KOVAN
 
     // Deploy cDAI
     await deployer.deploy(DAIInterestRateModel, toWei('0.05', 'ether'), toWei('0.12', 'ether'))
@@ -92,6 +94,15 @@ module.exports = function(deployer, network, accounts) {
     // Deploy example Medianizer
     await deployer.deploy(Medianizer);
     var medianizer = await Medianizer.deployed();
+    // LOCAL
+
+    // const cdai = { address: '0x0a1e4d0b5c71b955c0a5993023fc48ba6e380496' } // KOVAN
+
+    // const cusdc = { address: '0xdff375162cfe7d77473c1bec4560dede974e138c' } // KOVAN
+
+    // const comptroller = { address: '0x142d11cb90a2b40f7d0c55ed1804988dfc316fae' } // KOVAN
+
+    // const medianizer = { address: '0x87c26fd61500fCf86dBe5DCD6E2DEcEDE70d4f82' } // KOVAN
 
     // // Deploy Atomic Loan Contracts
     await deployer.deploy(Funds, dai.address, '18');
