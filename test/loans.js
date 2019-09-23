@@ -58,6 +58,12 @@ async function getContracts(stablecoin) {
   }
 }
 
+async function getCurrentTime() {
+  const latestBlockNumber = await web3.eth.getBlockNumber()
+  const latestBlockTimestamp = (await web3.eth.getBlock(latestBlockNumber)).timestamp
+  return latestBlockTimestamp
+}
+
 stablecoins.forEach((stablecoin) => {
   const { name, unit } = stablecoin
 
@@ -189,6 +195,11 @@ stablecoins.forEach((stablecoin) => {
         await this.loans.repay(this.loan, owedForLoan, { from: borrower })
 
         await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
+
+        const currentTime = await getCurrentTime()
+        const { closedTimestamp } = await this.loans.loans.call(this.loan)
+
+        expect(currentTime.toString()).to.equal(BigNumber(closedTimestamp).toString())
 
         const off = await this.loans.off.call(this.loan)
         assert.equal(off, true);
