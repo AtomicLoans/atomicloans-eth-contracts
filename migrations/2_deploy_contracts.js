@@ -139,5 +139,20 @@ module.exports = function(deployer, network, accounts) {
     console.log(`USDC_LOAN_FUNDS_ADDRESS=${usdcFunds.address}`)
     console.log(`USDC_LOAN_LOANS_ADDRESS=${usdcLoans.address}`)
     console.log(`USDC_LOAN_SALES_ADDRESS=${usdcSales.address}`)
+
+    console.log('==================================')
+
+    console.log('{')
+    console.log(`  "DAI": "${dai.address}",`)
+    console.log(`  "USDC": "${usdc.address}",`)
+    console.log(`  "CDAI": "${cdai.address}",`)
+    console.log(`  "CUSDC": "${cusdc.address}",`)
+    console.log(`  "DAI_FUNDS": "${funds.address}",`)
+    console.log(`  "DAI_LOANS": "${loans.address}",`)
+    console.log(`  "DAI_SALES": "${sales.address}",`)
+    console.log(`  "USDC_FUNDS": "${usdcFunds.address}",`)
+    console.log(`  "USDC_LOANS": "${usdcLoans.address}",`)
+    console.log(`  "USDC_SALES": "${usdcSales.address}"`)
+    console.log('}')
   })
 };
