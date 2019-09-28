@@ -73,6 +73,7 @@ stablecoins.forEach((stablecoin) => {
     const arbiter = accounts[2]
     const lender2 = accounts[3]
     const lender3 = accounts[4]
+    const withdrawRecipient = accounts[5]
 
     let currentTime
     let btcPrice
@@ -477,7 +478,7 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
-    describe('withdraw funds', function() {
+    describe.only('withdraw funds', function() {
       it('should withdraw funds successfully if called by owner', async function() {
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
@@ -518,6 +519,33 @@ stablecoins.forEach((stablecoin) => {
 
         // Pull funds from loan fund
         await expectRevert(this.funds.withdraw(this.fund, toWei('50', unit), { from: arbiter }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should allow withdrawing to a specific address as long as it\'s called by the owner of the fund', async function() {
+        // Generate lender secret hashes
+        await this.funds.generate(lendSechs)
+
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
+
+        // Set Lender PubKey
+        await this.funds.setPubKey(ensure0x(lendpubk))
+
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('100', unit))
+        await this.funds.deposit(this.fund, toWei('100', unit))
+
+        const oldBal = await this.token.balanceOf.call(this.funds.address)
+        const oldRecipientBal = await this.token.balanceOf.call(withdrawRecipient)
+
+        // Pull funds from loan fund
+        await this.funds.withdrawTo(this.fund, toWei('50', unit), withdrawRecipient)
+
+        const newBal = await this.token.balanceOf.call(this.funds.address)
+        const newRecipientBal = await this.token.balanceOf.call(withdrawRecipient)
+
+        assert.equal(oldBal - newBal, toWei('50', unit))
+        assert.equal(newRecipientBal - oldRecipientBal, toWei('50', unit))
       })
     })
 
