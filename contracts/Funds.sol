@@ -559,6 +559,16 @@ contract Funds is DSMath, ALCompound {
      * @param amount Amount of tokens to withdraw
      */
     function withdraw(bytes32 fund, uint256 amount) external {
+        withdrawTo(fund, amount, msg.sender);
+    }
+
+    /**
+     * @notice Lenders withdraw tokens in Loan Fund
+     * @param fund The Id of a Loan Fund
+     * @param amount Amount of tokens to withdraw
+     * @param recipient Address that should receive the funds
+     */
+    function withdrawTo(bytes32 fund, uint256 amount, address recipient) public {
         require(msg.sender     == lender(fund));
         require(balance(fund)  >= amount);
         if (bools[fund].compoundEnabled) {
@@ -567,11 +577,11 @@ contract Funds is DSMath, ALCompound {
             uint256 cBalanceAfter = cToken.balanceOf(address(this));
             uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
             funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
-            require(token.transfer(lender(fund), amount));
+            require(token.transfer(recipient, amount));
             if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
         } else {
             funds[fund].balance = sub(funds[fund].balance, amount);
-            require(token.transfer(lender(fund), amount));
+            require(token.transfer(recipient, amount));
             if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount); }
         }
         if (!custom(fund)) { calcGlobalInterest(); }
