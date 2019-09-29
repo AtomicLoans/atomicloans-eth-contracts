@@ -461,6 +461,37 @@ stablecoins.forEach((stablecoin) => {
         const accepted = await this.sales.accepted.call(this.sale)
         assert.equal(accepted, true)
       })
+
+      it('should disperse funds to rightful parties after partial repayment using provideSecretsAndAccept function', async function() {
+        await approveAndTransfer(this.token, borrower, this.loans, toWei('100', unit))
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+        const { collateralValue, minCollateralValue, repaid, owedToLender } = await getLoanValues(this.loans, this.loan)
+        const medValue = await this.med.read.call()
+
+        await this.med.poke(numToBytes32(BigNumber(minCollateralValue).dividedBy(collateralValue).times(hexToNumberString(medValue)).times(0.99).toFixed(0)))
+
+        await approveAndTransfer(this.token, liquidator, this.loans, toWei('100', unit))
+
+        this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+        const { lendBalBefore, borBalBefore, arbiterBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+
+        await this.sales.provideSecretsAndAccept(this.sale, [ lendSecs[1], borSecs[1], liquidatorSecs[0] ])
+
+        const { lendBalAfter, borBalAfter, arbiterBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
+        const discountBuy = await this.sales.discountBuy.call(this.sale)
+
+        assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
+        assert.equal(BigNumber(borBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedForLiquidation)).toString(), borBalAfter.toString())
+        assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter)
+
+        const accepted = await this.sales.accepted.call(this.sale)
+        assert.equal(accepted, true)
+      })
     })
 
     describe('provideSig', function() {

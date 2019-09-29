@@ -41,7 +41,7 @@ async function getContracts(stablecoin) {
     const token = await ExampleUsdcCoin.deployed()
     const comptroller = await Comptroller.deployed()
     const usdcInterestRateModel = await USDCInterestRateModel.deployed()
-    const cUsdc = await CErc20.new(token.address, comptroller.address, usdcInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Usdc', 'cUSDC', '8')
+    const cUsdc = await CErc20.new(token.address, comptroller.address, usdcInterestRateModel.address, toWei('0.2', 'finney'), 'Compound Usdc', 'cUSDC', '8')
 
     await comptroller._supportMarket(cUsdc.address)
 
@@ -228,6 +228,28 @@ stablecoins.forEach((stablecoin) => {
         ]
 
         await expectRevert(this.funds.create(...fundParams), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should succeed in withdrawing from non-custom loan fund', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          true,
+          0
+        ]
+
+        this.fund2 = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        console.log('unit', unit)
+
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('100', unit))
+        await this.funds.deposit(this.fund2, toWei('100', unit))
+
+        // Pull funds from loan fund
+        await this.funds.withdraw(this.fund2, toWei('50', unit))
       })
     })
 
@@ -478,7 +500,7 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
-    describe.only('withdraw funds', function() {
+    describe('withdraw funds', function() {
       it('should withdraw funds successfully if called by owner', async function() {
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
