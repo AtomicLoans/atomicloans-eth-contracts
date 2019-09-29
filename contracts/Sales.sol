@@ -191,7 +191,7 @@ contract Sales is DSMath {
      * @notice Provide secret to enable liquidator to claim collateral
      * @param secret_ The secret provided by the borrower, lender, arbiter, or liquidator
      */
-    function provideSecret(bytes32 sale, bytes32 secret_) external {
+    function provideSecret(bytes32 sale, bytes32 secret_) public {
         require(sales[sale].set);
         bytes32 secretHash = sha256(abi.encodePacked(secret_));
         revealed[secretHash] = true;
@@ -217,7 +217,7 @@ contract Sales is DSMath {
      * @notice Accept discount buy by liquidator and disperse funds to rightful parties
      * @param sale The Id of the sale
      */
-	function accept(bytes32 sale) external {
+	function accept(bytes32 sale) public {
         require(!accepted(sale));
         require(!off(sale));
 		require(hasSecrets(sale));
@@ -245,6 +245,13 @@ contract Sales is DSMath {
 
         if (available > 0) { require(token.transfer(sales[sale].borrower, available)); }
 	}
+
+    function provideSecretsAndAccept(bytes32 sale, bytes32[3] calldata secrets_) external {
+        provideSecret(sale, secrets_[0]);
+        provideSecret(sale, secrets_[1]);
+        provideSecret(sale, secrets_[2]);
+        accept(sale);
+    }
 
     /**
      * @notice Refund discount buy to liquidator
