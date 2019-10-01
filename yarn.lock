@@ -381,6 +381,16 @@
     bs58 "^4.0.1"
     crypto-hashing "^1.0.0"
 
+"@liquality/crypto@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.0.tgz#63ed7803027884f837c2efaea361fb3788d361b1"
+  integrity sha512-t8+zR0j3qzXwmxrKt4X21dUD5/ZglcYI+gokwx9Ga9YDae5JIXnLZcxuuNel5SKXTXRp8Wu0uygH/rqUSRlrcQ==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    bech32 "^1.1.3"
+    bs58 "^4.0.1"
+    crypto-hashing "^1.0.0"
+
 "@liquality/debug@^0.3.2":
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/@liquality/debug/-/debug-0.3.2.tgz#bf9c6638ba67b657dce8a406ffc5dbce345dc97c"
@@ -487,13 +497,14 @@
     "@liquality/schema" "^0.3.2"
     eip55 "^1.0.3"
 
-"@liquality/ethereum-utils@^0.3.8":
-  version "0.3.8"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.3.8.tgz#196b196b3b0b5ece32b5a9455a5893b0e413ebed"
+"@liquality/ethereum-utils@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.0.tgz#12604b7e0d8510c7c091f9cfcc9077e5c579c7c6"
+  integrity sha512-xDwT5bTiid0j4u0lErfksBVvZio30r2oWyr7Kez2OsdH9KQyd3MaiteF+9iagvEJwsdT+i+8vR0NU/BetQYzTg==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.3.8"
-    "@liquality/schema" "^0.3.8"
+    "@liquality/crypto" "^0.4.0"
+    "@liquality/schema" "^0.4.0"
     eip55 "^1.0.3"
 
 "@liquality/jsonrpc-provider@^0.3.2":
@@ -554,6 +565,13 @@
 "@liquality/schema@^0.3.6", "@liquality/schema@^0.3.8":
   version "0.3.8"
   resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.3.8.tgz#00f499f6f4c078039df8eb1abd9a13809829009e"
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+
+"@liquality/schema@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.0.tgz#0c82c483765d94e632f59e05eb05199a21ea05aa"
+  integrity sha512-UaqlcQIBYiHjsn9oCxCWA6nYAFb4hkKiZpy7UkDDtG1IPe4PgDcLDsxBjOum6U3+ffOIA7dpds53+N1UUQd+Xw==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
@@ -1432,6 +1450,11 @@ chai-bignumber@^3.0.0:
 chai-bn@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/chai-bn/-/chai-bn-0.1.1.tgz#a8904b2dc878e5c094881f327c0029579ff2062b"
+
+chai-bn@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/chai-bn/-/chai-bn-0.2.0.tgz#7da60617531e5a8bdf9fbd5d848e693b7405a5cb"
+  integrity sha512-h+XqIFikre13N3uiZSc50PZ0VztVjuD/Gytle07EUFkbd8z31tWp37DLAsR1dPozmOLA3yu4hi3IFjJDQ5CKBg==
 
 chai@^4.2.0:
   version "4.2.0"
@@ -8480,7 +8503,6 @@ websocket@^1.0.28, "websocket@github:web3-js/WebSocket-Node#polyfill/globalThis"
   dependencies:
     debug "^2.2.0"
     es5-ext "^0.10.50"
-    gulp "^4.0.2"
     nan "^2.14.0"
     typedarray-to-buffer "^3.1.5"
     yaeti "^0.0.6"
