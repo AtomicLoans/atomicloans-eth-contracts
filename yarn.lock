@@ -381,6 +381,16 @@
     bs58 "^4.0.1"
     crypto-hashing "^1.0.0"
 
+"@liquality/crypto@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.0.tgz#63ed7803027884f837c2efaea361fb3788d361b1"
+  integrity sha512-t8+zR0j3qzXwmxrKt4X21dUD5/ZglcYI+gokwx9Ga9YDae5JIXnLZcxuuNel5SKXTXRp8Wu0uygH/rqUSRlrcQ==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    bech32 "^1.1.3"
+    bs58 "^4.0.1"
+    crypto-hashing "^1.0.0"
+
 "@liquality/debug@^0.3.2":
   version "0.3.2"
   resolved "https://registry.yarnpkg.com/@liquality/debug/-/debug-0.3.2.tgz#bf9c6638ba67b657dce8a406ffc5dbce345dc97c"
@@ -1432,6 +1442,11 @@ chai-bignumber@^3.0.0:
 chai-bn@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/chai-bn/-/chai-bn-0.1.1.tgz#a8904b2dc878e5c094881f327c0029579ff2062b"
+
+chai-bn@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/chai-bn/-/chai-bn-0.2.0.tgz#7da60617531e5a8bdf9fbd5d848e693b7405a5cb"
+  integrity sha512-h+XqIFikre13N3uiZSc50PZ0VztVjuD/Gytle07EUFkbd8z31tWp37DLAsR1dPozmOLA3yu4hi3IFjJDQ5CKBg==
 
 chai@^4.2.0:
   version "4.2.0"
@@ -8480,7 +8495,6 @@ websocket@^1.0.28, "websocket@github:web3-js/WebSocket-Node#polyfill/globalThis"
   dependencies:
     debug "^2.2.0"
     es5-ext "^0.10.50"
-    gulp "^4.0.2"
     nan "^2.14.0"
     typedarray-to-buffer "^3.1.5"
     yaeti "^0.0.6"
