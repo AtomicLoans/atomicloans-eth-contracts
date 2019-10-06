@@ -152,7 +152,8 @@ module.exports = function(deployer, network, accounts) {
     console.log(`  "DAI_SALES": "${sales.address}",`)
     console.log(`  "USDC_FUNDS": "${usdcFunds.address}",`)
     console.log(`  "USDC_LOANS": "${usdcLoans.address}",`)
-    console.log(`  "USDC_SALES": "${usdcSales.address}"`)
+    console.log(`  "USDC_SALES": "${usdcSales.address}",`)
+    console.log(`  "MEDIANIZER": "${medianizer.address}"`)
     console.log('}')
   })
 };

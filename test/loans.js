@@ -316,6 +316,16 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
+    describe('withdraw', function() {
+      it('should fail trying to withdraw twice', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        await expectRevert(this.loans.withdraw(this.loan, borSecs[0], { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+    })
+
     describe('setSales', function() {
       it('should not allow setSales to be called twice', async function() {
         await expectRevert(this.loans.setSales(this.loans.address), 'VM Exception while processing transaction: revert')
