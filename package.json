@@ -15,7 +15,7 @@
     "truffle-contract": "^4.0.29",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-plugin-verify": "^0.3.3",
-    "web3": "^1.0.0-beta.55"
+    "web3": "^1.2.1"
   },
   "scripts": {
     "test": "truffle test",

@@ -29,16 +29,19 @@ module.exports = function(deployer, network, accounts) {
     await deployer.deploy(ExampleDaiCoin); // LOCAL
     var dai = await ExampleDaiCoin.deployed(); // LOCAL
     // const dai = { address: '0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99' } // KOVAN - Compound DAI Contract
+    // const dai = { address: '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359' } // MAINNET
 
     // Deploy Example USDC
     await deployer.deploy(ExampleUsdcCoin);
     var usdc = await ExampleUsdcCoin.deployed();
     // const usdc = { address: '0x6e894660985207feb7cf89faf048998c71e8ee89' } // KOVAN - Compound USDC Contract
+    // const usdc = { address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' } // MAINNET
 
     await deployer.deploy(MakerMedianizer) // LOCAL
     var makerMedianizer = await MakerMedianizer.deployed(); // LOCAL
     await makerMedianizer.poke(padLeft(numberToHex(toWei('200', 'ether')), 64)) // LOCAL
     // const makerMedianizer = { address: '0xA944bd4b25C9F186A846fd5668941AA3d3B8425F' } // KOVAN
+    // const makerMedianizer = { address: '0x729D19f657BD0614b4985Cf1D82531c67569197B' } // MAINNET
 
     // Deploy cDAI
     await deployer.deploy(DAIInterestRateModel, toWei('0.05', 'ether'), toWei('0.12', 'ether'))
@@ -97,12 +100,16 @@ module.exports = function(deployer, network, accounts) {
     // LOCAL
 
     // const cdai = { address: '0x0a1e4d0b5c71b955c0a5993023fc48ba6e380496' } // KOVAN
+    // const cdai = { address: '0xf5dce57282a584d2746faf1593d3121fcac444dc' } // MAINNET
 
     // const cusdc = { address: '0xdff375162cfe7d77473c1bec4560dede974e138c' } // KOVAN
+    // const cusdc = { address: '0x39aa39c021dfbae8fac545936693ac917d5e7563' } // MAINNET
 
     // const comptroller = { address: '0x142d11cb90a2b40f7d0c55ed1804988dfc316fae' } // KOVAN
+    // const comptroller = { address: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b' } // MAINNET
 
     // const medianizer = { address: '0x87c26fd61500fCf86dBe5DCD6E2DEcEDE70d4f82' } // KOVAN
+    // const medianizer = { address: '0x10d2f250A30Dc78f3B418730E6AAE4c1Cf695889' } // MAINNET
 
     // // Deploy Atomic Loan Contracts
     await deployer.deploy(Funds, dai.address, '18');
@@ -117,14 +124,13 @@ module.exports = function(deployer, network, accounts) {
 
     const usdcFunds = await Funds.new(usdc.address, '6')
     await usdcFunds.setCompound(cusdc.address, comptroller.address)
-
     const usdcLoans = await Loans.new(usdcFunds.address, medianizer.address, usdc.address, '6')
     const usdcSales = await Sales.new(usdcLoans.address, medianizer.address, usdc.address)
 
     await usdcFunds.setLoans(usdcLoans.address)
     await usdcLoans.setSales(usdcSales.address)
 
-    await deployer.deploy(ALCompound, comptroller.address)
+    await deployer.deploy(ALCompound, comptroller.address) // LOCAL
 
     console.log(`DAI_ADDRESS=${dai.address}`)
     console.log(`USDC_ADDRESS=${usdc.address}`)
