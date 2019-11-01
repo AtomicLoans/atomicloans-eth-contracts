@@ -42,7 +42,7 @@
     "chai-bn": "^0.2.0",
     "coveralls": "^3.0.5",
     "eth-gas-reporter": "^0.2.9",
-    "openzeppelin-test-helpers": "^0.4.1",
+    "openzeppelin-test-helpers": "^0.5.0",
     "solidity-coverage": "^0.6.3"
   }
 }
