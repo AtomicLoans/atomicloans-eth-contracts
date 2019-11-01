@@ -379,6 +379,7 @@ contract Loans is DSMath {
     	require(!off(loan));
     	require(bools[loan].funded == true);
     	require(bools[loan].approved == true);
+        require(bools[loan].withdrawn == false);
     	require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
     	require(token.transfer(loans[loan].borrower, principal(loan)));
     	bools[loan].withdrawn = true;
