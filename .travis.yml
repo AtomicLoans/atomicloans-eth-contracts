@@ -12,7 +12,6 @@ before_install:
 apt_packages:
   - bitcoind
 before_script:
-  - npm install
   - npm install -g ganache-cli
   - mkdir -p /home/travis/.bitcoin && cp bitcoin.conf /home/travis/.bitcoin/bitcoin.conf
   - bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
