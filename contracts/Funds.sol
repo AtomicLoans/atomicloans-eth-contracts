@@ -310,7 +310,7 @@ contract Funds is DSMath, ALCompound {
      * @param fund The Id of a Loan Fund
      * @return The address of the arbiter for a Loan fund
      */
-    function arbiter(bytes32 fund)   public view returns (address) {
+    function arbiter(bytes32 fund) public view returns (address) {
         return funds[fund].arbiter;
     }
 
