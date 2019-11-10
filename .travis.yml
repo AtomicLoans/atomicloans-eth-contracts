@@ -17,7 +17,7 @@ before_script:
   - bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
 script:
   - CI=false ganache-cli -k petersburg &
-  - CI=false npm run test
+  - CI=false yarn test
 after_script:
   - npx codechecks
-  - npm run coverage && cat coverage/lcov.info | coveralls
+  - yarn coverage && cat coverage/lcov.info | coveralls
