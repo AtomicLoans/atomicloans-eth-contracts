@@ -1,7 +1,7 @@
 import './InterestRateModel.sol';
 import './Exponential.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 /**
   * @title The Compound Standard Interest Rate Model with pluggable constants

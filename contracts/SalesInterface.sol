@@ -1,4 +1,4 @@
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 interface SalesInterface {
     function saleIndexByLoan(bytes32, uint256) external returns(bytes32);

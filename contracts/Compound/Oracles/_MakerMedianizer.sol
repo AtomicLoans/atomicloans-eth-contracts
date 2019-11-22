@@ -1,6 +1,6 @@
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract _MakerMedianizer {
     bool    has;

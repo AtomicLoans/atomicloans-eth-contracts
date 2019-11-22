@@ -1,4 +1,4 @@
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract _DSValue {
     // TODO: View or constant? It's clearly a view...

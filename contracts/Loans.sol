@@ -1,17 +1,23 @@
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
+import {ValidateSPV} from "@summa-tx/bitcoin-spv-sol/contracts/ValidateSPV.sol";
+import {BytesLib} from "@summa-tx/bitcoin-spv-sol/contracts/BytesLib.sol";
+import {BTCUtils} from "@summa-tx/bitcoin-spv-sol/contracts/BTCUtils.sol";
+
 import './FundsInterface.sol';
 import './SalesInterface.sol';
+import './P2SHInterface.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract Loans is DSMath {
     FundsInterface funds;
     Medianizer med;
     SalesInterface sales;
+    P2SHInterface p2sh;
 
     uint256 public constant APPROVE_EXP_THRESHOLD = 2 hours;    // approval expiration threshold
     uint256 public constant ACCEPT_EXP_THRESHOLD = 2 days;      // acceptance expiration threshold
@@ -34,6 +40,7 @@ contract Loans is DSMath {
     ERC20 public token; // ERC20 Debt Stablecoin
     uint256 public decimals;
 
+    address onDemandSpv;
     address deployer;
 
     /**
@@ -278,6 +285,26 @@ contract Loans is DSMath {
         require(address(sales) == address(0));
         sales = sales_;
     }
+
+    /**
+     * @dev Sets P2SH contract
+     * @param p2sh_ Address of P2SH contract
+     */
+    function setP2SH(P2SHInterface p2sh_) external {
+        require(msg.sender == deployer);
+        require(address(p2sh) == address(0));
+        p2sh = p2sh_;
+    }
+
+    /**
+     * @dev Sets OnDemandSpv contract address
+     * @param onDemandSpv_ Address of OnDemandSpv contract
+     */
+    function setOnDemandSpv(address onDemandSpv_) external {
+        require(msg.sender == deployer);
+        require(address(onDemandSpv) == address(0)); // TODO verify if this should be unchangeable
+        onDemandSpv = onDemandSpv_;
+    }
     
     /**
      * @notice Creates a new loan agreement
@@ -348,6 +375,14 @@ contract Loans is DSMath {
         secretHashes[loan].set          = true;
 	}
 
+    function spv(bytes32 _txid, bytes calldata _vin, bytes calldata _vout, uint256 _requestID, uint8 _inputIndex, uint8 _outputIndex) external returns (bytes memory) {
+        require(msg.sender == address(onDemandSpv));
+        // bytes memory test = BTCUtils.extractInputAtIndex(_vin, _inputIndex);
+        // return BTCUtils.extractOutpoint(test);
+
+        return BTCUtils.extractHash(BTCUtils.extractOutputAtIndex(_vout, _outputIndex));
+    }
+
     /**
      * @notice Lender sends tokens to the loan agreement
      * @param loan The Id of the Loan
@@ -382,6 +417,7 @@ contract Loans is DSMath {
         require(bools[loan].withdrawn == false);
     	require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
     	require(token.transfer(loans[loan].borrower, principal(loan)));
+        // TODO: Add request for spv proof info
     	bools[loan].withdrawn = true;
         secretHashes[loan].withdrawSecret = secretA1;
     }

@@ -1,7 +1,7 @@
 import './ComptrollerStorage.sol';
 import './ErrorReporter.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 
 /**

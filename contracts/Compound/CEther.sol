@@ -1,7 +1,7 @@
 import './CToken.sol';
 import './EIP20NonStandardInterface.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 
 /**

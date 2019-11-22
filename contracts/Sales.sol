@@ -5,7 +5,7 @@ import './Loans.sol';
 import './Medianizer.sol';
 import './DSMath.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract Sales is DSMath {
 	Loans loans;
