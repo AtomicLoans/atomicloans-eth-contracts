@@ -27,10 +27,10 @@ const BTC_TO_SAT = 10**8
 
 console.info = () => {} // Silence the Deprecation Warning
 
-const stablecoins = [ { name: 'DAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
+const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
 async function getContracts(stablecoin) {
-  if (stablecoin == 'DAI') {
+  if (stablecoin == 'SAI') {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
@@ -73,10 +73,10 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 50; // 50 DAI
-    const loanReq2 = 300; // 300 DAI
-    const loanReq3 = 400; // 400 DAI
-    const loanReq4 = 3000; // 3000 DAI
+    const loanReq = 50; // 50 SAI
+    const loanReq2 = 300; // 300 SAI
+    const loanReq3 = 400; // 400 SAI
+    const loanReq4 = 3000; // 3000 SAI
     const loanRat = 2;   // Collateralization ratio of 200%
     let col;
 

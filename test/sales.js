@@ -28,12 +28,12 @@ const WAD = 10 ** 18
 const SZABO = 10 ** 12
 
 const stablecoins = [
-  { name: 'DAI', unit: 'ether', multiplier: 1, divisor: 1, precision: 18 },
+  { name: 'SAI', unit: 'ether', multiplier: 1, divisor: 1, precision: 18 },
   { name: 'USDC', unit: 'mwei', multiplier: SZABO, divisor: WAD, precision: 10 }
 ]
 
 async function getContracts(stablecoin) {
-  if (stablecoin == 'DAI') {
+  if (stablecoin == 'SAI') {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
@@ -161,7 +161,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 5; // 5 DAI
+    const loanReq = 5; // 5 SAI
     const loanRat = 2; // Collateralization ratio of 200%
     let col;
 
