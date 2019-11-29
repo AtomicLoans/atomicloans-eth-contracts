@@ -25,10 +25,10 @@ const { toWei, fromWei } = web3.utils;
 
 const BTC_TO_SAT = 10**8
 
-const stablecoins = [ { name: 'DAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
+const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
 async function getContracts(stablecoin) {
-  if (stablecoin == 'DAI') {
+  if (stablecoin == 'SAI') {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
@@ -78,7 +78,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 1; // 5 DAI
+    const loanReq = 1; // 5 SAI
     const loanRat = 2; // Collateralization ratio of 200%
 
     let lendSecs = []

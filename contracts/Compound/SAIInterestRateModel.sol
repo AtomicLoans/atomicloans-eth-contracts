@@ -8,7 +8,7 @@ pragma solidity ^0.5.8;
   * @author Compound
   * @notice See Section 2.4 of the Compound Whitepaper
   */
-contract DAIInterestRateModel is InterestRateModel, Exponential {
+contract SAIInterestRateModel is InterestRateModel, Exponential {
     /**
      * @notice Indicator that this is an InterestRateModel contract (for inspection)
      */

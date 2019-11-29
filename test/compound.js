@@ -37,10 +37,10 @@ const RAY = 10 ** 27
 
 BN.config({ ROUNDING_MODE: BN.ROUND_DOWN })
 
-const stablecoins = [ { name: 'DAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
+const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
 async function getContracts(stablecoin, accounts) {
-  if (stablecoin == 'DAI') {
+  if (stablecoin == 'SAI') {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
@@ -112,7 +112,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 20; // 20 DAI
+    const loanReq = 20; // 20 SAI
     const loanRat = 2; // Collateralization ratio of 200%
     let col;
 
@@ -505,7 +505,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('enableCompound', function() {
-      it('should properly convert DAI to cDAI at the current exchangeRate and update token and cToken balances', async function() {
+      it('should properly convert SAI to cSAI at the current exchangeRate and update token and cToken balances', async function() {
         this.fund  = await createCompoundDisabledFund(this, arbiter, lender, toWei('100', unit))
         this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
@@ -559,7 +559,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(expectedBalanceChange, actualBalanceBefore)
       })
 
-      it('should transfer tokenMarketLiquidity to cTokenMarketLiquidity at DAI to cDAI exchangeRate', async function() {
+      it('should transfer tokenMarketLiquidity to cTokenMarketLiquidity at SAI to cSAI exchangeRate', async function() {
         this.fund  = await createCompoundDisabledFund(this, arbiter, lender, toWei('100', unit))
         this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
@@ -622,7 +622,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('disableCompound', function() {
-      it('should properly convert cDAI to DAI at the current exchangeRate and update token and cToken balances', async function() {
+      it('should properly convert cSAI to SAI at the current exchangeRate and update token and cToken balances', async function() {
         this.fund  = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
         this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
@@ -676,7 +676,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(expectedCBalanceChange, actualCBalanceBefore)
       })
 
-      it('should transfer cTokenMarketLiquidity to tokenMarketLiquidity at cDAI to DAI exchangeRate', async function() {
+      it('should transfer cTokenMarketLiquidity to tokenMarketLiquidity at cSAI to SAI exchangeRate', async function() {
         this.fund  = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
         this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
