@@ -356,6 +356,9 @@ stablecoins.forEach((stablecoin) => {
         const refundableInfo = await this.p2sh.getP2SH(this.loan, false)
         const seizableInfo = await this.p2sh.getP2SH(this.loan, true)
 
+        console.log('refundableInfo', refundableInfo)
+        console.log('seizableInfo', seizableInfo)
+
         const testRefundableP2WSH = bitcoinjs.payments.p2wsh({
           redeem: { output: Buffer.from(remove0x(refundableInfo['0']), 'hex'), network: bitcoinjs.networks.regtest },
           network: bitcoinjs.networks.regtest

@@ -6,6 +6,7 @@ const BN = require('bignumber.js')
 var ExampleDaiCoin = artifacts.require("./ExampleDaiCoin.sol");
 var ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
 var Medianizer = artifacts.require('./MedianizerExample.sol');
+var ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 var Funds = artifacts.require('./Funds.sol');
 var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
@@ -98,6 +99,9 @@ module.exports = function(deployer, network, accounts) {
     // Deploy example Medianizer
     await deployer.deploy(Medianizer);
     var medianizer = await Medianizer.deployed();
+
+    await deployer.deploy(ISPVRequestManager);
+    var onDemandSpv = await ISPVRequestManager.deployed();
     // LOCAL
 
     // const csai = { address: '0x0a1e4d0b5c71b955c0a5993023fc48ba6e380496' } // KOVAN
@@ -122,10 +126,11 @@ module.exports = function(deployer, network, accounts) {
     var sales = await Sales.deployed();
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
+    await loans.setOnDemandSpv(onDemandSpv.address);
     await deployer.deploy(P2SH, loans.address);
     var p2sh = await P2SH.deployed();
     await loans.setP2SH(p2sh.address);
-    await loans.setOnDemandSpv(accounts[9]);
+    await loans.setOnDemandSpv(onDemandSpv.address);
 
     const usdcFunds = await Funds.new(usdc.address, '6')
     await usdcFunds.setCompound(cusdc.address, comptroller.address)
