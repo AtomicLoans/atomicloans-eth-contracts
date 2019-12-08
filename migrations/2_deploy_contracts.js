@@ -28,8 +28,8 @@ module.exports = function(deployer, network, accounts) {
     // Deploy Example SAI
     // await deployer.deploy(ExampleDaiCoin); // LOCAL
     // var sai = await ExampleDaiCoin.deployed(); // LOCAL
-    const dai = { address: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa' } // KOVAN - Compound DAI Contract
-    // const sai = { address: '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359' } // MAINNET
+    // const dai = { address: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa' } // KOVAN - Compound DAI Contract
+    const dai = { address: '0x6b175474e89094c44da98b954eedeac495271d0f' } // MAINNET
 
     // Deploy Example USDC
     // await deployer.deploy(ExampleUsdcCoin);
@@ -40,8 +40,8 @@ module.exports = function(deployer, network, accounts) {
     // await deployer.deploy(MakerMedianizer) // LOCAL
     // var makerMedianizer = await MakerMedianizer.deployed(); // LOCAL
     // await makerMedianizer.poke(padLeft(numberToHex(toWei('200', 'ether')), 64)) // LOCAL
-    const makerMedianizer = { address: '0xA944bd4b25C9F186A846fd5668941AA3d3B8425F' } // KOVAN
-    // const makerMedianizer = { address: '0x729D19f657BD0614b4985Cf1D82531c67569197B' } // MAINNET
+    // const makerMedianizer = { address: '0xA944bd4b25C9F186A846fd5668941AA3d3B8425F' } // KOVAN
+    const makerMedianizer = { address: '0x729D19f657BD0614b4985Cf1D82531c67569197B' } // MAINNET
 
     // Deploy cSAI
     // await deployer.deploy(SAIInterestRateModel, toWei('0.05', 'ether'), toWei('0.12', 'ether'))
@@ -99,17 +99,17 @@ module.exports = function(deployer, network, accounts) {
     // var medianizer = await Medianizer.deployed();
     // LOCAL
 
-    const cdai = { address: '0xe7bc397dbd069fc7d0109c0636d06888bb50668c' } // KOVAN
-    // const csai = { address: '0xf5dce57282a584d2746faf1593d3121fcac444dc' } // MAINNET
+    // const cdai = { address: '0xe7bc397dbd069fc7d0109c0636d06888bb50668c' } // KOVAN
+    const cdai = { address: '0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643' } // MAINNET
 
     // const cusdc = { address: '0xdff375162cfe7d77473c1bec4560dede974e138c' } // KOVAN
     // const cusdc = { address: '0x39aa39c021dfbae8fac545936693ac917d5e7563' } // MAINNET
 
-    const comptroller = { address: '0x142d11cb90a2b40f7d0c55ed1804988dfc316fae' } // KOVAN
-    // const comptroller = { address: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b' } // MAINNET
+    // const comptroller = { address: '0x142d11cb90a2b40f7d0c55ed1804988dfc316fae' } // KOVAN
+    const comptroller = { address: '0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b' } // MAINNET
 
-    const medianizer = { address: '0x87c26fd61500fCf86dBe5DCD6E2DEcEDE70d4f82' } // KOVAN
-    // const medianizer = { address: '0x10d2f250A30Dc78f3B418730E6AAE4c1Cf695889' } // MAINNET
+    // const medianizer = { address: '0x87c26fd61500fCf86dBe5DCD6E2DEcEDE70d4f82' } // KOVAN
+    const medianizer = { address: '0x10d2f250A30Dc78f3B418730E6AAE4c1Cf695889' } // MAINNET
 
     // // Deploy Atomic Loan Contracts
     await deployer.deploy(Funds, dai.address, '18');
