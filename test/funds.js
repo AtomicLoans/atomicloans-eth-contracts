@@ -12,6 +12,8 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
+const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
+const P2SH  = artifacts.require('./P2SH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
 
 const CErc20 = artifacts.require('./CErc20.sol');
@@ -53,6 +55,12 @@ async function getContracts(stablecoin) {
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
+
+    const p2sh = await P2SH.deployed()
+    const onDemandSpv = await ISPVRequestManager.deployed()
+
+    await loans.setP2SH(p2sh.address)
+    await loans.setOnDemandSpv(onDemandSpv.address)
 
     return { funds, loans, sales, token, med }
   }
@@ -121,6 +129,8 @@ stablecoins.forEach((stablecoin) => {
       this.sales = sales
       this.token = token
       this.med = med
+
+      this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
 
       const fundParams = [
         toWei('1', unit),
@@ -241,8 +251,6 @@ stablecoins.forEach((stablecoin) => {
 
         this.fund2 = await this.funds.create.call(...fundParams)
         await this.funds.create(...fundParams)
-
-        console.log('unit', unit)
 
         // Push funds to loan fund
         await this.token.approve(this.funds.address, toWei('100', unit))

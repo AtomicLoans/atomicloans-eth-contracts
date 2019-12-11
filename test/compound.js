@@ -14,6 +14,8 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
+const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
+const P2SH  = artifacts.require('./P2SH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
 
 const CErc20 = artifacts.require('./CErc20.sol');
@@ -67,6 +69,12 @@ async function getContracts(stablecoin, accounts) {
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
+
+    const p2sh = await P2SH.deployed()
+    const onDemandSpv = await ISPVRequestManager.deployed()
+
+    await loans.setP2SH(p2sh.address)
+    await loans.setOnDemandSpv(onDemandSpv.address)
 
     return { funds, loans, sales, token, med, cErc20, cEther, comptroller }
   }
@@ -161,6 +169,8 @@ stablecoins.forEach((stablecoin) => {
       this.cErc20 = cErc20
       this.cEther = cEther
       this.comptroller = comptroller
+
+      this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
     })
 
     describe('deposit', function() {
