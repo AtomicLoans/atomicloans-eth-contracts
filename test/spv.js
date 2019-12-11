@@ -17,7 +17,7 @@ const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
 const P2SH = artifacts.require('./P2SH.sol');
-const onDemandSpv = artifacts.require('./ISPVRequestManager.sol')
+const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol')
 const Med = artifacts.require('./MedianizerExample.sol');
 
 const CErc20 = artifacts.require('./CErc20.sol');
@@ -31,18 +31,20 @@ const { toWei, fromWei, hexToNumberString } = web3.utils;
 
 const BTC_TO_SAT = 10**8
 
-const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
+// const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
+const stablecoins = [ { name: 'SAI', unit: 'ether' } ]
 
 async function getContracts(stablecoin) {
   if (stablecoin == 'SAI') {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
-    const p2sh  = await P2SH.deployed();
     const token = await ExampleCoin.deployed();
     const med   = await Med.deployed();
+    const p2sh  = await P2SH.deployed();
+    const onDemandSpv = await ISPVRequestManager.deployed()
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, token, med, p2sh, onDemandSpv }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
@@ -62,11 +64,12 @@ async function getContracts(stablecoin) {
     await loans.setSales(sales.address)
 
     const p2sh = await P2SH.new(loans.address)
+    const onDemandSpv = await ISPVRequestManager.deployed()
 
     await loans.setP2SH(p2sh.address)
     await loans.setOnDemandSpv(onDemandSpv.address)
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, token, med, p2sh, onDemandSpv }
   }
 }
 
@@ -290,13 +293,15 @@ stablecoins.forEach((stablecoin) => {
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-      const { funds, loans, sales, token, med } = await getContracts(name)
+      const { funds, loans, sales, token, med, p2sh, onDemandSpv } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
       this.token = token
       this.med = med
+      this.p2sh = p2sh
+      this.onDemandSpv = onDemandSpv
 
       this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
 
@@ -375,6 +380,13 @@ stablecoins.forEach((stablecoin) => {
         // CHECK REQUESTS THAT WERE CREATED IN ISPV request manager
         // IS A REQUEST FOREVER?
 
+
+        // get loan spv requests
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await this.loans.loanRequests.call(this.loan)
+        console.log('refundRequestIDOneConf', refundRequestIDOneConf)
+
+        const request = await this.onDemandSpv.getRequest.call(refundRequestIDOneConf)
+        console.log('request', request)
 
         // THEN ADD COLLATERAL
         // lock Bitcoin collateral into the same p2sh's with the correct refundable/seizable ratios

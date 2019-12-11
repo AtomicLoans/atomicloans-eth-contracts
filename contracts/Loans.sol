@@ -33,7 +33,7 @@ contract Loans is DSMath {
     mapping (bytes32 => PubKeys)             public pubKeys;             // Bitcoin Public Keys
     mapping (bytes32 => SecretHashes)        public secretHashes;        // Secret Hashes
     mapping (bytes32 => Bools)               public bools;               // Boolean state of Loan
-    mapping (bytes32 => LoanRequests)        public loanRequests;
+    mapping (bytes32 => LoanRequests)        public loanRequests;        // TODO rename to loan spv requests?
     mapping (bytes32 => bytes32)             public fundIndex;           // Mapping of Loan Index to Fund Index
     mapping (bytes32 => ERC20)               public tokes;               // Mapping of Loan index to Token contract
     mapping (bytes32 => uint256)             public repayments;          // Amount paid back in a Loan
