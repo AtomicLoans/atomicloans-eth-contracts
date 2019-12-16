@@ -17,11 +17,11 @@
     bitcoinjs-lib "^5.1.2"
 
 "@atomicloans/bitcoin-collateral-swap-provider@^0.3.4":
-  version "0.3.3"
-  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-swap-provider/-/bitcoin-collateral-swap-provider-0.3.3.tgz#72e8f194e979f59b308cf22abd29d06d52dfb503"
-  integrity sha512-aQv4a6ab3mJOB05V8bb6QwIVLx0L3AQMjGH3Xshuf/OQ/pUdwBa0Ub3AZ8woCegufd5GgbKZp3E5nS8IyDA0bQ==
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-swap-provider/-/bitcoin-collateral-swap-provider-0.3.4.tgz#615b4b04e78570678b8f618ebd4d88fcc6d765af"
+  integrity sha512-cODGxUO9ukpweds6v9IPWu0m6QeKgMhG1ishWz0itSCLKzQjWeiJWgtNdElNoZyK3Zz0gQq8sZ3KUBj/nksXzg==
   dependencies:
-    "@atomicloans/provider" "^0.3.3"
+    "@atomicloans/provider" "^0.3.4"
     "@babel/runtime" "^7.4.3"
     "@liquality/bitcoin-networks" "^0.4.3"
     "@liquality/bitcoin-utils" "^0.4.3"
@@ -59,7 +59,7 @@
     debug "^4.1.1"
     lodash "^4.17.11"
 
-"@atomicloans/provider@0.3.4", "@atomicloans/provider@^0.3.3", "@atomicloans/provider@^0.3.4":
+"@atomicloans/provider@0.3.4", "@atomicloans/provider@^0.3.4":
   version "0.3.4"
   resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.3.4.tgz#3aac2521d3101c8b01f095c22ac23e11fc75254e"
   integrity sha512-28ivPIO11Uq9Ov53Y1c6F5U855dgqZ/peMco6VZEQBCUDfKRM8q0cfc57ewXpcpxmnkzLJIeCe85Utpyr4RZ3w==
@@ -671,6 +671,27 @@
     "@liquality/errors" "^0.4.11"
     "@liquality/provider" "^0.4.11"
     lodash "^4.17.13"
+
+"@mblackmblack/bitcoinjs-lib@5.1.6":
+  version "5.1.6"
+  resolved "https://registry.yarnpkg.com/@mblackmblack/bitcoinjs-lib/-/bitcoinjs-lib-5.1.6.tgz#de84d1e9e10eca548f7a98029f930aab625c75af"
+  integrity sha512-W7g+F3yNCb7jeV4V2Re1hR+YDqPxJ9QQdsThQgLY4os5JZZN46RiC/E2k7H4iTaWcwT/dxxe3XBApADDfP6oOg==
+  dependencies:
+    bech32 "^1.1.2"
+    bip174 "^1.0.1"
+    bip32 "^2.0.4"
+    bip66 "^1.1.0"
+    bitcoin-ops "^1.4.0"
+    bs58check "^2.0.0"
+    create-hash "^1.1.0"
+    create-hmac "^1.1.3"
+    merkle-lib "^2.0.10"
+    pushdata-bitcoin "^1.0.1"
+    randombytes "^2.0.1"
+    tiny-secp256k1 "^1.1.1"
+    typeforce "^1.11.3"
+    varuint-bitcoin "^1.0.4"
+    wif "^2.0.1"
 
 "@mblackmblack/to-seconds@^0.1.0":
   version "0.1.0"

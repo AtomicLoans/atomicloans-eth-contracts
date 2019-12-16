@@ -1,7 +1,6 @@
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
-import {ValidateSPV} from "@summa-tx/bitcoin-spv-sol/contracts/ValidateSPV.sol";
 import {BytesLib} from "@summa-tx/bitcoin-spv-sol/contracts/BytesLib.sol";
 import {BTCUtils} from "@summa-tx/bitcoin-spv-sol/contracts/BTCUtils.sol";
 
@@ -239,6 +238,14 @@ contract Loans is DSMath {
         return collaterals[loan].seizableCollateral;
     }
 
+    function temporaryRefundableCollateral(bytes32 loan) public view returns (uint256) {
+        return temporaryCollaterals[loan].refundableCollateral;
+    }
+
+    function temporarySeizableCollateral(bytes32 loan) public view returns (uint256) {
+        return temporaryCollaterals[loan].seizableCollateral;
+    }
+
     function repaid(bytes32 loan) public view returns (uint256) { // Amount paid back for loan
         return repayments[loan];
     }
@@ -457,12 +464,6 @@ contract Loans is DSMath {
                 if (seizable) {
                     collaterals[loan].seizableCollateral = add(collaterals[loan].seizableCollateral, amount);
 
-                    // check existing refundable collaterals
-                    if (collaterals[loan].seizableCollateral >= minSeizableCollateralValue(loan)) {
-                        collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, collaterals[loan].unaccountedRefundableCollateral);
-                        collaterals[loan].unaccountedRefundableCollateral = 0;
-                    }
-
                     temporaryCollaterals[loan].seizableCollateral = sub(temporaryCollaterals[loan].seizableCollateral, amount);
                 } else {
 
@@ -499,6 +500,12 @@ contract Loans is DSMath {
                     temporaryCollaterals[loan].seizableCollateral = add(temporaryCollaterals[loan].seizableCollateral, amount);
                 } else {
                     temporaryCollaterals[loan].refundableCollateral = add(temporaryCollaterals[loan].refundableCollateral, amount);
+                }
+
+                // check existing refundable collaterals
+                if (add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= minSeizableCollateralValue(loan) && collaterals[loan].unaccountedRefundableCollateral != 0) {
+                    collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, collaterals[loan].unaccountedRefundableCollateral);
+                    collaterals[loan].unaccountedRefundableCollateral = 0;
                 }
             }
         }
@@ -677,11 +684,13 @@ contract Loans is DSMath {
         (, bytes32 refundableP2WSH) = p2sh.getP2SH(loan, false); // refundable collateral
         (, bytes32 seizableP2WSH) = p2sh.getP2SH(loan, true); // seizable collateral
 
-        uint256 refundRequestIDOneConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", refundableP2WSH), uint64(0), address(this), 1);
-        uint256 refundRequestIDSixConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", refundableP2WSH), uint64(0), address(this), 6);
+        uint256 onePercentOfCollateral = div(collateral(loan), 100);
 
-        uint256 seizeRequestIDOneConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", seizableP2WSH), uint64(0), address(this), 1);
-        uint256 seizeRequestIDSixConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", seizableP2WSH), uint64(0), address(this), 6);
+        uint256 refundRequestIDOneConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", refundableP2WSH), uint64(onePercentOfCollateral), address(this), 1);
+        uint256 refundRequestIDSixConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", refundableP2WSH), uint64(onePercentOfCollateral), address(this), 6);
+
+        uint256 seizeRequestIDOneConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", seizableP2WSH), uint64(onePercentOfCollateral), address(this), 1);
+        uint256 seizeRequestIDSixConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", seizableP2WSH), uint64(onePercentOfCollateral), address(this), 6);
 
         loanRequests[loan].refundRequestIDOneConf = refundRequestIDOneConf;
         loanRequests[loan].refundRequestIDSixConf = refundRequestIDSixConf;
