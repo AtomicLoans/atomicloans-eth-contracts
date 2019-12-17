@@ -2,12 +2,12 @@
 # yarn lockfile v1
 
 
-"@atomicloans/bitcoin-collateral-provider@^0.3.4":
-  version "0.3.4"
-  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-provider/-/bitcoin-collateral-provider-0.3.4.tgz#29d152d93983f2a6526cd2f37a7b15a820bc049d"
-  integrity sha512-QtYpVrc16hLJQXN1TJ6SSc06uBRhIPM9SQNE0eL/MbL7JvysQgroek+IIhRn77wPq1IKwj1jNd+b6gyMUQi02w==
+"@atomicloans/bitcoin-collateral-provider@^0.3.5":
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-provider/-/bitcoin-collateral-provider-0.3.5.tgz#ed10cbbdb5628b820d0abac39775d6f26b2bb2c1"
+  integrity sha512-8aE/JE8szu9aTMj7yMfB9YPowBFsR1LiQpBSd0YrfTjocLPN5EpuWzHrfU2AgC8qZvxHx/qpwLvh2/llnfjPNg==
   dependencies:
-    "@atomicloans/provider" "^0.3.4"
+    "@atomicloans/provider" "^0.3.5"
     "@babel/runtime" "^7.4.3"
     "@liquality/bitcoin-networks" "^0.4.3"
     "@liquality/bitcoin-utils" "^0.4.3"
@@ -16,12 +16,12 @@
     "@liquality/utils" "^0.4.3"
     bitcoinjs-lib "^5.1.2"
 
-"@atomicloans/bitcoin-collateral-swap-provider@^0.3.4":
-  version "0.3.4"
-  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-swap-provider/-/bitcoin-collateral-swap-provider-0.3.4.tgz#615b4b04e78570678b8f618ebd4d88fcc6d765af"
-  integrity sha512-cODGxUO9ukpweds6v9IPWu0m6QeKgMhG1ishWz0itSCLKzQjWeiJWgtNdElNoZyK3Zz0gQq8sZ3KUBj/nksXzg==
+"@atomicloans/bitcoin-collateral-swap-provider@^0.3.5":
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-swap-provider/-/bitcoin-collateral-swap-provider-0.3.5.tgz#5c2cc7115a11c5b6e8581beed4ef1d114bfd3d30"
+  integrity sha512-3o7xfZftGRJe2XDBKUZE4DBORN218et5E3nMKphNvGwIwzSAvwCRKSIKWJLJF5Df/SeFflSsD72t6cp5OKVh/Q==
   dependencies:
-    "@atomicloans/provider" "^0.3.4"
+    "@atomicloans/provider" "^0.3.5"
     "@babel/runtime" "^7.4.3"
     "@liquality/bitcoin-networks" "^0.4.3"
     "@liquality/bitcoin-utils" "^0.4.3"
@@ -30,24 +30,24 @@
     "@liquality/utils" "^0.4.3"
     bignumber.js "^9.0.0"
 
-"@atomicloans/loan-bundle@^0.3.4":
-  version "0.3.4"
-  resolved "https://registry.yarnpkg.com/@atomicloans/loan-bundle/-/loan-bundle-0.3.4.tgz#4cdc47ec6132c2218f3b4751b503f494197a14c8"
-  integrity sha512-3aKW/IPeXJI0oZoH8D6dExGFzqba7usvM3+zqj2UH60MH6+UJdRVIgbZBXuzJMl56PTERrNByqTrEKu9Gjvj9A==
+"@atomicloans/loan-bundle@0.3.5":
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/@atomicloans/loan-bundle/-/loan-bundle-0.3.5.tgz#fda9f897c3fe4eb977ce0e609dadbc36bdb7ce0b"
+  integrity sha512-O+9GMB1odYhkSS6Et6tpp249RQsXob6VsC36JQgMjkRIhf/lPb2MIoTd8jYoea+gTppdp7cEVtcaFOP4SZeM8w==
   dependencies:
-    "@atomicloans/bitcoin-collateral-provider" "^0.3.4"
-    "@atomicloans/bitcoin-collateral-swap-provider" "^0.3.4"
-    "@atomicloans/loan-client" "^0.3.4"
+    "@atomicloans/bitcoin-collateral-provider" "^0.3.5"
+    "@atomicloans/bitcoin-collateral-swap-provider" "^0.3.5"
+    "@atomicloans/loan-client" "^0.3.5"
     "@babel/runtime" "^7.4.3"
-    "@ledgerhq/hw-transport-web-ble" "^4.57.0"
-    "@ledgerhq/hw-transport-webusb" "^4.57.0"
+    "@ledgerhq/hw-transport-web-ble" "^5.0.0"
+    "@ledgerhq/hw-transport-webusb" "^5.0.0"
     axios "^0.19.0"
     json-bigint "^0.3.0"
 
-"@atomicloans/loan-client@^0.3.4":
-  version "0.3.4"
-  resolved "https://registry.yarnpkg.com/@atomicloans/loan-client/-/loan-client-0.3.4.tgz#aeb1bc7561d6f8785533b819ab9ac566a9c4943f"
-  integrity sha512-j1bm/1ta7UuyKfEycrVyUWJ0e4SLRHKrLjlOmg5SD1Yp199o7hO4z9kBQEBmudSk3DapBQoch9ud4ooWOTvHFw==
+"@atomicloans/loan-client@^0.3.5":
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/@atomicloans/loan-client/-/loan-client-0.3.5.tgz#7c72c3f95ab266e3355b81da6329534abb86021b"
+  integrity sha512-mtVS9FRYLlp4SHqwHG4M+rVx7b/X7d/O6gI5PNYZiSXGmQaPTYZfuK9/MbQjqXQfR3Nn2KKI1NkQyb4P05cD/w==
   dependencies:
     "@babel/runtime" "^7.4.3"
     "@liquality/client" "^0.4.3"
@@ -59,10 +59,10 @@
     debug "^4.1.1"
     lodash "^4.17.11"
 
-"@atomicloans/provider@0.3.4", "@atomicloans/provider@^0.3.4":
-  version "0.3.4"
-  resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.3.4.tgz#3aac2521d3101c8b01f095c22ac23e11fc75254e"
-  integrity sha512-28ivPIO11Uq9Ov53Y1c6F5U855dgqZ/peMco6VZEQBCUDfKRM8q0cfc57ewXpcpxmnkzLJIeCe85Utpyr4RZ3w==
+"@atomicloans/provider@0.3.5", "@atomicloans/provider@^0.3.5":
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.3.5.tgz#47f9318d779c8c6dbecd29ca179aa2dbf9127c5b"
+  integrity sha512-dtVNGF7s9H0wHEQgWq5u+0tU15HIqfM750zIHKk0l+9EObq9oYzvgdHZYyQSXKvne95H5+Q5T5k9Hl8r89AGFQ==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
@@ -213,10 +213,24 @@
     "@ledgerhq/logs" "^4.72.0"
     rxjs "^6.5.3"
 
+"@ledgerhq/devices@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/devices/-/devices-5.0.0.tgz#4bc83d8b088e9596896f90c10a4403e5edd954b0"
+  integrity sha512-wEnf2RMFELgj4q1ApG2bNzyobYgeX3Jl92FA8af/1VfcBB9esApFAO8cuE7aQruv2S6k5sTR5RMMnomrS9myiw==
+  dependencies:
+    "@ledgerhq/errors" "^5.0.0"
+    "@ledgerhq/logs" "^5.0.0"
+    rxjs "^6.5.3"
+
 "@ledgerhq/errors@^4.78.0":
   version "4.78.0"
   resolved "https://registry.yarnpkg.com/@ledgerhq/errors/-/errors-4.78.0.tgz#23daf3af54d03b1bda3e616002b555da1bdb705a"
   integrity sha512-FX6zHZeiNtegBvXabK6M5dJ+8OV8kQGGaGtuXDeK/Ss5EmG4Ltxc6Lnhe8hiHpm9pCHtktOsnUVL7IFBdHhYUg==
+
+"@ledgerhq/errors@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/errors/-/errors-5.0.0.tgz#b4a9970f070b2fc9145a32c6f730694925600d9d"
+  integrity sha512-sguPj6FeYOdkjuQEBfZSM6j5xYBk9RK1L9AfkLlO0zXSYHFZ+9OAlTA6Q0d5W7xmktx+32tUYxiT+JQ9WaeGmw==
 
 "@ledgerhq/hw-app-btc@^4.68.2":
   version "4.78.0"
@@ -269,7 +283,7 @@
     "@ledgerhq/logs" "^4.72.0"
     u2f-api "0.2.7"
 
-"@ledgerhq/hw-transport-web-ble@^4.56.0", "@ledgerhq/hw-transport-web-ble@^4.57.0":
+"@ledgerhq/hw-transport-web-ble@^4.56.0":
   version "4.78.0"
   resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport-web-ble/-/hw-transport-web-ble-4.78.0.tgz#a13a9a292c0e7575808fcf4748052b5629283230"
   integrity sha512-YOdVCPPg5gloTfZyLIU2ra4x/4iyU9exuD5M9P7z3Q84+q24cWi0ddDNmLsXCINr8UOuGa/M5lay/Rt5XzBRyg==
@@ -280,7 +294,18 @@
     "@ledgerhq/logs" "^4.72.0"
     rxjs "^6.5.3"
 
-"@ledgerhq/hw-transport-webusb@^4.56.0", "@ledgerhq/hw-transport-webusb@^4.57.0":
+"@ledgerhq/hw-transport-web-ble@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport-web-ble/-/hw-transport-web-ble-5.0.0.tgz#a14fa43e7cc7aa2ca7efe6ea81e300789fea77f6"
+  integrity sha512-Sb8EGfqtUye+OjMkeO9OcSnVQG9ObTeKHNAjqhTaGKnSIJ0B6gbuxyOMhg9eeDrJU2YkCIu9j+AY0m+/dDTD9g==
+  dependencies:
+    "@ledgerhq/devices" "^5.0.0"
+    "@ledgerhq/errors" "^5.0.0"
+    "@ledgerhq/hw-transport" "^5.0.0"
+    "@ledgerhq/logs" "^5.0.0"
+    rxjs "^6.5.3"
+
+"@ledgerhq/hw-transport-webusb@^4.56.0":
   version "4.78.0"
   resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport-webusb/-/hw-transport-webusb-4.78.0.tgz#821903d7f0366ee599235e6ef5730cdd754f63d6"
   integrity sha512-od5dp15PDYamlcJci5mD1TgjN0gva3ed1eZ0oXd4/CJwAz5Q+IoyTZnVq03UX1U+0ShF5QqnqAMxsK4YWkVwsw==
@@ -289,6 +314,16 @@
     "@ledgerhq/errors" "^4.78.0"
     "@ledgerhq/hw-transport" "^4.78.0"
     "@ledgerhq/logs" "^4.72.0"
+
+"@ledgerhq/hw-transport-webusb@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport-webusb/-/hw-transport-webusb-5.0.0.tgz#b7c6e466c3405c3fe0714be9801078a14b6ffe92"
+  integrity sha512-NtW3uohnS5TLno/BVOcsEF3+YCaHb94XSmGHELs9Jdym/qBwoFA96Cnjsid4EvUbUd2YYUEeuN5eMzm6D5tfZQ==
+  dependencies:
+    "@ledgerhq/devices" "^5.0.0"
+    "@ledgerhq/errors" "^5.0.0"
+    "@ledgerhq/hw-transport" "^5.0.0"
+    "@ledgerhq/logs" "^5.0.0"
 
 "@ledgerhq/hw-transport@^4.78.0":
   version "4.78.0"
@@ -299,10 +334,24 @@
     "@ledgerhq/errors" "^4.78.0"
     events "^3.0.0"
 
+"@ledgerhq/hw-transport@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/hw-transport/-/hw-transport-5.0.0.tgz#33d64f9a5d696e6bf7da4c1a75455598a1cfae08"
+  integrity sha512-TS2h3RmFQj6igKGfE8ThN1Mk8+w4lK+xHvrDUymkJHzbQhboRTGcgp6psg5F3L2ZYKIq8Q3NFDSqhfygI2ZFqg==
+  dependencies:
+    "@ledgerhq/devices" "^5.0.0"
+    "@ledgerhq/errors" "^5.0.0"
+    events "^3.0.0"
+
 "@ledgerhq/logs@^4.72.0":
   version "4.72.0"
   resolved "https://registry.yarnpkg.com/@ledgerhq/logs/-/logs-4.72.0.tgz#43df23af013ad1135407e5cf33ca6e4c4c7708d5"
   integrity sha512-o+TYF8vBcyySRsb2kqBDv/KMeme8a2nwWoG+lAWzbDmWfb2/MrVWYCVYDYvjXdSoI/Cujqy1i0gIDrkdxa9chA==
+
+"@ledgerhq/logs@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@ledgerhq/logs/-/logs-5.0.0.tgz#c019eb71269e7a79b7772c00e1c28a65b145a2fb"
+  integrity sha512-+Rgnp0T5ximUUwEUCSRbJNTdfVFrchO7sqY4MtVChXSMqu8vvzeg9KKakAE6t9IKEnoQ7aaG/BIEDtLXvrgRBQ==
 
 "@liquality/bitcoin-esplora-api-provider@^0.4.11":
   version "0.4.11"

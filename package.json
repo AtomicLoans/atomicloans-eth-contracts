@@ -36,8 +36,8 @@
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {
-    "@atomicloans/loan-bundle": "^0.3.4",
-    "@atomicloans/provider": "0.3.4",
+    "@atomicloans/loan-bundle": "0.3.5",
+    "@atomicloans/provider": "0.3.5",
     "@codechecks/client": "^0.1.5",
     "@liquality/bundle": "0.4.11",
     "bitcoinjs-lib": "^5.1.3",
