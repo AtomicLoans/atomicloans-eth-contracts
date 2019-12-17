@@ -446,7 +446,11 @@ contract Loans is DSMath {
         secretHashes[loan].set          = true;
 	}
 
-    function spv(bytes32 _txid, bytes calldata _vin, bytes calldata _vout, uint256 _requestID, uint8 _inputIndex, uint8 _outputIndex) external {
+    /**
+     * @notice Consumer for Bitcoin transaction information
+     * @dev Handles Bitcoin events that have been validated by the Relay contract (Summa)
+     */
+    function spv(bytes32, bytes calldata, bytes calldata _vout, uint256 _requestID, uint8, uint8 _outputIndex) external {
         require(msg.sender == address(onDemandSpv));
 
         bytes memory outputAtIndex = BTCUtils.extractOutputAtIndex(_vout, _outputIndex);

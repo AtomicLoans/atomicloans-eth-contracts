@@ -1,7 +1,7 @@
 pragma solidity ^0.5.10;
 
 contract Bytes {
-    function scriptNumSize(uint256 i) public view returns (uint256) {
+    function scriptNumSize(uint256 i) public pure returns (uint256) {
         if      (i > 0x7fffffff) { return 5; }
         else if (i > 0x7fffff  ) { return 4; }
         else if (i > 0x7fff    ) { return 3; }
@@ -10,11 +10,11 @@ contract Bytes {
         else                     { return 0; }
     }
 
-    function scriptNumSizeHex(uint256 i) public view returns (bytes memory) {
+    function scriptNumSizeHex(uint256 i) public pure returns (bytes memory) {
         return toBytes(scriptNumSize(i));
     }
 
-    function toBytes(uint256 x) public view returns (bytes memory b) {
+    function toBytes(uint256 x) public pure returns (bytes memory b) {
         uint a = scriptNumSize(x);
         b = new bytes(a);
         for (uint i = 0; i < a; i++) {
@@ -22,7 +22,7 @@ contract Bytes {
         }
     }
 
-    function scriptNumEncode(uint256 num) public view returns (bytes memory) {
+    function scriptNumEncode(uint256 num) public pure returns (bytes memory) {
         uint a = scriptNumSize(num);
         bytes memory b = toBytes(num);
         for (uint i = 0; i < (a/2); i++) {

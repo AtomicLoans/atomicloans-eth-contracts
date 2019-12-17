@@ -10,6 +10,7 @@ contract MedianizerExample {
     }
     function read() public returns (bytes32) {
         (bytes32 wut, bool has_) = peek();
+        has_ = true;
         assert(has_);
         return wut;
     }
