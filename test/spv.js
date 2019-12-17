@@ -290,7 +290,7 @@ async function collateralUnlockChecks(borBTCBalanceBefore, borBTCBalanceAfter, c
 stablecoins.forEach((stablecoin) => {
   const { name, unit } = stablecoin
 
-  contract(`${name} End to end (BTC/ETH)`, accounts => {
+  contract(`${name} Spv`, accounts => {
     const lender = accounts[0]
     const borrower = accounts[1]
     const arbiter = accounts[2]

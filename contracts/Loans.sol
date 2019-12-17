@@ -448,7 +448,16 @@ contract Loans is DSMath {
 
     /**
      * @notice Consumer for Bitcoin transaction information
-     * @dev Handles Bitcoin events that have been validated by the Relay contract (Summa)
+     * @dev Handles Bitcoin events that have been validated by the Relay contract (onDemandSpv by Summa)
+     * @param _vout        The length-prefixed output vector of the bitcoin tx
+     *                     that triggered the notification.
+     * @param _requestID   The ID of the event request that this notification
+     *                     satisfies. The ID is returned by
+     *                     OnDemandSPV.request and should be locally stored by
+     *                     any contract that makes more than one request.
+     * @param _outputIndex The index of the output in the _vout that triggered
+     *                     the notification. Useful for subscribing to transactions
+     *                     that spend the newly-created UTXO.
      */
     function spv(bytes32, bytes calldata, bytes calldata _vout, uint256 _requestID, uint8, uint8 _outputIndex) external {
         require(msg.sender == address(onDemandSpv));

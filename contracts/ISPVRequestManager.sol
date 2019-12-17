@@ -41,6 +41,8 @@ interface ISPVConsumer {
       uint8 _outputIndex) external;
 }
 
+// NOTE: This contract is for testing purposes only
+
 contract ISPVRequestManager is DSMath {
 
   mapping (uint256 => Request) public requests;
@@ -152,14 +154,23 @@ contract ISPVRequestManager is DSMath {
     return true;
   }
 
-  // function spv(
-  //       bytes32 _txid,
-  //       bytes calldata _vin,
-  //       bytes calldata _vout,
-  //       uint256 _requestID,
-  //       uint8 _inputIndex,
-  //       uint8 _outputIndex) external;
-
+  /// @notice             Fill an active bitcoin event request.
+  /// @param _txid        The LE(!) txid of the bitcoin transaction that
+  ///                     triggered the notification.
+  /// @param _vin         The length-prefixed input vector of the bitcoin tx
+  ///                     that triggered the notification.
+  /// @param _vout        The length-prefixed output vector of the bitcoin tx
+  ///                     that triggered the notification.
+  /// @param _requestID   The ID of the event request that this notification
+  ///                     satisfies. The ID is returned by
+  ///                     OnDemandSPV.request and should be locally stored by
+  ///                     any contract that makes more than one request.
+  /// @param _inputIndex  The index of the input in the _vin that triggered
+  ///                     the notification.
+  /// @param _outputIndex The index of the output in the _vout that triggered
+  ///                     the notification. Useful for subscribing to transactions
+  ///                     that spend the newly-created UTXO.
+  /// @return             True if succesful, error otherwise
   function fillRequest(
     bytes32 _txid,
     bytes calldata _vin,
