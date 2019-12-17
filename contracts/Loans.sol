@@ -6,7 +6,7 @@ import {BTCUtils} from "@summa-tx/bitcoin-spv-sol/contracts/BTCUtils.sol";
 
 import './FundsInterface.sol';
 import './SalesInterface.sol';
-import './P2SHInterface.sol';
+import './P2WSHInterface.sol';
 import './ISPVInterfaces.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
@@ -17,7 +17,7 @@ contract Loans is DSMath {
     FundsInterface funds;
     Medianizer med;
     SalesInterface sales;
-    P2SHInterface p2sh;
+    P2WSHInterface p2wsh;
     ISPVRequestManager onDemandSpv;
 
     uint256 public constant APPROVE_EXP_THRESHOLD = 2 hours;    // approval expiration threshold
@@ -101,7 +101,7 @@ contract Loans is DSMath {
      *
      *         Note: This struct is unnecessary for the Ethereum
      *               contract itself, but is used as a point of 
-     *               reference for generating the correct P2SH for
+     *               reference for generating the correct P2WSH for
      *               locking Bitcoin collateral
      */
     struct PubKeys {
@@ -356,13 +356,13 @@ contract Loans is DSMath {
     }
 
     /**
-     * @dev Sets P2SH contract
-     * @param p2sh_ Address of P2SH contract
+     * @dev Sets P2WSH contract
+     * @param p2wsh_ Address of P2WSH contract
      */
-    function setP2SH(P2SHInterface p2sh_) external {
+    function setP2WSH(P2WSHInterface p2wsh_) external {
         require(msg.sender == deployer);
-        require(address(p2sh) == address(0));
-        p2sh = p2sh_;
+        require(address(p2wsh) == address(0));
+        p2wsh = p2wsh_;
     }
 
     /**
@@ -694,8 +694,8 @@ contract Loans is DSMath {
     }
 
     function requestSpv(bytes32 loan) internal {
-        (, bytes32 refundableP2WSH) = p2sh.getP2SH(loan, false); // refundable collateral
-        (, bytes32 seizableP2WSH) = p2sh.getP2SH(loan, true); // seizable collateral
+        (, bytes32 refundableP2WSH) = p2wsh.getP2WSH(loan, false); // refundable collateral
+        (, bytes32 seizableP2WSH) = p2wsh.getP2WSH(loan, true); // seizable collateral
 
         uint256 onePercentOfCollateral = div(collateral(loan), 100);
 

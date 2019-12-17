@@ -16,7 +16,7 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
-const P2SH = artifacts.require('./P2SH.sol');
+const P2WSH = artifacts.require('./P2WSH.sol');
 const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol')
 const Med = artifacts.require('./MedianizerExample.sol');
 
@@ -31,8 +31,7 @@ const { toWei, fromWei, hexToNumberString } = web3.utils;
 
 const BTC_TO_SAT = 10**8
 
-// const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
-const stablecoins = [ { name: 'SAI', unit: 'ether' } ]
+const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
 async function getContracts(stablecoin) {
   if (stablecoin == 'SAI') {
@@ -41,10 +40,10 @@ async function getContracts(stablecoin) {
     const sales = await Sales.deployed();
     const token = await ExampleCoin.deployed();
     const med   = await Med.deployed();
-    const p2sh  = await P2SH.deployed();
+    const p2wsh  = await P2WSH.deployed();
     const onDemandSpv = await ISPVRequestManager.deployed()
 
-    return { funds, loans, sales, token, med, p2sh, onDemandSpv }
+    return { funds, loans, sales, token, med, p2wsh, onDemandSpv }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
@@ -63,13 +62,13 @@ async function getContracts(stablecoin) {
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
 
-    const p2sh = await P2SH.new(loans.address)
+    const p2wsh = await P2WSH.new(loans.address)
     const onDemandSpv = await ISPVRequestManager.deployed()
 
-    await loans.setP2SH(p2sh.address)
+    await loans.setP2WSH(p2wsh.address)
     await loans.setOnDemandSpv(onDemandSpv.address)
 
-    return { funds, loans, sales, token, med, p2sh, onDemandSpv }
+    return { funds, loans, sales, token, med, p2wsh, onDemandSpv }
   }
 }
 
@@ -384,14 +383,14 @@ stablecoins.forEach((stablecoin) => {
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-      const { funds, loans, sales, token, med, p2sh, onDemandSpv } = await getContracts(name)
+      const { funds, loans, sales, token, med, p2wsh, onDemandSpv } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
       this.token = token
       this.med = med
-      this.p2sh = p2sh
+      this.p2wsh = p2wsh
       this.onDemandSpv = onDemandSpv
 
       await this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))

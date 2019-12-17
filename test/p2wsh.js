@@ -16,7 +16,7 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
-const P2SH = artifacts.require('./P2SH.sol');
+const P2WSH = artifacts.require('./P2WSH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
 
 const CErc20 = artifacts.require('./CErc20.sol');
@@ -37,11 +37,11 @@ async function getContracts(stablecoin) {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
-    const p2sh = await P2SH.deployed();
+    const p2wsh = await P2WSH.deployed();
     const token = await ExampleCoin.deployed();
     const med   = await Med.deployed();
 
-    return { funds, loans, sales, p2sh, token, med }
+    return { funds, loans, sales, p2wsh, token, med }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
@@ -192,7 +192,7 @@ async function getSwapSecrets(contract, instance) {
 stablecoins.forEach((stablecoin) => {
   const { name, unit } = stablecoin
 
-  contract(`${name} P2SH`, accounts => {
+  contract(`${name} P2WSH`, accounts => {
     const lender = accounts[0]
     const borrower = accounts[1]
     const arbiter = accounts[2]
@@ -284,12 +284,12 @@ stablecoins.forEach((stablecoin) => {
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-      const { funds, loans, sales, p2sh, token, med } = await getContracts(name)
+      const { funds, loans, sales, p2wsh, token, med } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
-      this.p2sh  = p2sh
+      this.p2wsh  = p2wsh
       this.token = token
       this.med = med
 
@@ -353,8 +353,8 @@ stablecoins.forEach((stablecoin) => {
         const lockAddressParams = [colParams.pubKeys, colParams.secretHashes, colParams.expirations]
         const lockAddresses = await bitcoin.client.loan.collateral.getLockAddresses(...lockAddressParams)
 
-        const refundableInfo = await this.p2sh.getP2SH(this.loan, false)
-        const seizableInfo = await this.p2sh.getP2SH(this.loan, true)
+        const refundableInfo = await this.p2wsh.getP2WSH(this.loan, false)
+        const seizableInfo = await this.p2wsh.getP2WSH(this.loan, true)
 
         const testRefundableP2WSH = bitcoinjs.payments.p2wsh({
           redeem: { output: Buffer.from(remove0x(refundableInfo['0']), 'hex'), network: bitcoinjs.networks.regtest },

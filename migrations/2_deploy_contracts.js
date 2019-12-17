@@ -10,7 +10,7 @@ var ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 var Funds = artifacts.require('./Funds.sol');
 var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
-var P2SH  = artifacts.require('./P2SH.sol');
+var P2WSH  = artifacts.require('./P2WSH.sol');
 
 var SAIInterestRateModel = artifacts.require('./SAIInterestRateModel.sol')
 var USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
@@ -127,9 +127,9 @@ module.exports = function(deployer, network, accounts) {
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
     await loans.setOnDemandSpv(onDemandSpv.address);
-    await deployer.deploy(P2SH, loans.address);
-    var p2sh = await P2SH.deployed();
-    await loans.setP2SH(p2sh.address);
+    await deployer.deploy(P2WSH, loans.address);
+    var p2wsh = await P2WSH.deployed();
+    await loans.setP2WSH(p2wsh.address);
     await loans.setOnDemandSpv(onDemandSpv.address);
 
     const usdcFunds = await Funds.new(usdc.address, '6')

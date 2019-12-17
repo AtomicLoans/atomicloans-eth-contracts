@@ -3,14 +3,14 @@ import './Loans.sol';
 
 pragma solidity ^0.5.10;
 
-contract P2SH is Bytes {
+contract P2WSH is Bytes {
   Loans loans;
 
   constructor(Loans loans_) public {
     loans = loans_;
   }
 
-  function loanPeriodP2SH(bytes32 loan, bytes memory script) internal view returns (bytes memory) {
+  function loanPeriodP2WSH(bytes32 loan, bytes memory script) internal view returns (bytes memory) {
     (, bytes32 secretHashB1, bytes32 secretHashC1, , ,) = loans.secretHashes(loan);
     (bytes memory borrowerPubKey, ,) = loans.pubKeys(loan);
 
@@ -29,7 +29,7 @@ contract P2SH is Bytes {
     return result;
   }
 
-  function biddingPeriodSigP2SH(bytes32 loan) internal view returns (bytes memory) {
+  function biddingPeriodSigP2WSH(bytes32 loan) internal view returns (bytes memory) {
     (bytes memory borrowerPubKey, bytes memory lenderPubKey, bytes memory arbiterPubKey) = loans.pubKeys(loan);
 
     bytes memory result = abi.encodePacked(
@@ -46,10 +46,10 @@ contract P2SH is Bytes {
     return result;
   }
 
-  function biddingPeriodP2SH(bytes32 loan, bytes memory script) internal view returns (bytes memory) {
+  function biddingPeriodP2WSH(bytes32 loan, bytes memory script) internal view returns (bytes memory) {
     bytes memory result = abi.encodePacked(
       hex"63", // OP_IF
-      biddingPeriodSigP2SH(loan),
+      biddingPeriodSigP2WSH(loan),
       hex"67", // OP_ELSE
       script,
       hex"68" // OP_ENDIF
@@ -58,7 +58,7 @@ contract P2SH is Bytes {
     return result;
   }
 
-  function seizurePeriodSechP2SH(bytes32 loan) internal view returns (bytes memory) {
+  function seizurePeriodSechP2WSH(bytes32 loan) internal view returns (bytes memory) {
     (bytes32 secretHashA1,,,,,) = loans.secretHashes(loan);
     uint256 liquidationExpiration = loans.liquidationExpiration(loan);
 
@@ -74,7 +74,7 @@ contract P2SH is Bytes {
     return result;
   }
 
-  function seizurePeriodP2SH(bytes32 loan, bytes memory script, bool sez) internal view returns (bytes memory) {
+  function seizurePeriodP2WSH(bytes32 loan, bytes memory script, bool sez) internal view returns (bytes memory) {
     (bytes memory borrowerPubKey, bytes memory lenderPubKey, ) = loans.pubKeys(loan);
 
     bytes memory pubKey;
@@ -87,7 +87,7 @@ contract P2SH is Bytes {
 
     bytes memory result = abi.encodePacked(
       hex"63", // OP_IF
-      seizurePeriodSechP2SH(loan),
+      seizurePeriodSechP2WSH(loan),
       hex"76a914", // OP_DUP OP_HASH160 OP_PUSHDATA(20)
       ripemd160(abi.encodePacked(sha256(pubKey))),
       hex"88ac67", // OP_EQUALVERIFY OP_CHECKSIG OP_ELSE
@@ -98,7 +98,7 @@ contract P2SH is Bytes {
     return result;
   }
 
-  function refundablePeriodP2SH(bytes32 loan) internal view returns (bytes memory) {
+  function refundablePeriodP2WSH(bytes32 loan) internal view returns (bytes memory) {
     (bytes memory borrowerPubKey, , ) = loans.pubKeys(loan);
     uint256 seizureExpiration = loans.seizureExpiration(loan);
 
@@ -113,8 +113,8 @@ contract P2SH is Bytes {
     return result;
   }
 
-  function getP2SH(bytes32 loan, bool sez) public view returns (bytes memory, bytes32) {
-    bytes memory script = loanPeriodP2SH(loan, biddingPeriodP2SH(loan, seizurePeriodP2SH(loan, refundablePeriodP2SH(loan), sez)));
+  function getP2WSH(bytes32 loan, bool sez) public view returns (bytes memory, bytes32) {
+    bytes memory script = loanPeriodP2WSH(loan, biddingPeriodP2WSH(loan, seizurePeriodP2WSH(loan, refundablePeriodP2WSH(loan), sez)));
     bytes32 pubkh = sha256(script);
 
     return (script, pubkh);

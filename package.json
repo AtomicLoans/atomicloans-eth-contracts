@@ -32,7 +32,7 @@
     "test:interest_increase": "truffle test ./test/interestIncrease.js",
     "test:interest_decrease": "truffle test ./test/interestDecrease.js",
     "test:spv": "truffle test ./test/spv.js",
-    "test:p2sh": "truffle test ./test/p2sh.js",
+    "test:p2wsh": "truffle test ./test/p2wsh.js",
     "coverage": "npx solidity-coverage"
   },
   "devDependencies": {
