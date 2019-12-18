@@ -4,7 +4,7 @@ import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import './Loans.sol';
 import './ALCompound.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract Funds is DSMath, ALCompound {
     Loans loans;

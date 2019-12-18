@@ -1,7 +1,7 @@
 import './_ErrorReporter.sol';
 import './_CarefulMath.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract _Exponential is _ErrorReporter, _CarefulMath {
 

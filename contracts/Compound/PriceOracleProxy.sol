@@ -2,7 +2,7 @@ import './Comptroller.sol';
 import './PriceOracle.sol';
 import './CErc20.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 interface V1PriceOracleInterface {
     function assetPrices(address asset) external view returns (uint);

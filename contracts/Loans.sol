@@ -1,35 +1,56 @@
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
+import {BytesLib} from "@summa-tx/bitcoin-spv-sol/contracts/BytesLib.sol";
+import {BTCUtils} from "@summa-tx/bitcoin-spv-sol/contracts/BTCUtils.sol";
+
 import './FundsInterface.sol';
 import './SalesInterface.sol';
+import './P2WSHInterface.sol';
+import './ISPVInterfaces.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract Loans is DSMath {
     FundsInterface funds;
     Medianizer med;
     SalesInterface sales;
+    P2WSHInterface p2wsh;
+    ISPVRequestManager onDemandSpv;
 
     uint256 public constant APPROVE_EXP_THRESHOLD = 2 hours;    // approval expiration threshold
     uint256 public constant ACCEPT_EXP_THRESHOLD = 2 days;      // acceptance expiration threshold
     uint256 public constant LIQUIDATION_EXP_THRESHOLD = 7 days; // liquidation expiration threshold
     uint256 public constant SEIZURE_EXP_THRESHOLD = 2 days;     // seizable expiration threshold
     uint256 public constant LIQUIDATION_DISCOUNT = 930000000000000000; // 93% (7% discount)
+    uint256 public constant ADD_COLLATERAL_EXPIRY = 4 hours;
 
-    mapping (bytes32 => Loan)         public loans;
-    mapping (bytes32 => PubKeys)      public pubKeys;      // PubKeys
-    mapping (bytes32 => SecretHashes) public secretHashes; // Secret Hashes
-    mapping (bytes32 => Bools)        public bools;        // Boolean state of Loan
-    mapping (bytes32 => bytes32)      public fundIndex;    // Mapping of Loan Index to Fund Index
-    mapping (bytes32 => ERC20)        public tokes;        // Mapping of Loan index to Token contract
-    mapping (bytes32 => uint256)      public repayments;   // Amount paid back in a Loan
-    uint256                           public loanIndex;    // Current Loan Index
+    mapping (bytes32 => Loan)                public loans;
+    mapping (bytes32 => Collateral)          public collaterals;
+    mapping (bytes32 => PubKeys)             public pubKeys;             // Bitcoin Public Keys
+    mapping (bytes32 => SecretHashes)        public secretHashes;        // Secret Hashes
+    mapping (bytes32 => Bools)               public bools;               // Boolean state of Loan
+    mapping (bytes32 => LoanRequests)        public loanRequests;        // TODO rename to loan spv requests?
+    mapping (bytes32 => bytes32)             public fundIndex;           // Mapping of Loan Index to Fund Index
+    mapping (bytes32 => ERC20)               public tokes;               // Mapping of Loan index to Token contract
+    mapping (bytes32 => uint256)             public repayments;          // Amount paid back in a Loan
+    uint256                                  public loanIndex;           // Current Loan Index
 
-    mapping (address => bytes32[])    public borrowerLoans;
-    mapping (address => bytes32[])    public lenderLoans;
+    mapping (address => bytes32[])           public borrowerLoans;
+    mapping (address => bytes32[])           public lenderLoans;
+
+    mapping (uint256 => RequestDetails)      public requestsDetails;
+    mapping (uint256 => bool)                public requestsValid;
+
+    mapping (uint256 => uint256)             public finalRequestToInitialRequest;
+
+    mapping (bytes32 => Collateral)                            public temporaryCollaterals;
+    mapping (bytes32 => mapping(uint256 => CollateralDeposit)) public collateralDeposits;
+    mapping (bytes32 => uint256)                               public collateralDepositIndex;
+    mapping (bytes32 => uint256)                               public collateralDepositFinalizedIndex;
+
 
     ERC20 public token; // ERC20 Debt Stablecoin
     uint256 public decimals;
@@ -66,6 +87,12 @@ contract Loans is DSMath {
         uint256 liquidationRatio;
     }
 
+    struct Collateral {
+        uint256 refundableCollateral;
+        uint256 seizableCollateral;
+        uint256 unaccountedRefundableCollateral; // Refundable Collateral that has been added but not accounted for because the minimum seizable collateral has not been achieved
+    }
+
     /**
      * @notice Container for Bitcoin public key information
      * @member borrowerPubKey Borrower Bitcoin Public Key
@@ -74,7 +101,7 @@ contract Loans is DSMath {
      *
      *         Note: This struct is unnecessary for the Ethereum
      *               contract itself, but is used as a point of 
-     *               reference for generating the correct P2SH for
+     *               reference for generating the correct P2WSH for
      *               locking Bitcoin collateral
      */
     struct PubKeys {
@@ -125,6 +152,27 @@ contract Loans is DSMath {
     	bool off;
     }
 
+    struct CollateralDeposit {
+        uint256 amount;
+        bool    finalized; // 6 confirmations
+        bool    seizable;
+        uint256 expiry;
+    }
+
+    struct RequestDetails {
+        bytes32 loan;
+        bool    finalized; // 6 confirmations?
+        bool    seizable;
+        bytes32 p2wshAddress;
+    }
+
+    struct LoanRequests {
+        uint256 refundRequestIDOneConf;
+        uint256 refundRequestIDSixConf;
+        uint256 seizeRequestIDOneConf;
+        uint256 seizeRequestIDSixConf;
+    }
+
     event Create(bytes32 loan);
 
     function borrower(bytes32 loan) public view returns (address) {
@@ -142,8 +190,6 @@ contract Loans is DSMath {
     function approveExpiration(bytes32 loan) public view returns (uint256) { // Approval Expiration
         return add(loans[loan].createdAt, APPROVE_EXP_THRESHOLD);
     }
-
-    // TODO: add loanExpiration
 
     function acceptExpiration(bytes32 loan) public view returns (uint256) { // Acceptance Expiration
         return add(loans[loan].loanExpiration, ACCEPT_EXP_THRESHOLD);
@@ -174,7 +220,30 @@ contract Loans is DSMath {
     }
 
     function collateral(bytes32 loan) public view returns (uint256) {
-        return loans[loan].collateral;
+        // check if collateralDepositIndex == collateralDepositFinalizedIndex
+        if (collateralDepositIndex[loan] != collateralDepositFinalizedIndex[loan] &&
+            add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= minSeizableCollateralValue(loan) &&
+            now < collateralDeposits[loan][collateralDepositFinalizedIndex[loan]].expiry) {
+            return add(add(refundableCollateral(loan), seizableCollateral(loan)), add(temporaryCollaterals[loan].refundableCollateral, temporaryCollaterals[loan].seizableCollateral));
+        } else {
+            return add(refundableCollateral(loan), seizableCollateral(loan));
+        }
+    }
+
+    function refundableCollateral(bytes32 loan) public view returns (uint256) {
+        return collaterals[loan].refundableCollateral;
+    }
+
+    function seizableCollateral(bytes32 loan) public view returns (uint256) {
+        return collaterals[loan].seizableCollateral;
+    }
+
+    function temporaryRefundableCollateral(bytes32 loan) public view returns (uint256) {
+        return temporaryCollaterals[loan].refundableCollateral;
+    }
+
+    function temporarySeizableCollateral(bytes32 loan) public view returns (uint256) {
+        return temporaryCollaterals[loan].seizableCollateral;
     }
 
     function repaid(bytes32 loan) public view returns (uint256) { // Amount paid back for loan
@@ -241,6 +310,13 @@ contract Loans is DSMath {
         return lenderLoans[lender_].length;
     }
 
+    function minSeizableCollateralValue(bytes32 loan) public view returns (uint256) {
+        (bytes32 val, bool set) = med.peek();
+        require(set);
+        uint256 price = uint(val);
+        return div(wdiv(dmul(add(principal(loan), interest(loan))), price), (10 ** 12));
+    }
+
     function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
         (bytes32 val, bool set) = med.peek();
         require(set);
@@ -278,6 +354,26 @@ contract Loans is DSMath {
         require(address(sales) == address(0));
         sales = sales_;
     }
+
+    /**
+     * @dev Sets P2WSH contract
+     * @param p2wsh_ Address of P2WSH contract
+     */
+    function setP2WSH(P2WSHInterface p2wsh_) external {
+        require(msg.sender == deployer);
+        require(address(p2wsh) == address(0));
+        p2wsh = p2wsh_;
+    }
+
+    /**
+     * @dev Sets OnDemandSpv contract address
+     * @param onDemandSpv_ Address of OnDemandSpv contract
+     */
+    function setOnDemandSpv(ISPVRequestManager onDemandSpv_) external {
+        require(msg.sender == deployer);
+        // require(address(onDemandSpv) == address(0)); // TODO verify if this should be unchangeable
+        onDemandSpv = onDemandSpv_;
+    }
     
     /**
      * @notice Creates a new loan agreement
@@ -305,6 +401,8 @@ contract Loans is DSMath {
         loans[loan].penalty          = vals_[2];
         loans[loan].fee              = vals_[3];
         loans[loan].collateral       = vals_[4];
+        collaterals[loan].seizableCollateral = minSeizableCollateralValue(loan);
+        collaterals[loan].refundableCollateral = sub(vals_[4], collaterals[loan].seizableCollateral);
         loans[loan].liquidationRatio = vals_[5];
         loans[loan].requestTimestamp = vals_[6];
         fundIndex[loan]              = fundIndex_;
@@ -344,9 +442,87 @@ contract Loans is DSMath {
 		secretHashes[loan].secretHashCs = [ arbiterSecretHashes[1], arbiterSecretHashes[2], arbiterSecretHashes[3] ];
 		pubKeys[loan].borrowerPubKey    = borrowerPubKey_;
 		pubKeys[loan].lenderPubKey      = lenderPubKey_;
-        pubKeys[loan].arbiterPubKey       = arbiterPubKey_;
+        pubKeys[loan].arbiterPubKey     = arbiterPubKey_;
         secretHashes[loan].set          = true;
 	}
+
+    /**
+     * @notice Consumer for Bitcoin transaction information
+     * @dev Handles Bitcoin events that have been validated by the Relay contract (onDemandSpv by Summa)
+     * @param _vout        The length-prefixed output vector of the bitcoin tx
+     *                     that triggered the notification.
+     * @param _requestID   The ID of the event request that this notification
+     *                     satisfies. The ID is returned by
+     *                     OnDemandSPV.request and should be locally stored by
+     *                     any contract that makes more than one request.
+     * @param _outputIndex The index of the output in the _vout that triggered
+     *                     the notification. Useful for subscribing to transactions
+     *                     that spend the newly-created UTXO.
+     */
+    function spv(bytes32, bytes calldata, bytes calldata _vout, uint256 _requestID, uint8, uint8 _outputIndex) external {
+        require(msg.sender == address(onDemandSpv));
+
+        bytes memory outputAtIndex = BTCUtils.extractOutputAtIndex(_vout, _outputIndex);
+        bytes32 p2wshAddress = BytesLib.toBytes32(BTCUtils.extractHash(outputAtIndex));
+        uint256 amount = uint(BTCUtils.extractValue(outputAtIndex));
+
+        bytes32 loan = requestsDetails[_requestID].loan;
+        bool finalized = requestsDetails[_requestID].finalized;
+        bool seizable = requestsDetails[_requestID].seizable;
+
+        require(p2wshAddress == requestsDetails[_requestID].p2wshAddress); // ensure p2wsh is generated properly
+
+        if (finalized) { // 6 confirmations
+            if (requestsValid[finalRequestToInitialRequest[_requestID]]) { // Check that request is valid
+                if (seizable) {
+                    collaterals[loan].seizableCollateral = add(collaterals[loan].seizableCollateral, amount);
+
+                    temporaryCollaterals[loan].seizableCollateral = sub(temporaryCollaterals[loan].seizableCollateral, amount);
+                } else {
+
+                    if (collaterals[loan].seizableCollateral >= minSeizableCollateralValue(loan)) {
+                        collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, amount);
+                    } else {
+                        collaterals[loan].unaccountedRefundableCollateral = add(collaterals[loan].unaccountedRefundableCollateral, amount);
+                    }
+
+                    temporaryCollaterals[loan].refundableCollateral = sub(temporaryCollaterals[loan].refundableCollateral, amount);
+                }
+
+                collateralDeposits[loan][collateralDepositIndex[loan]].finalized = true;
+
+                for (uint i = collateralDepositFinalizedIndex[loan]; i < sub(collateralDepositIndex[loan], collateralDepositFinalizedIndex[loan]); i++) { // check if collateralDepositFinalizedIndex should be increased
+                    if (collateralDeposits[loan][i].finalized == true) {
+                        collateralDepositFinalizedIndex[loan] = add(collateralDepositFinalizedIndex[loan], 1);
+                    } else {
+                        break;
+                    }
+                }
+            }
+        } else { // 1 confirmation
+            if (amount >= div(collateral(loan), 100)) { // Ensure amount is greater than 1% of collateral value
+                requestsValid[_requestID] = true;
+
+                collateralDeposits[loan][collateralDepositIndex[loan]].amount = amount;
+                collateralDeposits[loan][collateralDepositIndex[loan]].seizable = seizable;
+                collateralDeposits[loan][collateralDepositIndex[loan]].expiry = now + ADD_COLLATERAL_EXPIRY;
+
+                collateralDepositIndex[loan] = add(collateralDepositIndex[loan], 1);
+
+                if (seizable) {
+                    temporaryCollaterals[loan].seizableCollateral = add(temporaryCollaterals[loan].seizableCollateral, amount);
+                } else {
+                    temporaryCollaterals[loan].refundableCollateral = add(temporaryCollaterals[loan].refundableCollateral, amount);
+                }
+
+                // check existing refundable collaterals
+                if (add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= minSeizableCollateralValue(loan) && collaterals[loan].unaccountedRefundableCollateral != 0) {
+                    collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, collaterals[loan].unaccountedRefundableCollateral);
+                    collaterals[loan].unaccountedRefundableCollateral = 0;
+                }
+            }
+        }
+    }
 
     /**
      * @notice Lender sends tokens to the loan agreement
@@ -382,8 +558,10 @@ contract Loans is DSMath {
         require(bools[loan].withdrawn == false);
     	require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
     	require(token.transfer(loans[loan].borrower, principal(loan)));
+
     	bools[loan].withdrawn = true;
         secretHashes[loan].withdrawSecret = secretA1;
+        requestSpv(loan);
     }
 
     /**
@@ -403,7 +581,10 @@ contract Loans is DSMath {
     	repayments[loan] = add(amount, repayments[loan]);
     	if (repaid(loan) == owedForLoan(loan)) {
     		bools[loan].paid = true;
+            cancelSpv(loan);
     	}
+
+        // TODO: CANCEL REQUEST SPV
     }
 
     /**
@@ -499,7 +680,7 @@ contract Loans is DSMath {
             }
 		} else {
 			require(sales.next(loan) < 3);
-            require(now > sales.settlementExpiration(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation after settlement expiration of pervious liquidation
+            require(now > sales.settlementExpiration(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation after settlement expiration of previous liquidation
             require(!sales.accepted(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation again if previous liquidation discountBuy wasn't taken
 		}
         require(token.balanceOf(msg.sender) >= ddiv(discountCollateralValue(loan)));
@@ -509,5 +690,51 @@ contract Loans is DSMath {
 		sale_ = sales.create(loan, loans[loan].borrower, loans[loan].lender, loans[loan].arbiter, msg.sender, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i], secretHash, pubKeyHash);
         if (bools[loan].sale == false) { require(token.transfer(address(sales), repaid(loan))); }
 		bools[loan].sale = true;
+        cancelSpv(loan);
+    }
+
+    function requestSpv(bytes32 loan) internal {
+        (, bytes32 refundableP2WSH) = p2wsh.getP2WSH(loan, false); // refundable collateral
+        (, bytes32 seizableP2WSH) = p2wsh.getP2WSH(loan, true); // seizable collateral
+
+        uint256 onePercentOfCollateral = div(collateral(loan), 100);
+
+        uint256 refundRequestIDOneConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", refundableP2WSH), uint64(onePercentOfCollateral), address(this), 1);
+        uint256 refundRequestIDSixConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", refundableP2WSH), uint64(onePercentOfCollateral), address(this), 6);
+
+        uint256 seizeRequestIDOneConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", seizableP2WSH), uint64(onePercentOfCollateral), address(this), 1);
+        uint256 seizeRequestIDSixConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", seizableP2WSH), uint64(onePercentOfCollateral), address(this), 6);
+
+        loanRequests[loan].refundRequestIDOneConf = refundRequestIDOneConf;
+        loanRequests[loan].refundRequestIDSixConf = refundRequestIDSixConf;
+        loanRequests[loan].seizeRequestIDOneConf = seizeRequestIDOneConf;
+        loanRequests[loan].seizeRequestIDSixConf = seizeRequestIDSixConf;
+
+        requestsDetails[refundRequestIDOneConf].loan = loan;
+        requestsDetails[refundRequestIDOneConf].p2wshAddress = refundableP2WSH;
+
+        requestsDetails[refundRequestIDSixConf].loan = loan;
+        requestsDetails[refundRequestIDSixConf].finalized = true;
+        requestsDetails[refundRequestIDSixConf].p2wshAddress = refundableP2WSH;
+
+        finalRequestToInitialRequest[refundRequestIDSixConf] = refundRequestIDOneConf;
+
+        requestsDetails[seizeRequestIDOneConf].loan = loan;
+        requestsDetails[seizeRequestIDOneConf].seizable = true;
+        requestsDetails[seizeRequestIDOneConf].p2wshAddress = seizableP2WSH;
+
+        requestsDetails[seizeRequestIDSixConf].loan = loan;
+        requestsDetails[seizeRequestIDSixConf].seizable = true;
+        requestsDetails[seizeRequestIDSixConf].finalized = true;
+        requestsDetails[seizeRequestIDSixConf].p2wshAddress = seizableP2WSH;
+
+        finalRequestToInitialRequest[seizeRequestIDSixConf] = seizeRequestIDOneConf;
+    }
+
+    function cancelSpv(bytes32 loan) internal {
+        onDemandSpv.cancelRequest(loanRequests[loan].refundRequestIDOneConf);
+        onDemandSpv.cancelRequest(loanRequests[loan].refundRequestIDSixConf);
+        onDemandSpv.cancelRequest(loanRequests[loan].seizeRequestIDOneConf);
+        onDemandSpv.cancelRequest(loanRequests[loan].seizeRequestIDSixConf);
     }
 }

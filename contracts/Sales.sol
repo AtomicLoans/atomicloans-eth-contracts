@@ -5,7 +5,7 @@ import './Loans.sol';
 import './Medianizer.sol';
 import './DSMath.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract Sales is DSMath {
 	Loans loans;
@@ -59,8 +59,8 @@ contract Sales is DSMath {
 
     /**
      * @notice Container for the Bitcoin refundable and seizable signature information
-     * @member refundableSig The Bitcoin refundable signature to move collateral to swap P2SH
-     * @member seizableSig The Bitcoin seizable signature to move collateral to swap P2SH
+     * @member refundableSig The Bitcoin refundable signature to move collateral to swap P2WSH
+     * @member seizableSig The Bitcoin seizable signature to move collateral to swap P2WSH
      */
     struct Sig {
         bytes refundableSig;

@@ -1,6 +1,6 @@
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract MedianizerExample {
     bool    has;
@@ -10,6 +10,7 @@ contract MedianizerExample {
     }
     function read() public returns (bytes32) {
         (bytes32 wut, bool has_) = peek();
+        has_ = true;
         assert(has_);
         return wut;
     }

@@ -1,7 +1,7 @@
 import './_Exponential.sol';
 import './_DSValue.sol';
 
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 contract _PriceOracle is _Exponential {
 
