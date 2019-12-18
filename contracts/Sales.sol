@@ -225,18 +225,20 @@ contract Sales is DSMath {
         sales[sale].accepted = true;
 
         uint256 available = add(sales[sale].discountBuy, loans.repaid(sales[sale].loanIndex));
-        uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
 
+        if (sales[sale].arbiter != address(0) && available >= loans.fee(sales[sale].loanIndex)) {
+            require(token.transfer(sales[sale].arbiter, loans.fee(sales[sale].loanIndex)));
+            available = sub(available, loans.fee(sales[sale].loanIndex));
+        }
+
+        uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
         require(token.transfer(sales[sale].lender, amount));
         available = sub(available, amount);
 
-        if (available >= add(loans.fee(sales[sale].loanIndex), loans.penalty(sales[sale].loanIndex))) {
-            if (sales[sale].arbiter != address(0)) {
-                require(token.transfer(sales[sale].arbiter, loans.fee(sales[sale].loanIndex)));
-            }
+        if (available >= loans.penalty(sales[sale].loanIndex)) {
             require(token.approve(address(med), loans.penalty(sales[sale].loanIndex)));
             med.fund(loans.penalty(sales[sale].loanIndex), token);
-            available = sub(available, add(loans.fee(sales[sale].loanIndex), loans.penalty(sales[sale].loanIndex)));
+            available = sub(available, loans.penalty(sales[sale].loanIndex));
         } else if (available > 0) {
             require(token.approve(address(med), available));
             med.fund(available, token);
