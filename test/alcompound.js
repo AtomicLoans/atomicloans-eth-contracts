@@ -1,4 +1,4 @@
-const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
+const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const Funds = artifacts.require("./Funds.sol");
 const CErc20 = artifacts.require('./CErc20.sol');
 const CEther = artifacts.require('./CEther.sol');

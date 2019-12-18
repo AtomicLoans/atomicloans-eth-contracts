@@ -8,7 +8,7 @@ const { ensure0x }  = require('@liquality/ethereum-utils');
 const { BigNumber: BN } = require('bignumber.js');
 const axios         = require('axios');
 
-const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
+const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
