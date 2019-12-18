@@ -169,7 +169,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 5; // 5 SAI
+    const loanReq = 10; // 5 SAI
     const loanRat = 2; // Collateralization ratio of 200%
     let col;
 
@@ -334,7 +334,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(accepted, true)
       })
 
-      it('should disperse all funds to lender if discountBuy + repaid doesn\'t cover principal + interest', async function() {
+      it('should disperse all funds to lender and arbiter if discountBuy + repaid doesn\'t cover principal + interest', async function() {
         await approveAndTransfer(this.token, borrower, this.loans, toWei('100', unit))
 
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
@@ -354,15 +354,15 @@ stablecoins.forEach((stablecoin) => {
         const { owedToLender, fee, penalty, repaid, owedForLiquidation, safe } = await getLoanValues(this.loans, this.loan)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        assert.equal(BigNumber(lendBalBefore).plus(BigNumber(discountBuy).plus(repaid)).toFixed(), lendBalAfter.toString())
+        assert.equal(BigNumber(lendBalBefore).plus(BigNumber(discountBuy).plus(repaid)).minus(fee).toFixed(), lendBalAfter.toString())
         assert.equal(borBalBefore.toString(), borBalAfter.toString())
-        assert.equal(arbiterBalBefore.toString(), arbiterBalAfter)
+        assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter)
 
         const taken = await this.sales.accepted.call(this.sale)
         assert.equal(taken, true)
       })
 
-      it('should disperse all funds to lender if discountBuy + repaid covers only principal + interest', async function() {
+      it('should disperse all funds to lender and arbiter if discountBuy + repaid covers only principal + interest + fee', async function() {
         await approveAndTransfer(this.token, borrower, this.loans, toWei('100', unit))
 
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
@@ -375,7 +375,7 @@ stablecoins.forEach((stablecoin) => {
         // discountBuy = medValue * x * 0.93 * collateral
         // x = (-repaid + owedToLender) / (medValue * 0.93 * collateral * BTC_TO_SAT)
 
-        const num = BigNumber(repaid).times(-1).plus(owedToLender)
+        const num = BigNumber(repaid).times(-1).plus(owedToLender).plus(fee)
         const den = BigNumber(medValue).times(0.93).times(collateral).dividedBy(BTC_TO_SAT)
         const x = BigNumber(num).dividedBy(den)
 
@@ -391,27 +391,27 @@ stablecoins.forEach((stablecoin) => {
 
         assert.equal(BigNumber(lendBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(lendBalAfter).dividedBy(divisor).toFixed(precision))
         assert.equal(medBalBefore.toString(), medBalAfter.toString())
-        assert.equal(arbiterBalBefore.toString(), arbiterBalAfter.toString())
+        assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter.toString())
         assert.equal(borBalBefore.toString(), borBalAfter.toString())
 
         const accepted = await this.sales.accepted.call(this.sale)
         assert.equal(accepted, true)
       })
 
-      it('should disperse all remaining funds to medianizer if funds have been paid to lender but not enough is needed to pay arbiter and medianizer', async function() {
+      it('should disperse all remaining funds to medianizer if funds have been paid to lender and arbiter but not enough is needed to pay the penalty for the medianizer', async function() {
         await approveAndTransfer(this.token, borrower, this.loans, toWei('100', unit))
 
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
         await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
 
-        const { collateral, collateralValue, minCollateralValue, repaid, owedToLender } = await getLoanValues(this.loans, this.loan)
+        const { collateral, collateralValue, minCollateralValue, fee, repaid, owedToLender } = await getLoanValues(this.loans, this.loan)
         const medValue = await this.med.read.call()
 
         // discountBuy + repaid - owedToLender > 0
         // discountBuy = medValue * x * 0.93 * collateral
         // x = (-repaid + owedToLender) / (medValue * 0.93 * collateral)
 
-        const num = BigNumber(repaid).times(-1).plus(owedToLender).plus(1000) // increase slighlty to make statement true for ">"
+        const num = BigNumber(repaid).times(-1).plus(owedToLender).plus(fee).plus(1000) // increase slighlty to make statement true for ">"
         const den = BigNumber(medValue).times(0.93).times(collateral).dividedBy(BTC_TO_SAT)
         const x = BigNumber(num).times(multiplier).dividedBy(den)
 
@@ -423,12 +423,12 @@ stablecoins.forEach((stablecoin) => {
         const { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
         await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
         const { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
-        const { fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
+        const { penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
         assert.equal(BigNumber(lendBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(lendBalAfter).dividedBy(divisor).toFixed(precision))
-        assert.equal(BigNumber(medBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedToLender)).toString(), medBalAfter.toString())
-        assert.equal(arbiterBalBefore.toString(), arbiterBalAfter.toString())
+        assert.equal(BigNumber(medBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedToLender).minus(fee)).toString(), medBalAfter.toString())
+        assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter.toString())
         assert.equal(borBalBefore.toString(), borBalAfter.toString())
 
         const accepted = await this.sales.accepted.call(this.sale)
