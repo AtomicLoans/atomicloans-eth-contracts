@@ -2,9 +2,9 @@ import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 
 pragma solidity ^0.5.2;
 
-contract ExampleDaiCoin is ERC20 {
-  string public name = "ExampleDAICoin"; 
-  string public symbol = "DAI";
+contract ExampleSaiCoin is ERC20 {
+  string public name = "ExampleSAICoin"; 
+  string public symbol = "SAI";
   uint public decimals = 18;
 
   constructor () public {
