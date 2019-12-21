@@ -84,7 +84,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 1; // 5 SAI
+    const loanReq = 5; // 5 SAI
     const loanRat = 2; // Collateralization ratio of 200%
     let col;
 
@@ -231,6 +231,86 @@ stablecoins.forEach((stablecoin) => {
         const off = await this.loans.off.call(this.loan)
         assert.equal(off, true);
       })
+
+      it('should accept successfully and send funds directly to lender if fundId is 0', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+        const success = await this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        // Push funds to loan fund
+        await this.token.approve(this.loans.address, principal)
+        await this.loans.fund(loan)
+
+        await this.loans.approve(loan)
+
+        await this.loans.withdraw(loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(loan)
+        await this.loans.repay(loan, owedForLoan, { from: borrower })
+
+        const balBefore = await this.token.balanceOf.call(lender)
+
+        await this.loans.accept(loan, arbiterSecs[0]) // accept loan repayment
+
+        const balAfter = await this.token.balanceOf.call(lender)
+
+        const off = await this.loans.off.call(loan)
+        assert.equal(off, true);
+        assert.equal(BigNumber(balBefore).plus(principal).plus(interest).toString(), BigNumber(balAfter).toString())
+      })
+    })
+
+    describe('cancel', function() {
+      it('should successfully cancel loan and return funds to loan fund', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.cancel(this.loan, lendSecs[0]) // cancel loan
+
+        const off = await this.loans.off.call(this.loan)
+        assert.equal(off, true);
+      })
+    })
+
+    describe('refund', function() {
+      it('should returns loan repayment to borrower', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const balBefore = await this.token.balanceOf.call(borrower)
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await time.increase(toSecs({ days: 5 }))
+
+        const balBeforeRefund = await this.token.balanceOf.call(borrower)
+
+        await this.loans.refund(this.loan, { from: borrower })
+
+        const balAfterRefund = await this.token.balanceOf.call(borrower)
+
+        const off = await this.loans.off.call(this.loan)
+        assert.equal(off, true);
+
+        assert.equal(BigNumber(balBefore).toFixed(), BigNumber(balAfterRefund).toFixed())
+        assert.equal(BigNumber(balBeforeRefund).plus(owedForLoan).toFixed(), BigNumber(balAfterRefund).toFixed())
+      })
     })
 
     describe('getters', function() {
@@ -273,7 +353,7 @@ stablecoins.forEach((stablecoin) => {
         const safe = await this.loans.safe.call(this.loan)
         assert.equal(safe, false)
 
-        await this.token.transfer(liquidator, toWei('5', unit))
+        await this.token.transfer(liquidator, toWei('10', unit))
         await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
 
         this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
@@ -293,6 +373,8 @@ stablecoins.forEach((stablecoin) => {
         const taken = await this.sales.accepted.call(this.sale)
         assert.equal(taken, true)
       })
+
+      // TODO: liquidate when it\'s a non-custom loan fund
     })
 
     describe('default', function() {
@@ -313,7 +395,7 @@ stablecoins.forEach((stablecoin) => {
 
         await time.increase(toSecs({days: 2, minutes: 1}))
 
-        await this.token.transfer(liquidator, toWei('5', unit))
+        await this.token.transfer(liquidator, toWei('10', unit))
         await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
 
         this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
@@ -337,6 +419,141 @@ stablecoins.forEach((stablecoin) => {
     describe('setSales', function() {
       it('should not allow setSales to be called twice', async function() {
         await expectRevert(this.loans.setSales(this.loans.address), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('borrower', function() {
+      it('should return borrower address', async function() {
+        const borrowerAddress = await this.loans.borrower(this.loan)
+
+        assert.equal(borrower, borrowerAddress)
+      })
+    })
+
+    describe('lender', function() {
+      it('should return lender address', async function() {
+        const lenderAddress = await this.loans.lender(this.loan)
+
+        assert.equal(lender, lenderAddress)
+      })
+    })
+
+    describe('arbiter', function() {
+      it('should return arbiter address', async function() {
+        const arbiterAddress = await this.loans.arbiter(this.loan)
+
+        assert.equal(arbiter, arbiterAddress)
+      })
+    })
+
+    describe('owing', function() {
+      it('should return principal + interest + fee when first requested', async function() {
+        const principal = await this.loans.principal.call(this.loan)
+        const interest = await this.loans.interest.call(this.loan)
+        const fee = await this.loans.fee.call(this.loan)
+
+        const owing = await this.loans.owing.call(this.loan)
+
+        assert.equal(BigNumber(principal).plus(interest).plus(fee).toFixed(), BigNumber(owing).toFixed())
+      })
+
+      it('should return principal + interest + fee - repaid if parts of the loan were repaid', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, BigNumber(owedForLoan).minus(10), { from: borrower })
+
+        const principal = await this.loans.principal.call(this.loan)
+        const interest = await this.loans.interest.call(this.loan)
+        const fee = await this.loans.fee.call(this.loan)
+
+        const owing = await this.loans.owing.call(this.loan)
+
+        assert.equal(BigNumber(10).toFixed(), BigNumber(owing).toFixed())
+      })
+    })
+
+    describe('funded', function() {
+      it('should return boolean determining whether funds have been depositd into loan', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+        const success = await this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        // Push funds to loan fund
+        await this.token.approve(this.loans.address, principal)
+
+        const fundedBefore = await this.loans.funded.call(loan)
+
+        await this.loans.fund(loan)
+
+        const fundedAfter = await this.loans.funded.call(loan)
+
+        assert.equal(fundedBefore, false)
+        assert.equal(fundedAfter, true)
+      })
+    })
+
+    describe('approved', function() {
+      it('should return boolean determining whether loan has been approved', async function() {
+        const approvedBefore = await this.loans.approved.call(this.loan)
+
+        await this.loans.approve(this.loan)
+
+        const approvedAfter = await this.loans.approved.call(this.loan)
+
+        assert.equal(approvedBefore, false)
+        assert.equal(approvedAfter, true)
+      })
+    })
+
+    describe('withdrawn', function() {
+      it('should return boolean determining whether loan has been withdrawn', async function() {
+        await this.loans.approve(this.loan)
+
+        const withdrawnBefore = await this.loans.withdrawn.call(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        const withdrawnAfter = await this.loans.withdrawn.call(this.loan)
+
+        assert.equal(withdrawnBefore, false)
+        assert.equal(withdrawnAfter, true)
+      })
+    })
+
+    describe('paid', function() {
+      it('should return boolean determining whether loan has been repaid', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        const paidBefore = await this.loans.paid.call(this.loan)
+
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        const paidAfter = await this.loans.paid.call(this.loan)
+
+        assert.equal(paidBefore, false)
+        assert.equal(paidAfter, true)
       })
     })
   })
