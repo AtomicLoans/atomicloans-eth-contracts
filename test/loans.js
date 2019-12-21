@@ -184,6 +184,16 @@ stablecoins.forEach((stablecoin) => {
         ensure0x(lendpubk)
       ]
 
+      // Ensure arbiter secret hash is next in line
+      let secretHashIndex
+      let secretHashesCount
+      while ((parseInt(secretHashesCount) - parseInt(secretHashIndex)) !== 4) {
+        await this.funds.request(...loanParams)
+
+        secretHashIndex = await this.funds.secretHashIndex.call(arbiter)
+        secretHashesCount = await this.funds.secretHashesCount.call(arbiter)
+      }
+
       this.loan = await this.funds.request.call(...loanParams)
       await this.funds.request(...loanParams)
     })
