@@ -244,11 +244,11 @@ stablecoins.forEach((stablecoin) => {
       await this.funds.setPubKey(ensure0x(arbiterpubk), { from: arbiter })
 
       // Push funds to loan fund
-      await this.token.approve(this.funds.address, toWei('1300', unit))
+      await this.token.approve(this.funds.address, toWei('20000', unit))
       await this.funds.deposit(this.fund, toWei('400', unit))
 
       await this.token.transfer(lender2, toWei('100', unit))
-      await this.token.approve(this.funds.address, toWei('100', unit), { from: lender2 })
+      await this.token.approve(this.funds.address, toWei('10000', unit), { from: lender2 })
     })
 
     describe('global interest rate', function() {
@@ -276,6 +276,8 @@ stablecoins.forEach((stablecoin) => {
           ensure0x(borpubk),
           ensure0x(lendpubk)
         ]
+
+        console.log('loanParams', loanParams)
 
         this.loan = await this.funds.request.call(...loanParams)
         await this.funds.request(...loanParams)

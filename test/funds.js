@@ -86,7 +86,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 1; // 5 SAI
+    const loanReq = 20; // 5 SAI
     const loanRat = 2; // Collateralization ratio of 200%
 
     let lendSecs = []
@@ -326,8 +326,19 @@ stablecoins.forEach((stablecoin) => {
       it('should push secrets hashes to secretHashes for user address', async function() {
         const secretHashesCount = await this.funds.secretHashesCount.call(lender)
 
+        const secretHashIndex = await this.funds.secretHashIndex.call(lender)
+
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
+
+        const secretHashesCountAfter = await this.funds.secretHashesCount.call(lender)
+
+        console.log('secretHashesCount', secretHashesCount)
+        console.log('secretHashesCountAfter', secretHashesCountAfter)
+
+        console.log('secretHashIndex', secretHashIndex)
+
+        console.log('lendSechs', lendSechs)
 
         const sech0 = await this.funds.secretHashes.call(lender, secretHashesCount)
         const sech1 = await this.funds.secretHashes.call(lender, secretHashesCount + 1)
