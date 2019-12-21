@@ -324,13 +324,15 @@ stablecoins.forEach((stablecoin) => {
 
     describe('generate secret hashes', function() {
       it('should push secrets hashes to secretHashes for user address', async function() {
+        const secretHashesCount = await this.funds.secretHashesCount.call(lender)
+
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
 
-        const sech0 = await this.funds.secretHashes.call(lender, 0)
-        const sech1 = await this.funds.secretHashes.call(lender, 1)
-        const sech2 = await this.funds.secretHashes.call(lender, 2)
-        const sech3 = await this.funds.secretHashes.call(lender, 3)
+        const sech0 = await this.funds.secretHashes.call(lender, secretHashesCount)
+        const sech1 = await this.funds.secretHashes.call(lender, secretHashesCount + 1)
+        const sech2 = await this.funds.secretHashes.call(lender, secretHashesCount + 2)
+        const sech3 = await this.funds.secretHashes.call(lender, secretHashesCount + 3)
 
         assert.equal(lendSechs[0], sech0);
         assert.equal(lendSechs[1], sech1);
@@ -354,11 +356,14 @@ stablecoins.forEach((stablecoin) => {
 
         // Push funds to loan fund
         await this.token.approve(this.funds.address, toWei('100', unit), { from: arbiter })
+
+        const balBefore = await this.token.balanceOf.call(this.funds.address)
+
         await this.funds.deposit(this.fund, toWei('100', unit), { from: arbiter })
 
-        const bal = await this.token.balanceOf.call(this.funds.address)
+        const balAfter = await this.token.balanceOf.call(this.funds.address)
 
-        assert.equal(bal.toString(), toWei('100', unit));
+        assert.equal(BigNumber(balAfter).minus(balBefore).toFixed(), toWei('100', unit));
       })
 
       it('should request and complete loan successfully if loan setup correctly', async function() {

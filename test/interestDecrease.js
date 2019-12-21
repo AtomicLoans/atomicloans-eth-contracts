@@ -235,9 +235,6 @@ stablecoins.forEach((stablecoin) => {
       this.fund = await this.funds.create.call(...fundParams)
       await this.funds.create(...fundParams)
 
-      this.fund2 = await this.funds.create.call(...fundParams, { from: lender2 })
-      await this.funds.create(...fundParams, { from: lender2 })
-
       // Generate arbiter secret hashes
       await this.funds.generate(arbiterSechs, { from: arbiter })
 
@@ -252,7 +249,6 @@ stablecoins.forEach((stablecoin) => {
 
       await this.token.transfer(lender2, toWei('100', unit))
       await this.token.approve(this.funds.address, toWei('100', unit), { from: lender2 })
-      await this.funds.deposit(this.fund2, toWei('100', unit), { from: lender2 })
     })
 
     describe('global interest rate', function() {
