@@ -7,7 +7,7 @@ import {BTCUtils} from "@summa-tx/bitcoin-spv-sol/contracts/BTCUtils.sol";
 import './FundsInterface.sol';
 import './SalesInterface.sol';
 import './P2WSHInterface.sol';
-import './ISPVInterfaces.sol';
+import './ISPVRequestManager.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
 

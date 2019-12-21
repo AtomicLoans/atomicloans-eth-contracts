@@ -13,7 +13,7 @@
     "dotenv": "^8.1.0",
     "lodash": "^4.17.13",
     "openzeppelin-solidity": "^2.2.0",
-    "truffle": "^5.0.33",
+    "truffle": "5.1.5",
     "truffle-contract": "^4.0.29",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-plugin-verify": "^0.3.3",
@@ -47,6 +47,6 @@
     "coveralls": "^3.0.5",
     "eth-gas-reporter": "^0.2.12",
     "openzeppelin-test-helpers": "^0.5.0",
-    "solidity-coverage": "^0.6.3"
+    "solidity-coverage": "0.6.7"
   }
 }

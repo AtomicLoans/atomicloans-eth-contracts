@@ -5311,7 +5311,7 @@ sol-merger@^1.1.0:
     glob "^7.1.2"
     strip-json-comments "^3.0.1"
 
-solidity-coverage@^0.6.3:
+solidity-coverage@0.6.7:
   version "0.6.7"
   resolved "https://registry.yarnpkg.com/solidity-coverage/-/solidity-coverage-0.6.7.tgz#8ccd5e6d4d4ecc8cc59baf3656a869762d73c079"
   integrity sha512-Ga0Er5b25sFhy1uaYrQ+jQisP9819nj3zP1pfyAfE8Skg+/OBQ+Ev3sOmYQy9qZMjDuFJ7PCjuFVXdqdBO3cZw==
@@ -5802,10 +5802,10 @@ truffle-plugin-verify@^0.3.3:
     querystring "^0.2.0"
     sol-merger "^1.1.0"
 
-truffle@^5.0.33:
-  version "5.1.3"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.3.tgz#e3e44ca7c0fe25708c421993f993a3de4883411f"
-  integrity sha512-fCL0pGCvBWPboyl3dzgAZFSgpBsgb5NdaaIXbouuqGxFjfgq5+JK2PZLEgN/GYBF+uEzcYg83hFOHCHlZJZINw==
+truffle@5.1.5:
+  version "5.1.5"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.5.tgz#87730b484103bb77e7371a14d69628e1ec20a094"
+  integrity sha512-9zloOGyY/+kj+lqX6S9eCARrBvCLPlT1y+q41SPP2dfieRLsfXYDmBqgzCh5dSpccABlqkCUvE4nedhqi6Qggg==
   dependencies:
     app-module-path "^2.2.0"
     mocha "5.2.0"
