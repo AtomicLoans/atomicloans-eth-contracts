@@ -789,5 +789,24 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(expectedDefaultArbiterFee, actualDefaultArbiterFee)
       })
     })
+
+    describe('secretHashesCount', function() {
+      it('should return the secret hash count for a specific address', async function() {
+        const secretHashesCountBefore = await this.funds.secretHashesCount.call(arbiter)
+
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
+
+        const secretHashesCountAfter = await this.funds.secretHashesCount.call(arbiter)
+
+        assert.equal(BigNumber(secretHashesCountBefore).plus(4).toFixed(), BigNumber(secretHashesCountAfter).toFixed())
+      })
+    })
+
+    describe('decreaseTotalBorrow', function() {
+      it('should fail calling if not loans contract address', async function() {
+        await expectRevert(this.funds.decreaseTotalBorrow(toWei('1', 'ether')), 'VM Exception while processing transaction: revert')
+      })
+    })
   })
 })

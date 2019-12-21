@@ -530,6 +530,10 @@ stablecoins.forEach((stablecoin) => {
         const accepted = await this.sales.accepted.call(this.sale)
         assert.equal(accepted, true)
       })
+
+      it('should fail providing signature for incorrect sale', async function() {
+        await expectRevert(this.sales.provideSig(numToBytes32(0), sig1, sig2, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
     })
 
     describe('refund', function() {
