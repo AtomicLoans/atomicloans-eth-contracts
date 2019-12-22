@@ -280,6 +280,15 @@ stablecoins.forEach((stablecoin) => {
         const properRequest = await this.funds.properRequest.call(...loanParams)
         console.log('properRequest', properRequest)
 
+        fundsTokenBalance = await this.token.balanceOf.call(this.funds.address)
+        console.log('fundsTokenBalance', fundsTokenBalance)
+
+        const fundBalance = await this.funds.balance.call(this.fund)
+        console.log('fundBalance', fundBalance)
+
+        console.log('toWei(loanReq3.toString(), unit)', toWei(loanReq3.toString(), unit))
+        console.log('col', col)
+
         this.loan = await this.funds.request.call(...loanParams)
         await this.funds.request(...loanParams)
 

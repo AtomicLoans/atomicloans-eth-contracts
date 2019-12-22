@@ -261,15 +261,25 @@ stablecoins.forEach((stablecoin) => {
         for (let i = 1; i <= loanIndex; i++) {
           const loan = numToBytes32(i)
           console.log('loan', loan)
-          const { off, sale } = await this.loans.bools.call(loan)
-          if (off === false && sale === false) {
+          const { off, sale, withdrawn, paid } = await this.loans.bools.call(loan)
+          if (withdrawn === false) {
+            console.log('not withdrawn')
+          } else if (paid === true) {
+            console.log('refund to continue')
+            await this.loans.refund(loan, { from: borrower })
+          } else if (off === false && sale === false) {
             console.log('liquidate to continue')
+            await this.med.poke(numToBytes32(toWei((btcPrice * 0.3).toString(), 'ether')))
+
             await this.token.transfer(liquidator, toWei('800', unit))
             await this.token.approve(this.loans.address, toWei('800', unit), { from: liquidator })
 
             await this.loans.liquidate(loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
           }
         }
+
+
+        await this.med.poke(numToBytes32(toWei((btcPrice * 1.2).toString(), 'ether')))
 
         const globalInterestRate = await this.funds.globalInterestRate.call()
         console.info('globalInterestRate', fromWei(globalInterestRate, 'gether'))
