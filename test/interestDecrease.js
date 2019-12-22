@@ -212,7 +212,7 @@ stablecoins.forEach((stablecoin) => {
 
       btcPrice = '9340.23'
 
-      col = Math.round(((loanReq4 * loanRat) / btcPrice) * BTC_TO_SAT)
+      col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
       const { funds, loans, sales, token, med } = await getContracts(name)
 
@@ -235,6 +235,9 @@ stablecoins.forEach((stablecoin) => {
       this.fund = await this.funds.create.call(...fundParams)
       await this.funds.create(...fundParams)
 
+      this.fund2 = await this.funds.create.call(...fundParams, { from: lender2 })
+      await this.funds.create(...fundParams, { from: lender2 })
+
       // Generate arbiter secret hashes
       await this.funds.generate(arbiterSechs, { from: arbiter })
 
@@ -244,15 +247,16 @@ stablecoins.forEach((stablecoin) => {
       await this.funds.setPubKey(ensure0x(arbiterpubk), { from: arbiter })
 
       // Push funds to loan fund
-      await this.token.approve(this.funds.address, toWei('20000', unit))
-      await this.funds.deposit(this.fund, toWei('500', unit))
+      await this.token.approve(this.funds.address, toWei('1300', unit))
+      await this.funds.deposit(this.fund, toWei('400', unit))
 
-      await this.token.transfer(lender2, toWei('130', unit))
-      await this.token.approve(this.funds.address, toWei('10000', unit), { from: lender2 })
+      await this.token.transfer(lender2, toWei('100', unit))
+      await this.token.approve(this.funds.address, toWei('100', unit), { from: lender2 })
+      await this.funds.deposit(this.fund2, toWei('100', unit), { from: lender2 })
     })
 
     describe('global interest rate', function() {
-      it('should decrease global interest rate after a day if utilization ratio increases', async function() {
+      it('should increase global interest rate after a day if utilization ratio increases', async function() {
         const globalInterestRate = await this.funds.globalInterestRate.call()
         console.info('globalInterestRate', fromWei(globalInterestRate, 'gether'))
 
@@ -276,8 +280,6 @@ stablecoins.forEach((stablecoin) => {
           ensure0x(borpubk),
           ensure0x(lendpubk)
         ]
-
-        console.log('loanParams', loanParams)
 
         this.loan = await this.funds.request.call(...loanParams)
         await this.funds.request(...loanParams)
