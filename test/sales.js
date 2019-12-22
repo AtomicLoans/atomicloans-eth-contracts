@@ -436,7 +436,7 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should disperse funds to lender, arbiter, and medianizer if there is enough funds for owedToLender, fee and penalty but not enough for borrower', async function() {
-        await approveAndTransfer(this.token, borrower, this.loans, toWei('100', unit))
+        await approveAndTransfer(this.token, borrower, this.loans, toWei('200', unit))
 
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
         await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
@@ -452,9 +452,9 @@ stablecoins.forEach((stablecoin) => {
         const den = BigNumber(medValue).times(0.93).times(collateral).dividedBy(BTC_TO_SAT)
         const x = BigNumber(num).times(multiplier).dividedBy(den)
 
-        await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(28)).toFixed(0)))
+        await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(30)).toFixed(0)))
 
-        await approveAndTransfer(this.token, liquidator, this.loans, toWei('100', unit))
+        await approveAndTransfer(this.token, liquidator, this.loans, toWei('200', unit))
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
         const { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
