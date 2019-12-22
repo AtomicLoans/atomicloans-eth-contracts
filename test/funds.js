@@ -340,10 +340,10 @@ stablecoins.forEach((stablecoin) => {
 
         console.log('lendSechs', lendSechs)
 
-        const sech0 = await this.funds.secretHashes.call(lender, secretHashesCount)
-        const sech1 = await this.funds.secretHashes.call(lender, secretHashesCount + 1)
-        const sech2 = await this.funds.secretHashes.call(lender, secretHashesCount + 2)
-        const sech3 = await this.funds.secretHashes.call(lender, secretHashesCount + 3)
+        const sech0 = await this.funds.secretHashes.call(lender, parseInt(secretHashesCount))
+        const sech1 = await this.funds.secretHashes.call(lender, parseInt(secretHashesCount) + 1)
+        const sech2 = await this.funds.secretHashes.call(lender, parseInt(secretHashesCount) + 2)
+        const sech3 = await this.funds.secretHashes.call(lender, parseInt(secretHashesCount) + 3)
 
         assert.equal(lendSechs[0], sech0);
         assert.equal(lendSechs[1], sech1);

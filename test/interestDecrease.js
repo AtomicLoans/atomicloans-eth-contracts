@@ -212,7 +212,7 @@ stablecoins.forEach((stablecoin) => {
 
       btcPrice = '9340.23'
 
-      col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
+      col = Math.round(((loanReq4 * loanRat) / btcPrice) * BTC_TO_SAT)
 
       const { funds, loans, sales, token, med } = await getContracts(name)
 

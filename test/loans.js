@@ -187,7 +187,14 @@ stablecoins.forEach((stablecoin) => {
       // Ensure arbiter secret hash is next in line
       let secretHashIndex
       let secretHashesCount
+
+      secretHashIndex = await this.funds.secretHashIndex.call(arbiter)
+      secretHashesCount = await this.funds.secretHashesCount.call(arbiter)
+
       while ((parseInt(secretHashesCount) - parseInt(secretHashIndex)) !== 4) {
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('1000', unit))
+        await this.funds.deposit(this.fund, toWei('1000', unit))
         await this.funds.request(...loanParams)
 
         secretHashIndex = await this.funds.secretHashIndex.call(arbiter)
@@ -358,12 +365,12 @@ stablecoins.forEach((stablecoin) => {
 
         const bal = await this.token.balanceOf.call(borrower)
 
-        this.med.poke(numToBytes32(toWei((btcPrice * 0.7).toString(), 'ether')))
+        this.med.poke(numToBytes32(toWei((btcPrice * 0.6).toString(), 'ether')))
 
         const safe = await this.loans.safe.call(this.loan)
         assert.equal(safe, false)
 
-        await this.token.transfer(liquidator, toWei('10', unit))
+        await this.token.transfer(liquidator, toWei('40', unit))
         await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
 
         this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })

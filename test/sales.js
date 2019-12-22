@@ -452,7 +452,7 @@ stablecoins.forEach((stablecoin) => {
         const den = BigNumber(medValue).times(0.93).times(collateral).dividedBy(BTC_TO_SAT)
         const x = BigNumber(num).times(multiplier).dividedBy(den)
 
-        await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(25)).toFixed(0)))
+        await this.med.poke(numToBytes32(BigNumber(hexToNumberString(medValue)).times(x.toPrecision(28)).toFixed(0)))
 
         await approveAndTransfer(this.token, liquidator, this.loans, toWei('100', unit))
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
