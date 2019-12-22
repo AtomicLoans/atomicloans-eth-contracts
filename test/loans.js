@@ -296,6 +296,17 @@ stablecoins.forEach((stablecoin) => {
         const off = await this.loans.off.call(this.loan)
         assert.equal(off, true);
       })
+
+      it('should successfully cancel loan without secret if after seizureExpiration', async function() {
+        await this.loans.approve(this.loan)
+
+        await time.increase(toSecs({ days: 30 }))
+
+        await this.loans.cancel(this.loan) // cancel loan
+
+        const off = await this.loans.off.call(this.loan)
+        assert.equal(off, true);
+      })
     })
 
     describe('refund', function() {

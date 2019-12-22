@@ -619,6 +619,15 @@ contract Loans is DSMath {
         accept(loan, secret);
     }
 
+    function cancel(bytes32 loan) external {
+        require(!off(loan));
+        require(bools[loan].withdrawn == false);
+        require(msg.sender == loans[loan].lender || msg.sender == loans[loan].arbiter);
+        require(now                              >= seizureExpiration(loan));
+        require(bools[loan].sale                 == false);
+        close(loan);
+    }
+
     /**
      * @notice Lender accepts loan repayment
      * @dev Lender accepts loan repayment and principal + interest are sent back to the Lender / Loan Fund
@@ -632,9 +641,13 @@ contract Loans is DSMath {
         require(sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashB1 || sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashC1);
         require(now                              <= acceptExpiration(loan));
         require(bools[loan].sale                 == false);
+        secretHashes[loan].acceptSecret = secret;
+        close(loan);
+    }
+
+    function close(bytes32 loan) private {
         bools[loan].off = true;
         loans[loan].closedTimestamp = now;
-        secretHashes[loan].acceptSecret = secret;
         if (bools[loan].withdrawn == false) {
             if (fundIndex[loan] == bytes32(0)) {
                 require(token.transfer(loans[loan].lender, loans[loan].principal));

@@ -255,7 +255,7 @@ stablecoins.forEach((stablecoin) => {
 
     describe('global interest rate', function() {
       it('should increase global interest rate after a day if utilization ratio increases', async function() {
-        await time.increase(toSecs({ days: 10, minutes: 1 }))
+        await time.increase(toSecs({ days: 30, minutes: 1 }))
 
         const loanIndex = await this.loans.loanIndex.call()
         for (let i = 1; i <= loanIndex; i++) {
@@ -264,6 +264,7 @@ stablecoins.forEach((stablecoin) => {
           const { off, sale, withdrawn, paid } = await this.loans.bools.call(loan)
           if (withdrawn === false) {
             console.log('not withdrawn')
+            await this.loans.cancel(loan, { from: lender })
           } else if (paid === true && off === false && sale === false) {
             console.log('refund to continue')
             await this.loans.refund(loan, { from: borrower })
