@@ -255,6 +255,22 @@ stablecoins.forEach((stablecoin) => {
 
     describe('global interest rate', function() {
       it('should increase global interest rate after a day if utilization ratio increases', async function() {
+        await time.increase(toSecs({ days: 10, minutes: 1 }))
+
+        const loanIndex = await this.loans.loanIndex.call()
+        for (let i = 1; i <= loanIndex; i++) {
+          const loan = numToBytes32(i)
+          console.log('loan', loan)
+          const { off, sale } = await this.loans.bools.call(loan)
+          if (off === false && sale === false) {
+            console.log('liquidate to continue')
+            await this.token.transfer(liquidator, toWei('100', unit))
+            await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
+
+            await this.loans.liquidate(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
+          }
+        }
+
         const globalInterestRate = await this.funds.globalInterestRate.call()
         console.info('globalInterestRate', fromWei(globalInterestRate, 'gether'))
 
@@ -264,6 +280,8 @@ stablecoins.forEach((stablecoin) => {
         const utilizationRatio = await this.funds.lastUtilizationRatio.call()
         console.info('utilizationRatio', fromWei(utilizationRatio, 'gether'))
         console.info('====================================')
+
+        assert.equal(fromWei(utilizationRatio, 'gether'), 0)
 
         await time.increase(toSecs({ days: 1, minutes: 1 }))
 

@@ -252,7 +252,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('global interest rate', function() {
-      it('should increase global interest rate after a day if utilization ratio increases', async function() {
+      it('should decrease global interest rate after a day if utilization ratio increases', async function() {
         const globalInterestRate = await this.funds.globalInterestRate.call()
         console.info('globalInterestRate', fromWei(globalInterestRate, 'gether'))
 

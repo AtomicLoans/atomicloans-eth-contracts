@@ -439,7 +439,7 @@ stablecoins.forEach((stablecoin) => {
         await approveAndTransfer(this.token, borrower, this.loans, toWei('200', unit))
 
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
-        await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+        await this.loans.repay(this.loan, BigNumber(owedForLoan).minus(BigNumber(owedForLoan).dividedBy(2).toFixed(0)).toFixed(0), { from: borrower })
 
         const { collateral, collateralValue, minCollateralValue, repaid, owedToLender, fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
         const medValue = await this.med.read.call()
