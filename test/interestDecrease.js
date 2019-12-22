@@ -277,6 +277,9 @@ stablecoins.forEach((stablecoin) => {
           ensure0x(lendpubk)
         ]
 
+        const properRequest = await this.funds.properRequest.call(...loanParams)
+        console.log('properRequest', properRequest)
+
         this.loan = await this.funds.request.call(...loanParams)
         await this.funds.request(...loanParams)
 
