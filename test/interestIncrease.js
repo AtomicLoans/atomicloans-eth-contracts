@@ -267,7 +267,7 @@ stablecoins.forEach((stablecoin) => {
             await this.token.transfer(liquidator, toWei('100', unit))
             await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
 
-            await this.loans.liquidate(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
+            await this.loans.liquidate(loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
           }
         }
 
