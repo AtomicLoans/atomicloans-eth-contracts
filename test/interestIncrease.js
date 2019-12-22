@@ -264,7 +264,7 @@ stablecoins.forEach((stablecoin) => {
           const { off, sale, withdrawn, paid } = await this.loans.bools.call(loan)
           if (withdrawn === false) {
             console.log('not withdrawn')
-            await this.loans.cancel(loan, { from: lender })
+            await this.loans.cancel(loan)
           } else if (paid === true && off === false && sale === false) {
             console.log('refund to continue')
             await this.loans.refund(loan, { from: borrower })

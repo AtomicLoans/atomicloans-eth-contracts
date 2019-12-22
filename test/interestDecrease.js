@@ -289,6 +289,8 @@ stablecoins.forEach((stablecoin) => {
         console.log('toWei(loanReq3.toString(), unit)', toWei(loanReq3.toString(), unit))
         console.log('col', col)
 
+        await this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
+
         this.loan = await this.funds.request.call(...loanParams)
         await this.funds.request(...loanParams)
 

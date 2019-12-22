@@ -622,7 +622,6 @@ contract Loans is DSMath {
     function cancel(bytes32 loan) external {
         require(!off(loan));
         require(bools[loan].withdrawn == false);
-        require(msg.sender == loans[loan].lender || msg.sender == loans[loan].arbiter);
         require(now                              >= seizureExpiration(loan));
         require(bools[loan].sale                 == false);
         close(loan);
