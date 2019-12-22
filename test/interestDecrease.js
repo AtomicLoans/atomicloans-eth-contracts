@@ -245,9 +245,9 @@ stablecoins.forEach((stablecoin) => {
 
       // Push funds to loan fund
       await this.token.approve(this.funds.address, toWei('20000', unit))
-      await this.funds.deposit(this.fund, toWei('400', unit))
+      await this.funds.deposit(this.fund, toWei('500', unit))
 
-      await this.token.transfer(lender2, toWei('100', unit))
+      await this.token.transfer(lender2, toWei('130', unit))
       await this.token.approve(this.funds.address, toWei('10000', unit), { from: lender2 })
     })
 
