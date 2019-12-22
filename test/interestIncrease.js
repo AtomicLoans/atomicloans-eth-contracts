@@ -246,7 +246,7 @@ stablecoins.forEach((stablecoin) => {
       await this.funds.setPubKey(ensure0x(arbiterpubk), { from: arbiter })
 
       // Push funds to loan fund
-      await this.token.approve(this.funds.address, toWei('1300', unit))
+      await this.token.approve(this.funds.address, toWei('13000', unit))
       await this.funds.deposit(this.fund, toWei('400', unit))
 
       await this.token.transfer(lender2, toWei('100', unit))
