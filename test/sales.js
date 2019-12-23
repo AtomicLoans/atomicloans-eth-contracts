@@ -464,7 +464,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(lendBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(lendBalAfter).dividedBy(divisor).toFixed(precision))
         assert.equal(BigNumber(medBalBefore).plus(penalty).toFixed(), medBalAfter.toString())
         assert.equal(BigNumber(arbiterBalBefore).plus(fee).toFixed(), arbiterBalAfter.toString())
-        assert.equal(BigNumber(borBalBefore).toString(), borBalAfter.toString())
+        assert.equal(BigNumber(borBalBefore).toFixed(), borBalAfter.toString())
 
         const accepted = await this.sales.accepted.call(this.sale)
         assert.equal(accepted, true)
@@ -494,8 +494,8 @@ stablecoins.forEach((stablecoin) => {
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
         assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
-        assert.equal(BigNumber(borBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedForLiquidation)).toString(), borBalAfter.toString())
-        assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter)
+        assert.equal(BigNumber(borBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedForLiquidation)).toFixed(), borBalAfter.toString())
+        assert.equal(BigNumber(arbiterBalBefore).plus(fee).toFixed(), arbiterBalAfter)
 
         const accepted = await this.sales.accepted.call(this.sale)
         assert.equal(accepted, true)
