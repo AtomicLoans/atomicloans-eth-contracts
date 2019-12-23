@@ -279,6 +279,9 @@ stablecoins.forEach((stablecoin) => {
           }
         }
 
+        await time.increase(toSecs({ days: 2 }))
+
+        await this.funds.deposit(this.fund, toWei('100', unit))
 
         await this.med.poke(numToBytes32(toWei((btcPrice * 1.2).toString(), 'ether')))
 
