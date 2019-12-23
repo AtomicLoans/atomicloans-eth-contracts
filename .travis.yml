@@ -17,11 +17,6 @@ before_script:
   - mkdir -p /home/travis/.bitcoin && cp bitcoin.conf /home/travis/.bitcoin/bitcoin.conf
   - bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
   - CI=false ganache-cli -k petersburg > /dev/null &
-script:
-  - CI=false yarn test
-after_script:
-  - npx codechecks
-  - yarn coverage && cat coverage/lcov.info | coveralls
 
 jobs:
   include:
