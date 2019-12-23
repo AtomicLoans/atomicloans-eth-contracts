@@ -553,27 +553,6 @@ contract Funds is DSMath, ALCompound {
         loans.fund(loanIndex);
     }
 
-    function properRequest (
-        bytes32             fund,
-        address             borrower_,
-        uint256             amount_,
-        uint256             collateral_,
-        uint256             loanDur_,
-        uint256             requestTimestamp_,
-        bytes32[8] calldata secretHashes_,
-        bytes      calldata pubKeyA_,
-        bytes      calldata pubKeyB_
-    ) external returns (bool) {
-        return (
-            msg.sender == lender(fund) &&
-            amount_    <= balance(fund) &&
-            amount_    >= minLoanAmt(fund) &&
-            amount_    <= maxLoanAmt(fund) &&
-            loanDur_   >= minLoanDur(fund) &&
-            (loanDur_   <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund))
-        );
-    }
-
     /**
      * @notice Lenders withdraw tokens in Loan Fund
      * @param fund The Id of a Loan Fund

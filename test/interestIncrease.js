@@ -8,6 +8,7 @@ const axios         = require('axios');
 
 const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+const SAIInterestRateModel = artifacts.require('./SAIInterestRateModel')
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
@@ -33,11 +34,28 @@ const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwe
 
 async function getContracts(stablecoin) {
   if (stablecoin == 'SAI') {
-    const funds = await Funds.deployed();
-    const loans = await Loans.deployed();
-    const sales = await Sales.deployed();
-    const token = await ExampleCoin.deployed();
-    const med   = await Med.deployed();
+    const med = await Med.deployed()
+    const token = await ExampleCoin.deployed()
+    const comptroller = await Comptroller.deployed()
+    const saiInterestRateModel = await SAIInterestRateModel.deployed()
+    const cSai  = await CErc20.new(token.address, comptroller.address, saiInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Sai', 'cSAI', '8')
+
+    await comptroller._supportMarket(cSai.address)
+
+    const funds = await Funds.new(token.address, '18')
+    await funds.setCompound(cSai.address, comptroller.address)
+
+    const loans = await Loans.new(funds.address, med.address, token.address, '18')
+    const sales = await Sales.new(loans.address, med.address, token.address)
+
+    await funds.setLoans(loans.address)
+    await loans.setSales(sales.address)
+
+    const p2wsh = await P2WSH.deployed()
+    const onDemandSpv = await ISPVRequestManager.deployed()
+
+    await loans.setP2WSH(p2wsh.address)
+    await loans.setOnDemandSpv(onDemandSpv.address)
 
     return { funds, loans, sales, token, med }
   } else if (stablecoin == 'USDC') {
@@ -281,7 +299,7 @@ stablecoins.forEach((stablecoin) => {
 
         await time.increase(toSecs({ days: 2 }))
 
-        await this.funds.deposit(this.fund, toWei('100', unit))
+        await this.funds.deposit(this.fund, toWei('1', unit))
 
         await this.med.poke(numToBytes32(toWei((btcPrice * 1.2).toString(), 'ether')))
 

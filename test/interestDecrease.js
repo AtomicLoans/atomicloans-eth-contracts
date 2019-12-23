@@ -8,6 +8,7 @@ const axios         = require('axios');
 
 const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+const SAIInterestRateModel = artifacts.require('./SAIInterestRateModel')
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
@@ -33,11 +34,28 @@ const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwe
 
 async function getContracts(stablecoin) {
   if (stablecoin == 'SAI') {
-    const funds = await Funds.deployed();
-    const loans = await Loans.deployed();
-    const sales = await Sales.deployed();
-    const token = await ExampleCoin.deployed();
-    const med   = await Med.deployed();
+    const med = await Med.deployed()
+    const token = await ExampleCoin.deployed()
+    const comptroller = await Comptroller.deployed()
+    const saiInterestRateModel = await SAIInterestRateModel.deployed()
+    const cSai  = await CErc20.new(token.address, comptroller.address, saiInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Sai', 'cSAI', '8')
+
+    await comptroller._supportMarket(cSai.address)
+
+    const funds = await Funds.new(token.address, '18')
+    await funds.setCompound(cSai.address, comptroller.address)
+
+    const loans = await Loans.new(funds.address, med.address, token.address, '18')
+    const sales = await Sales.new(loans.address, med.address, token.address)
+
+    await funds.setLoans(loans.address)
+    await loans.setSales(sales.address)
+
+    const p2wsh = await P2WSH.deployed()
+    const onDemandSpv = await ISPVRequestManager.deployed()
+
+    await loans.setP2WSH(p2wsh.address)
+    await loans.setOnDemandSpv(onDemandSpv.address)
 
     return { funds, loans, sales, token, med }
   } else if (stablecoin == 'USDC') {
@@ -212,7 +230,7 @@ stablecoins.forEach((stablecoin) => {
 
       btcPrice = '9340.23'
 
-      col = Math.round(((loanReq4 * loanRat) / btcPrice) * BTC_TO_SAT)
+      col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
       const { funds, loans, sales, token, med } = await getContracts(name)
 
@@ -235,6 +253,9 @@ stablecoins.forEach((stablecoin) => {
       this.fund = await this.funds.create.call(...fundParams)
       await this.funds.create(...fundParams)
 
+      this.fund2 = await this.funds.create.call(...fundParams, { from: lender2 })
+      await this.funds.create(...fundParams, { from: lender2 })
+
       // Generate arbiter secret hashes
       await this.funds.generate(arbiterSechs, { from: arbiter })
 
@@ -249,6 +270,7 @@ stablecoins.forEach((stablecoin) => {
 
       await this.token.transfer(lender2, toWei('100', unit))
       await this.token.approve(this.funds.address, toWei('100', unit), { from: lender2 })
+      await this.funds.deposit(this.fund2, toWei('100', unit), { from: lender2 })
     })
 
     describe('global interest rate', function() {
@@ -276,20 +298,6 @@ stablecoins.forEach((stablecoin) => {
           ensure0x(borpubk),
           ensure0x(lendpubk)
         ]
-
-        const properRequest = await this.funds.properRequest.call(...loanParams)
-        console.log('properRequest', properRequest)
-
-        fundsTokenBalance = await this.token.balanceOf.call(this.funds.address)
-        console.log('fundsTokenBalance', fundsTokenBalance)
-
-        const fundBalance = await this.funds.balance.call(this.fund)
-        console.log('fundBalance', fundBalance)
-
-        console.log('toWei(loanReq3.toString(), unit)', toWei(loanReq3.toString(), unit))
-        console.log('col', col)
-
-        await this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
 
         this.loan = await this.funds.request.call(...loanParams)
         await this.funds.request(...loanParams)
