@@ -519,6 +519,39 @@ stablecoins.forEach((stablecoin) => {
         assert.isAbove(parseInt(BigNumber(cBalAfter).toFixed()), parseInt(BigNumber(cBalBefore).toFixed()))
         assert.isAbove(parseInt(BigNumber(cTokenLiquidityAfter).toFixed()), parseInt(BigNumber(cTokenLiquidityBefore).toFixed()))
       })
+
+      it('should not update cTokenMarketLiquidity if custom and compoundEnabled', async function() {
+        const fundParams = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter,
+          true,
+          0
+        ]
+
+        fund = await this.funds.createCustom.call(...fundParams)
+        await this.funds.createCustom(...fundParams)
+
+        await this.token.approve(this.funds.address, toWei('100', unit))
+
+        const cBalBefore = await this.cToken.balanceOf.call(this.funds.address)
+        const cTokenLiquidityBefore = await this.funds.cTokenMarketLiquidity.call()
+
+        await this.funds.deposit(fund, toWei('100', unit))
+
+        const cBalAfter = await this.cToken.balanceOf.call(this.funds.address)
+        const cTokenLiquidityAfter = await this.funds.cTokenMarketLiquidity.call()
+
+        expect(BigNumber(cBalAfter).toFixed(), BigNumber(cBalBefore).toFixed())
+        expect(BigNumber(cTokenLiquidityAfter).toFixed(), BigNumber(cTokenLiquidityBefore).toFixed())
+      })
     })
 
     describe('generate secret hashes', function() {
@@ -1008,7 +1041,7 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should fail trying to set default arbiter fee > 1%', async function() {
-        await expectRevert(this.funds.setDefaultArbiterFee(toWei(rateToSec('1.1'), 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
+        await expectRevert(this.funds.setDefaultArbiterFee(toWei(rateToSec('1.1'), 'gether')), 'VM Exception while processing transaction: revert')
       })
     })
 
