@@ -22,7 +22,7 @@ jobs:
   include:
     - stage: Codechecks
       script:
-        - CI=false npx codechecks
+        - CI=true npx codechecks
     - stage: Test
       script:
         - CI=false yarn test
