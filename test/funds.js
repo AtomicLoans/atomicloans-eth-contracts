@@ -8,6 +8,7 @@ const axios         = require('axios');
 
 const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+const ExamplePausableSaiCoin = artifacts.require("./ExamplePausableSaiCoin.sol")
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
@@ -36,12 +37,14 @@ async function getContracts(stablecoin) {
     const sales = await Sales.deployed();
     const token = await ExampleCoin.deployed();
     const cToken = await CErc20.deployed();
+    const pToken = await ExamplePausableSaiCoin.deployed();
     const med   = await Med.deployed();
 
-    return { funds, loans, sales, token, cToken, med }
+    return { funds, loans, sales, token, cToken, pToken, med }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
+    const pToken = await ExamplePausableSaiCoin.new()
     const comptroller = await Comptroller.deployed()
     const usdcInterestRateModel = await USDCInterestRateModel.deployed()
     const cToken = await CErc20.new(token.address, comptroller.address, usdcInterestRateModel.address, toWei('0.2', 'finney'), 'Compound Usdc', 'cUSDC', '8')
@@ -63,7 +66,7 @@ async function getContracts(stablecoin) {
     await loans.setP2WSH(p2wsh.address)
     await loans.setOnDemandSpv(onDemandSpv.address)
 
-    return { funds, loans, sales, token, cToken, med }
+    return { funds, loans, sales, token, cToken, pToken, med }
   }
 }
 
@@ -123,13 +126,14 @@ stablecoins.forEach((stablecoin) => {
 
       btcPrice = '9340.23'
 
-      const { funds, loans, sales, token, cToken, med } = await getContracts(name)
+      const { funds, loans, sales, token, cToken, pToken, med } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
       this.token = token
       this.cToken = cToken
+      this.pToken = pToken
       this.med = med
 
       this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
@@ -912,6 +916,16 @@ stablecoins.forEach((stablecoin) => {
 
       it('should not allow setLoans to be called by address other than deployer', async function() {
         await expectRevert(this.funds.setLoans(this.loans.address, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if token is pausable and paused', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.pToken.address, decimal)
+
+        await this.pToken.pause()
+
+        await expectRevert(funds.setLoans(this.loans.address), 'VM Exception while processing transaction: revert')
       })
     })
 

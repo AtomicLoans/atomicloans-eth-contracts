@@ -6,6 +6,7 @@ const BN = require('bignumber.js')
 var ExampleDaiCoin = artifacts.require("./ExampleDaiCoin.sol");
 var ExampleSaiCoin = artifacts.require("./ExampleSaiCoin.sol");
 var ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+var ExamplePausableSaiCoin = artifacts.require("./ExamplePausableSaiCoin.sol")
 var Medianizer = artifacts.require('./MedianizerExample.sol');
 var ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 var Funds = artifacts.require('./Funds.sol');
@@ -53,6 +54,10 @@ module.exports = function(deployer, network, accounts) {
     var dai = await ExampleDaiCoin.deployed();
     // const dai = { address: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa' } // KOVAN - Compound DAI Contract
     // const dai = { address: '0x6b175474e89094c44da98b954eedeac495271d0f' } // MAINNET
+
+    // Deploy Example SAI Pausable
+    await deployer.deploy(ExamplePausableSaiCoin);
+    var pausableSAi = await ExamplePausableSaiCoin.deployed();
 
     await deployer.deploy(MakerMedianizer) // LOCAL
     var makerMedianizer = await MakerMedianizer.deployed(); // LOCAL
