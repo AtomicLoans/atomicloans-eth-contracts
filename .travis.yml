@@ -20,12 +20,12 @@ before_script:
 
 jobs:
   include:
+    - stage: Codechecks
+      script:
+        - CI=false npx codechecks
     - stage: Test
       script:
         - CI=false yarn test
-    - stage: Codechecks
-      script:
-        - npx codechecks
     - stage: Coverage
       script:
-        - yarn coverage && cat coverage/lcov.info | coveralls
+        - CI=false yarn coverage && cat coverage/lcov.info | coveralls

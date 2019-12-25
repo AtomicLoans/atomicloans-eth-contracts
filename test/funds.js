@@ -35,20 +35,21 @@ async function getContracts(stablecoin) {
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
     const token = await ExampleCoin.deployed();
+    const cToken = await CErc20.deployed();
     const med   = await Med.deployed();
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, token, cToken, med }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
     const comptroller = await Comptroller.deployed()
     const usdcInterestRateModel = await USDCInterestRateModel.deployed()
-    const cUsdc = await CErc20.new(token.address, comptroller.address, usdcInterestRateModel.address, toWei('0.2', 'finney'), 'Compound Usdc', 'cUSDC', '8')
+    const cToken = await CErc20.new(token.address, comptroller.address, usdcInterestRateModel.address, toWei('0.2', 'finney'), 'Compound Usdc', 'cUSDC', '8')
 
-    await comptroller._supportMarket(cUsdc.address)
+    await comptroller._supportMarket(cToken.address)
 
     const funds = await Funds.new(token.address, '6')
-    await funds.setCompound(cUsdc.address, comptroller.address)
+    await funds.setCompound(cToken.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '6')
     const sales = await Sales.new(loans.address, med.address, token.address)
@@ -62,7 +63,7 @@ async function getContracts(stablecoin) {
     await loans.setP2WSH(p2wsh.address)
     await loans.setOnDemandSpv(onDemandSpv.address)
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, token, cToken, med }
   }
 }
 
@@ -122,12 +123,13 @@ stablecoins.forEach((stablecoin) => {
 
       btcPrice = '9340.23'
 
-      const { funds, loans, sales, token, med } = await getContracts(name)
+      const { funds, loans, sales, token, cToken, med } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
       this.token = token
+      this.cToken = cToken
       this.med = med
 
       this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
@@ -259,6 +261,83 @@ stablecoins.forEach((stablecoin) => {
         // Pull funds from loan fund
         await this.funds.withdraw(this.fund2, toWei('50', unit))
       })
+
+      it('should succeed with setCompoundEnabled false if compoundSet is false', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        await this.token.transfer(lender, toWei('100', unit))
+        await this.token.approve(funds.address, toWei('100', unit))
+
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          toWei('100', unit)
+        ]
+
+        const balBefore = await this.token.balanceOf.call(funds.address)
+
+        const fund = await funds.create.call(...fundParams)
+        await funds.create(...fundParams)
+
+        const balAfter = await this.token.balanceOf.call(funds.address)
+
+        expect(BigNumber(balBefore).plus(toWei('100', unit)).toFixed()).to.equal(BigNumber(balAfter).toFixed())
+      })
+
+      it('should fail with setCompoundEnabled true if compoundSet is false', async function() {
+        const funds = await Funds.new(this.token.address, '18')
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, '18')
+        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        await this.token.transfer(lender, toWei('100', unit))
+        await this.token.approve(funds.address, toWei('100', unit))
+
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          true,
+          toWei('100', unit)
+        ]
+
+        await expectRevert(funds.create(...fundParams), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should deposit funds on create if amount > 0', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          toWei('100', unit)
+        ]
+
+        await this.token.transfer(lender, toWei('100', unit))
+
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('100', unit), { from: lender })
+
+        const balBefore = await this.token.balanceOf.call(this.funds.address)
+
+        this.fund2 = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        const balAfter = await this.token.balanceOf.call(this.funds.address)
+
+        expect(BigNumber(balBefore).plus(toWei('100', unit)).toFixed()).to.equal(BigNumber(balAfter).toFixed())
+      })
     })
 
     describe('createCustom', function() {
@@ -320,6 +399,126 @@ stablecoins.forEach((stablecoin) => {
 
         await expectRevert(this.funds.createCustom(...fundParams), 'VM Exception while processing transaction: revert')
       })
+
+      it('should succeed with setCompoundEnabled false if compoundSet is false', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        await this.token.transfer(lender, toWei('100', unit))
+        await this.token.approve(funds.address, toWei('100', unit))
+
+        const fundParams = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter,
+          false,
+          toWei('100', unit)
+        ]
+
+        const balBefore = await this.token.balanceOf.call(funds.address)
+
+        const fund = await funds.createCustom.call(...fundParams)
+        await funds.createCustom(...fundParams)
+
+        const balAfter = await this.token.balanceOf.call(funds.address)
+
+        expect(BigNumber(balBefore).plus(toWei('100', unit)).toFixed()).to.equal(BigNumber(balAfter).toFixed())
+      })
+
+      it('should fail with setCompoundEnabled true if compoundSet is false', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        await this.token.approve(funds.address, toWei('20000', unit))
+
+        const fundParams = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter,
+          true,
+          toWei('100', unit)
+        ]
+
+        await expectRevert(funds.createCustom(...fundParams), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('deposit', function() {
+      it('should fail depositing to fund if erc20 allowance less than amount', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        const fund = await funds.create.call(...fundParams)
+        await funds.create(...fundParams)
+
+        await expectRevert(funds.deposit(fund, toWei('100', unit)), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should update cTokenMarketLiquidity if not custom and compoundEnabled', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          true,
+          0
+        ]
+
+        fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        await this.token.approve(this.funds.address, toWei('100', unit))
+
+        const cBalBefore = await this.cToken.balanceOf.call(this.funds.address)
+        const cTokenLiquidityBefore = await this.funds.cTokenMarketLiquidity.call()
+
+        await this.funds.deposit(fund, toWei('100', unit))
+
+        const cBalAfter = await this.cToken.balanceOf.call(this.funds.address)
+        const cTokenLiquidityAfter = await this.funds.cTokenMarketLiquidity.call()
+
+        expect(BigNumber(cBalBefore).plus(500000000000).toFixed()).to.equal(BigNumber(cBalAfter).toFixed())
+        assert.isAbove(parseInt(BigNumber(cTokenLiquidityAfter).toFixed()), parseInt(BigNumber(cTokenLiquidityBefore).toFixed()))
+      })
     })
 
     describe('generate secret hashes', function() {
@@ -332,13 +531,6 @@ stablecoins.forEach((stablecoin) => {
         await this.funds.generate(lendSechs)
 
         const secretHashesCountAfter = await this.funds.secretHashesCount.call(lender)
-
-        console.log('secretHashesCount', secretHashesCount)
-        console.log('secretHashesCountAfter', secretHashesCountAfter)
-
-        console.log('secretHashIndex', secretHashIndex)
-
-        console.log('lendSechs', lendSechs)
 
         const sech0 = await this.funds.secretHashes.call(lender, parseInt(secretHashesCount))
         const sech1 = await this.funds.secretHashes.call(lender, parseInt(secretHashesCount) + 1)
@@ -684,6 +876,16 @@ stablecoins.forEach((stablecoin) => {
       it('should not allow setLoans to be called twice', async function() {
         await expectRevert(this.funds.setLoans(this.loans.address), 'VM Exception while processing transaction: revert')
       })
+
+      it('should not allow setLoans to be called by address other than deployer', async function() {
+        await expectRevert(this.funds.setLoans(this.loans.address, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('setCompound', function() {
+      it('should not allow setLoans to be called by address other than deployer', async function() {
+        await expectRevert(this.funds.setCompound(this.loans.address, this.loans.address, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
     })
     
     describe('setUtilizationInterestDivisor', function() {
@@ -803,6 +1005,10 @@ stablecoins.forEach((stablecoin) => {
         const actualDefaultArbiterFee = await this.funds.defaultArbiterFee.call()
 
         assert.equal(expectedDefaultArbiterFee, actualDefaultArbiterFee)
+      })
+
+      it('should fail trying to set default arbiter fee > 1%', async function() {
+        await expectRevert(this.funds.setDefaultArbiterFee(toWei(rateToSec('1.1'), 'gether'), { from: lender2 }), 'VM Exception while processing transaction: revert')
       })
     })
 

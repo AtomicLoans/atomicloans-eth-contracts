@@ -28,6 +28,7 @@
     "test:alcompound:js": "truffle test ./test/alcompound.js",
     "test:alcompound:sol": "truffle test ./test/TestALCompound.sol",
     "test:alcompound": "truffle test ./test/alcompound.js ./test/TestALCompound.sol",
+    "test:bytes": "truffle test ./test/bytes.js",
     "test:e2e": "truffle test ./test/e2e.js",
     "test:interest_increase": "truffle test ./test/interestIncrease.js",
     "test:interest_decrease": "truffle test ./test/interestDecrease.js",
@@ -45,7 +46,7 @@
     "chai-bignumber": "^3.0.0",
     "chai-bn": "^0.2.0",
     "coveralls": "^3.0.5",
-    "eth-gas-reporter": "^0.2.12",
+    "eth-gas-reporter": "0.2.14",
     "openzeppelin-test-helpers": "^0.5.0",
     "solidity-coverage": "0.6.7"
   }

@@ -11,7 +11,8 @@ var ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 var Funds = artifacts.require('./Funds.sol');
 var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
-var P2WSH  = artifacts.require('./P2WSH.sol');
+var P2WSH = artifacts.require('./P2WSH.sol');
+var Bytes = artifacts.require('./Bytes.sol');
 
 var SAIInterestRateModel = artifacts.require('./SAIInterestRateModel.sol')
 var USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')

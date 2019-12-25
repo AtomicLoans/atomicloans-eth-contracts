@@ -327,6 +327,14 @@ contract Funds is DSMath, ALCompound {
         }
     }
 
+    function cTokenExchangeRate() public returns (uint256) {
+        if (compoundSet) {
+            return cToken.exchangeRateCurrent();
+        } else {
+            return 0;
+        }
+    }
+
     /**
      * @notice Get the custom indicator for a Loan Fund
      * @param fund The Id of a Loan Fund
@@ -664,7 +672,7 @@ contract Funds is DSMath, ALCompound {
      *
      */
     function calcGlobalInterest() public {
-        marketLiquidity = add(tokenMarketLiquidity, wmul(cTokenMarketLiquidity, cToken.exchangeRateCurrent()));
+        marketLiquidity = add(tokenMarketLiquidity, wmul(cTokenMarketLiquidity, cTokenExchangeRate()));
 
         if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) {
             uint256 utilizationRatio;
