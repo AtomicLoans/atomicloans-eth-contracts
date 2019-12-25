@@ -516,7 +516,7 @@ stablecoins.forEach((stablecoin) => {
         const cBalAfter = await this.cToken.balanceOf.call(this.funds.address)
         const cTokenLiquidityAfter = await this.funds.cTokenMarketLiquidity.call()
 
-        expect(BigNumber(cBalBefore).plus(500000000000).toFixed()).to.equal(BigNumber(cBalAfter).toFixed())
+        assert.isAbove(parseInt(BigNumber(cBalAfter).toFixed()), parseInt(BigNumber(cBalBefore).toFixed()))
         assert.isAbove(parseInt(BigNumber(cTokenLiquidityAfter).toFixed()), parseInt(BigNumber(cTokenLiquidityBefore).toFixed()))
       })
     })
