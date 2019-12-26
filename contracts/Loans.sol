@@ -743,9 +743,9 @@ contract Loans is DSMath {
     }
 
     function cancelSpv(bytes32 loan) internal {
-        onDemandSpv.cancelRequest(loanRequests[loan].refundRequestIDOneConf);
-        onDemandSpv.cancelRequest(loanRequests[loan].refundRequestIDSixConf);
-        onDemandSpv.cancelRequest(loanRequests[loan].seizeRequestIDOneConf);
-        onDemandSpv.cancelRequest(loanRequests[loan].seizeRequestIDSixConf);
+        require(onDemandSpv.cancelRequest(loanRequests[loan].refundRequestIDOneConf));
+        require(onDemandSpv.cancelRequest(loanRequests[loan].refundRequestIDSixConf));
+        require(onDemandSpv.cancelRequest(loanRequests[loan].seizeRequestIDOneConf));
+        require(onDemandSpv.cancelRequest(loanRequests[loan].seizeRequestIDSixConf));
     }
 }

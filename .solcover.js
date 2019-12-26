@@ -5,6 +5,7 @@ module.exports = {
     'ExampleDaiCoin.sol',
     'ExampleSaiCoin.sol',
     'ExampleUsdcCoin.sol',
+    'ExamplePausableSaiCoin.sol',
     'ISPVInterfaces.sol',
     'ISPVRequestManager.sol',
     'MedianizerExample.sol',

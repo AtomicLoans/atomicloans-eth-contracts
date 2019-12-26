@@ -39,7 +39,7 @@ interface ERC20Interface {
     function transferFrom(address, address, uint) external returns (bool);
 }
 
-interface ComptrollerInterface {
+interface TrollerInterface {
     function enterMarkets(address[] calldata cTokens) external returns (uint[] memory);
     function exitMarket(address cTokenAddress) external returns (uint);
     function getAssetsIn(address account) external view returns (address[] memory);
@@ -62,7 +62,7 @@ contract Helpers is DSMath {
     }
 
     function enterMarket(address cErc20) internal {
-        ComptrollerInterface troller = ComptrollerInterface(getComptrollerAddress());
+        TrollerInterface troller = TrollerInterface(getComptrollerAddress());
         address[] memory markets = troller.getAssetsIn(address(this));
         bool isEntered = false;
         for (uint i = 0; i < markets.length; i++) {
