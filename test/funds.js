@@ -1263,6 +1263,94 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
+    describe('enableCompound', function() {
+      it('should fail if compoundSet is false', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        const fund = await funds.create.call(...fundParams)
+        await funds.create(...fundParams)
+
+        await expectRevert(funds.enableCompound(fund), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if compound already enabled', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          true,
+          0
+        ]
+
+        fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        await expectRevert(this.funds.enableCompound(fund), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if msg.sender isn\'t lender', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        await expectRevert(this.funds.enableCompound(fund, { from: lender2 }), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('disableCompound', function() {
+      it('should fail if compound isn\'t already enabled', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        await expectRevert(this.funds.disableCompound(fund), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if msg.sender isn\'t lender', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          true,
+          0
+        ]
+
+        fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        await expectRevert(this.funds.disableCompound(fund, { from: lender2 }), 'VM Exception while processing transaction: revert')
+      })
+    })
+
     describe('decreaseTotalBorrow', function() {
       it('should fail calling if not loans contract address', async function() {
         await expectRevert(this.funds.decreaseTotalBorrow(toWei('1', 'ether')), 'VM Exception while processing transaction: revert')
