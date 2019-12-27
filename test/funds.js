@@ -795,6 +795,36 @@ stablecoins.forEach((stablecoin) => {
 
         await expectRevert(this.funds.updateCustom(this.fund, ...fundParams, { from: lender2 }), 'VM Exception while processing transaction: revert')
       })
+
+      it('should fail if trying to update non-custom fund', async function() {
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        const newFundExpiry = Math.floor(Date.now() / 1000) + toSecs({days: 366})
+
+        const fundParams2 = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter
+        ]
+
+        await expectRevert(this.funds.updateCustom(fund, ...fundParams2), 'VM Exception while processing transaction: revert')
+      })
     })
 
     describe('request', function() {
@@ -867,38 +897,47 @@ stablecoins.forEach((stablecoin) => {
         await expectRevert(this.funds.request(...loanParams), 'invalid opcode')
       })
 
-      // it('should fail if amount is greater than max loan amount', async function() {
-      //   const fundParams = [
-      //     toSecs({days: 366}),
-      //     toWei('15', unit),
-      //     arbiter,
-      //     false,
-      //     0
-      //   ]
+      it('should fail if amount is greater than max loan amount', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
 
-      //   fund = await this.funds.create.call(...fundParams)
-      //   await this.funds.create(...fundParams)
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
 
-      //   // Push funds to loan fund
-      //   await this.token.approve(this.funds.address, toWei('100', unit))
-      //   await this.funds.deposit(fund, toWei('100', unit))
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
 
-      //   const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
 
-      //   const loanParams = [
-      //     fund,
-      //     borrower,
-      //     toWei('20', unit),
-      //     col,
-      //     toSecs({days: 2}),
-      //     Math.floor(Date.now() / 1000),
-      //     [ ...borSechs, ...lendSechs ],
-      //     ensure0x(borpubk),
-      //     ensure0x(lendpubk)
-      //   ]
+        const fund = await funds.create.call(...fundParams)
+        await funds.create(...fundParams)
 
-      //   await expectRevert(this.funds.request(...loanParams), 'revert')
-      // })
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('100', unit))
+        await this.funds.deposit(fund, toWei('100', unit))
+
+        const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
+
+        const loanParams = [
+          fund,
+          borrower,
+          toWei('20', unit),
+          col,
+          toSecs({days: 2}),
+          Math.floor(Date.now() / 1000),
+          [ ...borSechs, ...lendSechs ],
+          ensure0x(borpubk),
+          ensure0x(lendpubk)
+        ]
+
+        await expectRevert(this.funds.request(...loanParams), 'invalid opcode')
+      })
     })
 
     describe('withdraw funds', function() {
@@ -1226,6 +1265,18 @@ stablecoins.forEach((stablecoin) => {
 
     describe('decreaseTotalBorrow', function() {
       it('should fail calling if not loans contract address', async function() {
+        await expectRevert(this.funds.decreaseTotalBorrow(toWei('1', 'ether')), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail decreaseTotalBorrow if totalBorrow is 0', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+
+        await funds.setLoans(accounts[0])
+
         await expectRevert(this.funds.decreaseTotalBorrow(toWei('1', 'ether')), 'VM Exception while processing transaction: revert')
       })
     })
