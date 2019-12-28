@@ -139,7 +139,7 @@ stablecoins.forEach((stablecoin) => {
       this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
 
       const fundParams = [
-        toWei('1', unit),
+        toWei('10', unit),
         toWei('100', unit),
         toSecs({days: 1}),
         toSecs({days: 366}),
@@ -898,25 +898,41 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should fail if amount is greater than max loan amount', async function() {
-        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('105', unit))
+        await this.funds.deposit(this.fund, toWei('105', unit))
 
-        const funds = await Funds.new(this.token.address, decimal)
-        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
-        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+        const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-        await funds.setLoans(loans.address)
-        await loans.setSales(sales.address)
+        const loanParams = [
+          this.fund,
+          borrower,
+          toWei('105', unit),
+          col,
+          toSecs({days: 2}),
+          Math.floor(Date.now() / 1000),
+          [ ...borSechs, ...lendSechs ],
+          ensure0x(borpubk),
+          ensure0x(lendpubk)
+        ]
+
+        await expectRevert(this.funds.request(...loanParams), 'revert')
+      })
+
+      it('should succeed requesting from non-custom fund', async function() {
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
 
         const fundParams = [
           toSecs({days: 366}),
           BigNumber(2).pow(256).minus(1).toFixed(),
           arbiter,
-          false,
+          true,
           0
         ]
 
-        const fund = await funds.create.call(...fundParams)
-        await funds.create(...fundParams)
+        const fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
 
         // Push funds to loan fund
         await this.token.approve(this.funds.address, toWei('100', unit))
@@ -936,7 +952,12 @@ stablecoins.forEach((stablecoin) => {
           ensure0x(lendpubk)
         ]
 
-        await expectRevert(this.funds.request(...loanParams), 'invalid opcode')
+        const loan = await this.funds.request.call(...loanParams)
+        await this.funds.request(...loanParams)
+
+        const { set } = await this.loans.secretHashes.call(loan)
+
+        expect(set).to.equal(true)
       })
     })
 
