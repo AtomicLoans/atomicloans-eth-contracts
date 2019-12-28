@@ -894,7 +894,7 @@ stablecoins.forEach((stablecoin) => {
           ensure0x(lendpubk)
         ]
 
-        await expectRevert(this.funds.request(...loanParams), 'invalid opcode')
+        await expectRevert(this.funds.request(...loanParams), 'revert')
       })
 
       it('should fail if amount is greater than max loan amount', async function() {
