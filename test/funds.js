@@ -1138,6 +1138,8 @@ stablecoins.forEach((stablecoin) => {
         await this.pToken.pause()
 
         await expectRevert(funds.setLoans(this.loans.address), 'VM Exception while processing transaction: revert')
+
+        await this.pToken.unpause()
       })
     })
 
