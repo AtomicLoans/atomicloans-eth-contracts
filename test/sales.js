@@ -56,7 +56,7 @@ async function getContracts(stablecoin) {
     await funds.setCompound(cUsdc.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '6')
-    const sales = await Sales.new(loans.address, med.address, token.address)
+    const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
@@ -111,35 +111,38 @@ async function getLoanValues(contract, instance) {
   return { collateral, collateralValue, minCollateralValue, owedToLender, fee, penalty, repaid, owedForLiquidation, safe }
 }
 
-async function getBalances(token, lender, borrower, arbiter, medianizer) {
+async function getBalances(token, lender, borrower, arbiter, medianizer, funds) {
   const lendBal = await token.balanceOf.call(lender)
   const borBal = await token.balanceOf.call(borrower)
   const arbiterBal = await token.balanceOf.call(arbiter)
   const medBal = await token.balanceOf.call(medianizer)
+  const fundBal = await token.balanceOf.call(funds)
 
-  return { lendBal, borBal, arbiterBal, medBal }
+  return { lendBal, borBal, arbiterBal, medBal, fundBal }
 }
 
-async function getBalancesBefore(token, lender, borrower, arbiter, medianizer) {
+async function getBalancesBefore(token, lender, borrower, arbiter, medianizer, funds) {
   const {
     lendBal: lendBalBefore,
     borBal: borBalBefore,
     arbiterBal: arbiterBalBefore,
-    medBal: medBalBefore
-  } = await getBalances(token, lender, borrower, arbiter, medianizer)
+    medBal: medBalBefore,
+    fundBal: fundBalBefore
+  } = await getBalances(token, lender, borrower, arbiter, medianizer, funds)
 
-  return { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore }
+  return { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore, fundBalBefore }
 }
 
-async function getBalancesAfter(token, lender, borrower, arbiter, medianizer) {
+async function getBalancesAfter(token, lender, borrower, arbiter, medianizer, funds) {
   const {
     lendBal: lendBalAfter,
     borBal: borBalAfter,
     arbiterBal: arbiterBalAfter,
-    medBal: medBalAfter
-  } = await getBalances(token, lender, borrower, arbiter, medianizer)
+    medBal: medBalAfter,
+    fundBal: fundBalAfter
+  } = await getBalances(token, lender, borrower, arbiter, medianizer, funds)
 
-  return { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter }
+  return { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter, fundBalAfter }
 }
 
 stablecoins.forEach((stablecoin) => {
@@ -320,13 +323,13 @@ stablecoins.forEach((stablecoin) => {
 
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        const { lendBalBefore, borBalBefore, arbiterBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalBefore, borBalBefore, arbiterBalBefore, fundBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
-        const { lendBalAfter, borBalAfter, arbiterBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalAfter, borBalAfter, arbiterBalAfter, fundBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         const { fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
+        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).toFixed(), fundBalAfter.toString())
         assert.equal(BigNumber(borBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedForLiquidation)).toString(), borBalAfter.toString())
         assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter)
 
@@ -348,13 +351,13 @@ stablecoins.forEach((stablecoin) => {
         await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        const { lendBalBefore, borBalBefore, arbiterBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalBefore, borBalBefore, arbiterBalBefore, fundBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
-        const { lendBalAfter, borBalAfter, arbiterBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalAfter, borBalAfter, arbiterBalAfter, fundBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         const { owedToLender, fee, penalty, repaid, owedForLiquidation, safe } = await getLoanValues(this.loans, this.loan)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        assert.equal(BigNumber(lendBalBefore).plus(BigNumber(discountBuy).plus(repaid)).minus(fee).toFixed(), lendBalAfter.toString())
+        assert.equal(BigNumber(fundBalBefore).plus(BigNumber(discountBuy).plus(repaid)).minus(fee).toFixed(), fundBalAfter.toString())
         assert.equal(borBalBefore.toString(), borBalAfter.toString())
         assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter)
 
@@ -362,7 +365,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(taken, true)
       })
 
-      it('should disperse all funds to lender and arbiter if discountBuy + repaid covers only principal + interest + fee', async function() {
+      it.only('should disperse all funds to lender and arbiter if discountBuy + repaid covers only principal + interest + fee', async function() {
         await approveAndTransfer(this.token, borrower, this.loans, toWei('50', unit))
 
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
@@ -384,12 +387,12 @@ stablecoins.forEach((stablecoin) => {
         await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        const { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore, fundBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
-        const { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter, fundBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        assert.equal(BigNumber(lendBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(lendBalAfter).dividedBy(divisor).toFixed(precision))
+        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(fundBalAfter).dividedBy(divisor).toFixed(precision))
         assert.equal(medBalBefore.toString(), medBalAfter.toString())
         assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter.toString())
         assert.equal(borBalBefore.toString(), borBalAfter.toString())
@@ -420,13 +423,13 @@ stablecoins.forEach((stablecoin) => {
         await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        const { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore, fundBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
-        const { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter, fundBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         const { penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        assert.equal(BigNumber(lendBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(lendBalAfter).dividedBy(divisor).toFixed(precision))
+        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(fundBalAfter).dividedBy(divisor).toFixed(precision))
         assert.equal(BigNumber(medBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedToLender).minus(fee)).toString(), medBalAfter.toString())
         assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter.toString())
         assert.equal(borBalBefore.toString(), borBalAfter.toString())
@@ -457,11 +460,11 @@ stablecoins.forEach((stablecoin) => {
         await approveAndTransfer(this.token, liquidator, this.loans, toWei('200', unit))
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        const { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalBefore, borBalBefore, arbiterBalBefore, medBalBefore, fundBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
-        const { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter, fundBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
 
-        assert.equal(BigNumber(lendBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(lendBalAfter).dividedBy(divisor).toFixed(precision))
+        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(fundBalAfter).dividedBy(divisor).toFixed(precision))
         assert.equal(BigNumber(medBalBefore).plus(penalty).toFixed(), medBalAfter.toString())
         assert.equal(BigNumber(arbiterBalBefore).plus(fee).toFixed(), arbiterBalAfter.toString())
         assert.equal(BigNumber(borBalBefore).toFixed(), borBalAfter.toString())
@@ -485,15 +488,15 @@ stablecoins.forEach((stablecoin) => {
 
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        const { lendBalBefore, borBalBefore, arbiterBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalBefore, borBalBefore, arbiterBalBefore, fundBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
 
         await this.sales.provideSecretsAndAccept(this.sale, [ lendSecs[1], borSecs[1], liquidatorSecs[0] ])
 
-        const { lendBalAfter, borBalAfter, arbiterBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { lendBalAfter, borBalAfter, arbiterBalAfter, fundBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         const { fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        assert.equal(BigNumber(lendBalBefore).plus(owedToLender).toFixed(), lendBalAfter.toString())
+        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).toFixed(), fundBalAfter.toString())
         assert.equal(BigNumber(borBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedForLiquidation)).toFixed(), borBalAfter.toString())
         assert.equal(BigNumber(arbiterBalBefore).plus(fee).toFixed(), arbiterBalAfter)
 
@@ -564,12 +567,12 @@ stablecoins.forEach((stablecoin) => {
         await time.increase(toSecs({hours: 4, minutes: 2}))
 
         const balBefore = await this.token.balanceOf.call(liquidator)
-        const { borBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+        const { borBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
 
         await this.sales.refund(this.sale)
 
         const balAfter = await this.token.balanceOf.call(liquidator)
-        const { borBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { borBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
 
         assert.equal(BigNumber(balBefore).plus(discountBuy).toFixed(), balAfter.toString())
         assert.equal(borBalBefore.toString(), borBalAfter.toString())
@@ -614,12 +617,12 @@ stablecoins.forEach((stablecoin) => {
         await time.increase(toSecs({hours: 4, minutes: 2}))
 
         const balBefore = await this.token.balanceOf.call(liquidator3)
-        const { borBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address)
+        const { borBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
 
         await this.sales.refund(this.sale3)
 
         const balAfter = await this.token.balanceOf.call(liquidator3)
-        const { borBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address)
+        const { borBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
 
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 

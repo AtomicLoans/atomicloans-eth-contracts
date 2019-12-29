@@ -8,6 +8,7 @@ import './DSMath.sol';
 pragma solidity ^0.5.10;
 
 contract Sales is DSMath {
+    FundsInterface funds;
 	Loans loans;
 	Medianizer med;
 
@@ -101,11 +102,13 @@ contract Sales is DSMath {
         return sales[sale].off;
     }
 
-    constructor (Loans loans_, Medianizer med_, ERC20 token_) public {
+    constructor (Loans loans_, FundsInterface funds_, Medianizer med_, ERC20 token_) public {
     	deployer = address(loans_);
     	loans    = loans_;
+        funds    = funds_;
     	med      = med_;
         token    = token_;
+        require(token.approve(address(funds), 2**256-1));
     }
 
     function next(bytes32 loan) public view returns (uint256) {
@@ -232,7 +235,13 @@ contract Sales is DSMath {
         }
 
         uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
-        require(token.transfer(sales[sale].lender, amount));
+
+        if (loans.fundIndex(sales[sale].loanIndex) == bytes32(0)) {
+            require(token.transfer(sales[sale].lender, amount));
+        } else {
+            funds.deposit(loans.fundIndex(sales[sale].loanIndex), amount);
+        }
+
         available = sub(available, amount);
 
         if (available >= loans.penalty(sales[sale].loanIndex)) {

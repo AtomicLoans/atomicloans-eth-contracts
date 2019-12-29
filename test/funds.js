@@ -55,7 +55,7 @@ async function getContracts(stablecoin) {
     await funds.setCompound(cToken.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '6')
-    const sales = await Sales.new(loans.address, med.address, token.address)
+    const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
@@ -271,7 +271,7 @@ stablecoins.forEach((stablecoin) => {
 
         const funds = await Funds.new(this.token.address, decimal)
         const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
-        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
 
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
@@ -300,7 +300,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail with setCompoundEnabled true if compoundSet is false', async function() {
         const funds = await Funds.new(this.token.address, '18')
         const loans = await Loans.new(funds.address, this.med.address, this.token.address, '18')
-        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
 
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
@@ -409,7 +409,7 @@ stablecoins.forEach((stablecoin) => {
 
         const funds = await Funds.new(this.token.address, decimal)
         const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
-        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
 
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
@@ -447,7 +447,7 @@ stablecoins.forEach((stablecoin) => {
 
         const funds = await Funds.new(this.token.address, decimal)
         const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
-        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
 
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
@@ -479,7 +479,7 @@ stablecoins.forEach((stablecoin) => {
 
         const funds = await Funds.new(this.token.address, decimal)
         const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
-        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
 
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
@@ -1290,7 +1290,7 @@ stablecoins.forEach((stablecoin) => {
 
         const funds = await Funds.new(this.token.address, decimal)
         const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
-        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
 
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
@@ -1382,7 +1382,7 @@ stablecoins.forEach((stablecoin) => {
 
         const funds = await Funds.new(this.token.address, decimal)
         const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
-        const sales = await Sales.new(loans.address, this.med.address, this.token.address)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
 
         await funds.setLoans(accounts[0])
 

@@ -155,7 +155,7 @@ module.exports = function(deployer, network, accounts) {
     await funds.setCompound(csai.address, comptroller.address);
     await deployer.deploy(Loans, funds.address, medianizer.address, sai.address, '18');
     var loans = await Loans.deployed();
-    await deployer.deploy(Sales, loans.address, medianizer.address, sai.address);
+    await deployer.deploy(Sales, loans.address, funds.address, medianizer.address, sai.address);
     var sales = await Sales.deployed();
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
@@ -168,14 +168,14 @@ module.exports = function(deployer, network, accounts) {
     const usdcFunds = await Funds.new(usdc.address, '6')
     await usdcFunds.setCompound(cusdc.address, comptroller.address)
     const usdcLoans = await Loans.new(usdcFunds.address, medianizer.address, usdc.address, '6')
-    const usdcSales = await Sales.new(usdcLoans.address, medianizer.address, usdc.address)
+    const usdcSales = await Sales.new(usdcLoans.address, usdcFunds.address, medianizer.address, usdc.address)
     await usdcFunds.setLoans(usdcLoans.address)
     await usdcLoans.setSales(usdcSales.address)
 
     const daiFunds = await Funds.new(dai.address, '6')
     await daiFunds.setCompound(dai.address, comptroller.address)
     const daiLoans = await Loans.new(daiFunds.address, medianizer.address, dai.address, '6')
-    const daiSales = await Sales.new(daiLoans.address, medianizer.address, dai.address)
+    const daiSales = await Sales.new(daiLoans.address, daiFunds.address, medianizer.address, dai.address)
     await daiFunds.setLoans(daiLoans.address)
     await daiLoans.setSales(daiSales.address)
 
