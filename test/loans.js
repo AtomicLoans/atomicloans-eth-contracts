@@ -223,6 +223,54 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
+    describe('setSales', function() {
+      it('should fail if msg.sender is not deployer', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+
+        await expectRevert(loans.setSales(sales.address, { from: accounts[1]}), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('setP2WSH', function() {
+      it('should fail if msg.sender is not deployed', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const p2wsh = await P2WSH.deployed()
+
+        await expectRevert(loans.setP2WSH(p2wsh.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if p2wsh already set', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const p2wsh = await P2WSH.deployed()
+
+        await loans.setP2WSH(p2wsh.address)
+
+        await expectRevert(loans.setP2WSH(p2wsh.address), 'VM Exception while processing transaction: revert')
+      })
+    })
+
     describe('accept', function() {
       it('should accept successfully if lender secret provided', async function() {
         await this.loans.approve(this.loan)
