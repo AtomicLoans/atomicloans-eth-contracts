@@ -8,6 +8,7 @@ const axios         = require('axios');
 
 const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+const ExamplePausableSaiCoin = artifacts.require("./ExamplePausableSaiCoin.sol")
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
@@ -35,12 +36,14 @@ async function getContracts(stablecoin) {
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
     const token = await ExampleCoin.deployed();
+    const pToken = await ExamplePausableSaiCoin.deployed();
     const med   = await Med.deployed();
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, token, pToken, med }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
+    const pToken = await ExamplePausableSaiCoin.deployed()
     const comptroller = await Comptroller.deployed()
     const usdcInterestRateModel = await USDCInterestRateModel.deployed()
     const cUsdc = await CErc20.new(token.address, comptroller.address, usdcInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Usdc', 'cUSDC', '8')
@@ -62,7 +65,7 @@ async function getContracts(stablecoin) {
     await loans.setP2WSH(p2wsh.address)
     await loans.setOnDemandSpv(onDemandSpv.address)
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, token, pToken, med }
   }
 }
 
@@ -78,7 +81,7 @@ stablecoins.forEach((stablecoin) => {
   contract(`${name} Loans`, accounts => {
     const lender     = accounts[0]
     const borrower   = accounts[1]
-    const arbiter      = accounts[2]
+    const arbiter    = accounts[2]
     const liquidator = accounts[3]
 
     let currentTime
@@ -133,12 +136,13 @@ stablecoins.forEach((stablecoin) => {
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-      const { funds, loans, sales, token, med } = await getContracts(name)
+      const { funds, loans, sales, token, pToken, med } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
       this.token = token
+      this.pToken = pToken
       this.med = med
 
       this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
@@ -203,6 +207,20 @@ stablecoins.forEach((stablecoin) => {
 
       this.loan = await this.funds.request.call(...loanParams)
       await this.funds.request(...loanParams)
+    })
+
+    describe('constructor', function() {
+      it('should fail deploying Loans if token is pausable and paused', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.pToken.address, decimal)
+
+        await this.pToken.pause()
+
+        await expectRevert(Loans.new(funds.address, this.med.address, this.pToken.address, decimal), 'VM Exception while processing transaction: revert')
+
+        await this.pToken.unpause()
+      })
     })
 
     describe('accept', function() {
