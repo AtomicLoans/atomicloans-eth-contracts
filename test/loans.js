@@ -596,6 +596,22 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(fundedBefore, false)
         assert.equal(fundedAfter, true)
       })
+
+      it('should return boolean determining whether funds have been depositd into loan', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+
+        await time.increase(toSecs({ days: 1 }))
+
+        await this.med.poke(numToBytes32(toWei(btcPrice, 'ether')), false)
+
+        await expectRevert(this.loans.collateralValue(loan), 'VM Exception while processing transaction: revert')
+      })
     })
 
     describe('approved', function() {

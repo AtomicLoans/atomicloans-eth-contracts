@@ -21,7 +21,10 @@ contract MedianizerExample {
     function poke() public {
         has = true;
     }
-
+    function poke(bytes32 wut, bool wat) public {
+        val = wut;
+        has = wat;
+    }
     function fund(uint256 amt, ERC20 tok) public {
         tok.transferFrom(msg.sender, address(this), amt);
     }
