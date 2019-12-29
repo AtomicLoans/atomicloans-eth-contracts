@@ -365,7 +365,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(taken, true)
       })
 
-      it.only('should disperse all funds to lender and arbiter if discountBuy + repaid covers only principal + interest + fee', async function() {
+      it('should disperse all funds to lender and arbiter if discountBuy + repaid covers only principal + interest + fee', async function() {
         await approveAndTransfer(this.token, borrower, this.loans, toWei('50', unit))
 
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
@@ -392,7 +392,7 @@ stablecoins.forEach((stablecoin) => {
         const { lendBalAfter, borBalAfter, arbiterBalAfter, medBalAfter, fundBalAfter } = await getBalancesAfter(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision), BigNumber(fundBalAfter).dividedBy(divisor).toFixed(precision))
+        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).dividedBy(divisor).toFixed(precision - 1), BigNumber(fundBalAfter).dividedBy(divisor).toFixed(precision - 1))
         assert.equal(medBalBefore.toString(), medBalAfter.toString())
         assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter.toString())
         assert.equal(borBalBefore.toString(), borBalAfter.toString())
