@@ -310,7 +310,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('refund', function() {
-      it('should returns loan repayment to borrower', async function() {
+      it('should return loan repayment to borrower', async function() {
         await this.loans.approve(this.loan)
 
         await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
@@ -334,6 +334,71 @@ stablecoins.forEach((stablecoin) => {
         const balAfterRefund = await this.token.balanceOf.call(borrower)
 
         const off = await this.loans.off.call(this.loan)
+        assert.equal(off, true);
+
+        assert.equal(BigNumber(balBefore).toFixed(), BigNumber(balAfterRefund).toFixed())
+        assert.equal(BigNumber(balBeforeRefund).plus(owedForLoan).toFixed(), BigNumber(balAfterRefund).toFixed())
+      })
+
+      it('should return loan repayment to borrower with non-custom fund', async function() {
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
+
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        const fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('100', unit))
+        await this.funds.deposit(fund, toWei('100', unit))
+
+        const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
+
+        const loanParams = [
+          fund,
+          borrower,
+          toWei('20', unit),
+          col,
+          toSecs({days: 2}),
+          Math.floor(Date.now() / 1000),
+          [ ...borSechs, ...lendSechs ],
+          ensure0x(borpubk),
+          ensure0x(lendpubk)
+        ]
+
+        const loan = await this.funds.request.call(...loanParams)
+        await this.funds.request(...loanParams)
+
+        await this.loans.approve(loan)
+
+        await this.loans.withdraw(loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const balBefore = await this.token.balanceOf.call(borrower)
+
+        const owedForLoan = await this.loans.owedForLoan.call(loan)
+        await this.loans.repay(loan, owedForLoan, { from: borrower })
+
+        await time.increase(toSecs({ days: 5 }))
+
+        const balBeforeRefund = await this.token.balanceOf.call(borrower)
+
+        await this.loans.refund(loan, { from: borrower })
+
+        const balAfterRefund = await this.token.balanceOf.call(borrower)
+
+        const off = await this.loans.off.call(loan)
         assert.equal(off, true);
 
         assert.equal(BigNumber(balBefore).toFixed(), BigNumber(balAfterRefund).toFixed())
