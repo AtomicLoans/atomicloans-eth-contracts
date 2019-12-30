@@ -8,7 +8,7 @@ contract ExampleSaiCoin is ERC20 {
   uint public decimals = 18;
 
   constructor () public {
-    _mint(msg.sender, 42020000000000000000000);
+    _mint(msg.sender, 82020000000000000000000);
   }
 
   function mintTokens () public {
