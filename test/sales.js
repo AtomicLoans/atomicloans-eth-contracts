@@ -787,6 +787,16 @@ stablecoins.forEach((stablecoin) => {
 
         await expectRevert(this.sales.refund(this.sale), 'VM Exception while processing transaction: revert')
       })
+
+      it('should fail if discountBuy is 0', async function() {
+        await expectRevert(this.sales.refund(numToBytes32(0)), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('provideSecret', function() {
+      it('should fail if sale not set', async function() {
+        await expectRevert(this.sales.provideSecret(numToBytes32(0), numToBytes32(0)), 'VM Exception while processing transaction: revert')
+      })
     })
   })
 })
