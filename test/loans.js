@@ -681,7 +681,7 @@ stablecoins.forEach((stablecoin) => {
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
         await this.loans.repay(this.loan, owedForLoan, { from: borrower })
 
-        await time.increase(toSecs({ days: 4 }))
+        await time.increase(toSecs({ days: 5 }))
 
         await expectRevert(this.loans.accept(this.loan, lendSecs[0]), 'VM Exception while processing transaction: revert')
       })

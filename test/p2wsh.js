@@ -348,23 +348,35 @@ stablecoins.forEach((stablecoin) => {
         const values = getCollateralSatAmounts(collateral, owedToLender, btcPrice, unit);
         assert.equal((values.refundableValue + values.seizableValue), col)
 
+        console.log('test1')
+
         const colParams = await getCollateralParams(collateralSatValues, this.loans, this.loan)
+
+        console.log('test2')
 
         const lockAddressParams = [colParams.pubKeys, colParams.secretHashes, colParams.expirations]
         const lockAddresses = await bitcoin.client.loan.collateral.getLockAddresses(...lockAddressParams)
 
+        console.log('test3')
+
         const refundableInfo = await this.p2wsh.getP2WSH(this.loan, false)
         const seizableInfo = await this.p2wsh.getP2WSH(this.loan, true)
+
+        console.log('test4')
 
         const testRefundableP2WSH = bitcoinjs.payments.p2wsh({
           redeem: { output: Buffer.from(remove0x(refundableInfo['0']), 'hex'), network: bitcoinjs.networks.regtest },
           network: bitcoinjs.networks.regtest
         })
 
+        console.log('test5')
+
         const testSeizableP2WSH = bitcoinjs.payments.p2wsh({
           redeem: { output: Buffer.from(remove0x(seizableInfo['0']), 'hex'), network: bitcoinjs.networks.regtest },
           network: bitcoinjs.networks.regtest
         })
+
+        console.log('test6')
 
         const { refundableAddress, seizableAddress } = lockAddresses
 
