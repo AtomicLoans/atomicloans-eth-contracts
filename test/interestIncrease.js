@@ -90,6 +90,33 @@ stablecoins.forEach((stablecoin) => {
   const { name, unit } = stablecoin
 
   contract(`${name} Global Interest Rate Increase`, accounts => {
+    currentTime = await time.latest();
+
+    const blockHeight = await bitcoin.client.chain.getBlockHeight()
+    if (blockHeight < 101) {
+      await bitcoin.client.chain.generateBlock(101)
+    } else {
+      // Bitcoin regtest node can only generate blocks if within 2 hours
+      const latestBlockHash = await bitcoin.client.getMethod('jsonrpc')('getblockhash', blockHeight)
+      const latestBlock = await bitcoin.client.getMethod('jsonrpc')('getblock', latestBlockHash)
+
+      let btcTime = latestBlock.time
+      const ethTime = await getCurrentTime()
+
+      await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+      await bitcoin.client.chain.generateBlock(6)
+
+      if (btcTime > ethTime) {
+        await time.increase(btcTime - ethTime)
+      }
+
+      while (ethTime > btcTime && (ethTime - btcTime) >= toSecs({ hours: 2 })) {
+        await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+        await bitcoin.client.chain.generateBlock(6)
+        btcTime += toSecs({ hours: 1, minutes: 59 })
+      }
+    }
+
     const lender     = accounts[0]
     const borrower   = accounts[1]
     const arbiter    = accounts[2]
