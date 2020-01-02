@@ -9,8 +9,8 @@ pragma solidity ^0.5.10;
 
 contract Sales is DSMath {
     FundsInterface funds;
-	Loans loans;
-	Medianizer med;
+    Loans loans;
+    Medianizer med;
 
     uint256 public constant SWAP_EXP = 2 hours;       // Swap Expiration
     uint256 public constant SETTLEMENT_EXP = 4 hours; // Settlement Expiration
@@ -106,7 +106,7 @@ contract Sales is DSMath {
     	deployer = address(loans_);
     	loans    = loans_;
         funds    = funds_;
-    	med      = med_;
+        med      = med_;
         token    = token_;
         require(token.approve(address(funds), 2**256-1));
     }
@@ -130,19 +130,19 @@ contract Sales is DSMath {
      * @return sale The Id of the sale
      */
     function create(
-    	bytes32 loanIndex,
-    	address borrower,
-    	address lender,
+        bytes32 loanIndex,
+        address borrower,
+        address lender,
         address arbiter,
         address liquidator,
-    	bytes32 secretHashA,
-    	bytes32 secretHashB,
-    	bytes32 secretHashC,
+        bytes32 secretHashA,
+        bytes32 secretHashB,
+        bytes32 secretHashC,
         bytes32 secretHashD,
         bytes20 pubKeyHash
-	) external returns(bytes32 sale) {
-    	require(msg.sender == address(loans));
-    	saleIndex = add(saleIndex, 1);
+        ) external returns(bytes32 sale) {
+        require(msg.sender == address(loans));
+        saleIndex = add(saleIndex, 1);
         sale = bytes32(saleIndex);
         sales[sale].loanIndex   = loanIndex;
         sales[sale].borrower    = borrower;
@@ -158,7 +158,7 @@ contract Sales is DSMath {
         secretHashes[sale].secretHashC = secretHashC;
         secretHashes[sale].secretHashD = secretHashD;
         saleIndexByLoan[loanIndex].push(sale);
-    }
+   }
 
     /**
      * @notice Provide Bitcoin signatures for moving collateral to collateral swap script
@@ -168,27 +168,27 @@ contract Sales is DSMath {
      *
      *         Note: More info on the collateral swap script can be seen here:
                      https://github.com/AtomicLoans/chainabstractionlayer-loans
-     */
-	function provideSig(
-		bytes32        sale,
-		bytes calldata refundableSig,
-		bytes calldata seizableSig
-	) external {
-		require(sales[sale].set);
-		require(now < settlementExpiration(sale));
-		if (msg.sender == sales[sale].borrower) {
-			borrowerSigs[sale].refundableSig = refundableSig;
-			borrowerSigs[sale].seizableSig   = seizableSig;
-		} else if (msg.sender == sales[sale].lender) {
-			lenderSigs[sale].refundableSig = refundableSig;
-			lenderSigs[sale].seizableSig   = seizableSig;
-		} else if (msg.sender == sales[sale].arbiter) {
-			arbiterSigs[sale].refundableSig = refundableSig;
-			arbiterSigs[sale].seizableSig   = seizableSig;
-		} else {
-			revert();
-		}
-	}
+                     */
+    function provideSig(
+        bytes32        sale,
+        bytes calldata refundableSig,
+        bytes calldata seizableSig
+    ) external {
+        require(sales[sale].set);
+        require(now < settlementExpiration(sale));
+        if (msg.sender == sales[sale].borrower) {
+            borrowerSigs[sale].refundableSig = refundableSig;
+            borrowerSigs[sale].seizableSig   = seizableSig;
+        } else if (msg.sender == sales[sale].lender) {
+            lenderSigs[sale].refundableSig = refundableSig;
+            lenderSigs[sale].seizableSig   = seizableSig;
+        } else if (msg.sender == sales[sale].arbiter) {
+            arbiterSigs[sale].refundableSig = refundableSig;
+            arbiterSigs[sale].seizableSig   = seizableSig;
+        } else {
+            revert();
+        }
+    }
 
     /**
      * @notice Provide secret to enable liquidator to claim collateral
@@ -220,11 +220,11 @@ contract Sales is DSMath {
      * @notice Accept discount buy by liquidator and disperse funds to rightful parties
      * @param sale The Id of the sale
      */
-	function accept(bytes32 sale) public {
+    function accept(bytes32 sale) public {
         require(!accepted(sale));
         require(!off(sale));
-		require(hasSecrets(sale));
-		require(revealed[secretHashes[sale].secretHashD]);
+        require(hasSecrets(sale));
+        require(revealed[secretHashes[sale].secretHashD]);
         sales[sale].accepted = true;
 
         uint256 available = add(sales[sale].discountBuy, loans.repaid(sales[sale].loanIndex));
@@ -255,7 +255,7 @@ contract Sales is DSMath {
         }
 
         if (available > 0) { require(token.transfer(sales[sale].borrower, available)); }
-	}
+    }
 
     function provideSecretsAndAccept(bytes32 sale, bytes32[3] calldata secrets_) external {
         provideSecret(sale, secrets_[0]);
@@ -268,15 +268,15 @@ contract Sales is DSMath {
      * @notice Refund discount buy to liquidator
      * @param sale The Id of the sale
      */
-	function refund(bytes32 sale) external {
+    function refund(bytes32 sale) external {
         require(!accepted(sale));
         require(!off(sale));
-		require(now > settlementExpiration(sale));
-		require(sales[sale].discountBuy > 0);
+        require(now > settlementExpiration(sale));
+        require(sales[sale].discountBuy > 0);
         sales[sale].off = true;
-		require(token.transfer(sales[sale].liquidator, sales[sale].discountBuy));
+        require(token.transfer(sales[sale].liquidator, sales[sale].discountBuy));
         if (next(sales[sale].loanIndex) == 3) {
             require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)));
         }
-	}
+    }
 }

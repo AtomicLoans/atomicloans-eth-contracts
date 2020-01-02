@@ -1,7 +1,7 @@
 const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
-const { sha256 }    = require('@liquality/crypto')
+const { sha256, ripemd160 }    = require('@liquality/crypto')
 const { ensure0x, remove0x   }  = require('@liquality/ethereum-utils');
 const { BigNumber } = require('bignumber.js');
 const axios         = require('axios');
@@ -307,6 +307,25 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
+    describe('create', function() {
+      it('should fail if msg.sender isn\'t loans contract address', async function() {
+        const secretHash = liquidatorSechs[0]
+
+        await expectRevert(this.sales.create(
+          secretHash,
+          borrower,
+          lender,
+          arbiter,
+          liquidator,
+          secretHash,
+          secretHash,
+          secretHash,
+          secretHash,
+          ensure0x(ripemd160(borpubk))
+        ), 'VM Exception while processing transaction: revert')
+      })
+    })
+
     describe('accept', function() {
       it('should disperse funds to rightful parties after partial repayment', async function() {
         await approveAndTransfer(this.token, borrower, this.loans, toWei('50', unit))
@@ -329,9 +348,9 @@ stablecoins.forEach((stablecoin) => {
         const { fee, penalty, owedForLiquidation } = await getLoanValues(this.loans, this.loan)
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).toFixed(), fundBalAfter.toString())
-        assert.equal(BigNumber(borBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedForLiquidation)).toString(), borBalAfter.toString())
-        assert.equal(BigNumber(arbiterBalBefore).plus(fee).toString(), arbiterBalAfter)
+        assert.equal(BigNumber(fundBalBefore).plus(owedToLender).toFixed(), BigNumber(fundBalAfter).toFixed())
+        assert.equal(BigNumber(borBalBefore).plus(BigNumber(discountBuy).plus(repaid).minus(owedForLiquidation)).toFixed(), BigNumber(borBalAfter).toFixed())
+        assert.equal(BigNumber(arbiterBalBefore).plus(fee).toFixed(), BigNumber(arbiterBalAfter).toFixed())
 
         const accepted = await this.sales.accepted.call(this.sale)
         assert.equal(accepted, true)
@@ -503,6 +522,48 @@ stablecoins.forEach((stablecoin) => {
         const accepted = await this.sales.accepted.call(this.sale)
         assert.equal(accepted, true)
       })
+
+      it('should fail if accepted', async function() {
+        await approveAndTransfer(this.token, borrower, this.loans, toWei('50', unit))
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+        const { collateralValue, minCollateralValue, repaid, owedToLender } = await getLoanValues(this.loans, this.loan)
+        const medValue = await this.med.read.call()
+
+        await this.med.poke(numToBytes32(BigNumber(minCollateralValue).dividedBy(collateralValue).times(hexToNumberString(medValue)).times(0.99).toFixed(0)))
+
+        await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
+
+        this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+        await this.sales.provideSecretsAndAccept(this.sale, [ lendSecs[1], borSecs[1], liquidatorSecs[0] ])
+
+        await expectRevert(this.sales.accept(this.sale), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if off', async function() {
+        await approveAndTransfer(this.token, borrower, this.loans, toWei('50', unit))
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+        const { collateralValue, minCollateralValue, repaid, owedToLender } = await getLoanValues(this.loans, this.loan)
+        const medValue = await this.med.read.call()
+
+        await this.med.poke(numToBytes32(BigNumber(minCollateralValue).dividedBy(collateralValue).times(hexToNumberString(medValue)).times(0.99).toFixed(0)))
+
+        await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
+
+        this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+        await time.increase(toSecs({ days: 1 }))
+
+        await this.sales.refund(this.sale)
+
+        await expectRevert(this.sales.accept(this.sale), 'VM Exception while processing transaction: revert')
+      })
     })
 
     describe('provideSig', function() {
@@ -536,6 +597,10 @@ stablecoins.forEach((stablecoin) => {
 
       it('should fail providing signature for incorrect sale', async function() {
         await expectRevert(this.sales.provideSig(numToBytes32(0), sig1, sig2, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if msg.sender isn\'t borrower, lender, or arbiter', async function() {
+        await expectRevert(this.sales.provideSig(numToBytes32(0), sig1, sig2, { from: liquidator }), 'VM Exception while processing transaction: revert')
       })
     })
 
