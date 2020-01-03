@@ -784,13 +784,63 @@ stablecoins.forEach((stablecoin) => {
 
     describe('hasSecrets', function() {
       it('should return 0 if no secrets provided', async function() {
+        lendSecs = []
+        lendSechs = []
+        for (let i = 0; i < 4; i++) {
+          let sec = sha256(Math.random().toString())
+          lendSecs.push(ensure0x(sec))
+          lendSechs.push(ensure0x(sha256(sec)))
+        }
+
+        borSecs = []
+        borSechs = []
+        for (let i = 0; i < 4; i++) {
+          let sec = sha256(Math.random().toString())
+          borSecs.push(ensure0x(sec))
+          borSechs.push(ensure0x(sha256(sec)))
+        }
+
+        liquidatorSecs = []
+        liquidatorSechs = []
+        for (let i = 0; i < 4; i++) {
+          let sec = sha256(Math.random().toString())
+          liquidatorSecs.push(ensure0x(sec))
+          liquidatorSechs.push(ensure0x(sha256(sec)))
+        }
+
+        // Pull from loan
+        const loanParams = [
+          this.fund,
+          borrower,
+          toWei(loanReq.toString(), unit),
+          col,
+          toSecs({days: 2}),
+          ~~(Date.now() / 1000),
+          [ ...borSechs, ...lendSechs ],
+          ensure0x(borpubk),
+          ensure0x(lendpubk)
+        ]
+
+        await this.funds.generate(arbiterSechs, { from: arbiter })
+
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('100', unit))
+        await this.funds.deposit(this.fund, toWei('100', unit))
+
+        this.loan = await this.funds.request.call(...loanParams)
+        await this.funds.request(...loanParams)
+        await this.loans.approve(this.loan)
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        await this.med.poke(numToBytes32(toWei((btcPrice * 0.7).toString(), 'ether')))
+
         await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
 
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
         const hasSecrets = await this.sales.hasSecrets(this.sale)
 
-        assert.equal(hasSecrets, 0)
+        assert.equal(hasSecrets, false)
       })
     })
 
