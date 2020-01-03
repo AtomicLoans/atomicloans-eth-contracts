@@ -1,3 +1,7 @@
+const bitcoinjs = require('bitcoinjs-lib')
+const { bitcoin } = require('./helpers/collateral/common.js')
+const config = require('./helpers/collateral/config.js')
+
 const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
@@ -71,6 +75,22 @@ async function getContracts(stablecoin) {
   }
 }
 
+async function getCurrentTime() {
+  const latestBlockNumber = await web3.eth.getBlockNumber()
+  const latestBlockTimestamp = (await web3.eth.getBlock(latestBlockNumber)).timestamp
+  return latestBlockTimestamp
+}
+
+async function increaseTime(seconds) {
+  await time.increase(seconds)
+
+  const currentTime = await getCurrentTime()
+
+  await bitcoin.client.getMethod('jsonrpc')('setmocktime', currentTime)
+
+  await bitcoin.client.chain.generateBlock(10)
+}
+
 async function approveAndTransfer(token, spender, contract, amount) {
   await token.transfer(spender, amount)
   await token.approve(contract.address, amount, { from: spender })
@@ -92,7 +112,7 @@ async function liquidate(contract, instance, secretHash, pubKeyHash, liquidator)
 async function liquidateAndIncreaseTime(contract, instance, secretHash, pubKeyHash, liquidator) {
   const sale = await liquidate(contract, instance, secretHash, pubKeyHash, liquidator)
 
-  await time.increase(toSecs({hours: 4, minutes: 2}))
+  await increaseTime(toSecs({ hours: 4, minutes: 2 }))
 
   return sale
 }
@@ -216,6 +236,31 @@ stablecoins.forEach((stablecoin) => {
 
     beforeEach(async function () {
       currentTime = await time.latest();
+
+      const blockHeight = await bitcoin.client.chain.getBlockHeight()
+      if (blockHeight < 101) {
+        await bitcoin.client.chain.generateBlock(101)
+      } else {
+        // Bitcoin regtest node can only generate blocks if within 2 hours
+        const latestBlockHash = await bitcoin.client.getMethod('jsonrpc')('getblockhash', blockHeight)
+        const latestBlock = await bitcoin.client.getMethod('jsonrpc')('getblock', latestBlockHash)
+
+        let btcTime = latestBlock.time
+        const ethTime = await getCurrentTime()
+
+        await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+        await bitcoin.client.chain.generateBlock(6)
+
+        if (btcTime > ethTime) {
+          await time.increase(btcTime - ethTime)
+        }
+
+        while (ethTime > btcTime && (ethTime - btcTime) >= toSecs({ hours: 2 })) {
+          await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+          await bitcoin.client.chain.generateBlock(6)
+          btcTime += toSecs({ hours: 1, minutes: 59 })
+        }
+      }
 
       btcPrice = '9340.23'
 
@@ -558,7 +603,7 @@ stablecoins.forEach((stablecoin) => {
 
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        await time.increase(toSecs({ days: 1 }))
+        await increaseTime(toSecs({ days: 1 }))
 
         await this.sales.refund(this.sale)
 
@@ -604,6 +649,14 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
+    describe('hasSecrets', function() {
+      it('should return 0 if no secrets provided', async function() {
+        const hasSecrets = await this.sales.hasSecrets(numToBytes32(0))
+
+        assert.equal(hasSecrets, 0)
+      })
+    })
+
     describe('refund', function() {
       it('should refund if not off, not accepted, current time greater than settlementExpiration and discountBuy set', async function() {
         await approveAndTransfer(this.token, borrower, this.loans, toWei('50', unit))
@@ -629,7 +682,7 @@ stablecoins.forEach((stablecoin) => {
 
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        await time.increase(toSecs({hours: 4, minutes: 2}))
+        await increaseTime(toSecs({ hours: 4, minutes: 2 }))
 
         const balBefore = await this.token.balanceOf.call(liquidator)
         const { borBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
@@ -665,21 +718,21 @@ stablecoins.forEach((stablecoin) => {
         await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        await time.increase(toSecs({hours: 4, minutes: 2}))
+        await increaseTime(toSecs({ hours: 4, minutes: 2 }))
 
         await this.sales.refund(this.sale)
 
         await approveAndTransfer(this.token, liquidator2, this.loans, toWei('50', unit))
         this.sale2 = await liquidate(this.loans, this.loan, liquidatorSechs[1], liquidatorpbkh, liquidator2)
 
-        await time.increase(toSecs({hours: 4, minutes: 2}))
+        await increaseTime(toSecs({ hours: 4, minutes: 2 }))
 
         await this.sales.refund(this.sale2)
 
         await approveAndTransfer(this.token, liquidator3, this.loans, toWei('50', unit))
         this.sale3 = await liquidate(this.loans, this.loan, liquidatorSechs[2], liquidatorpbkh, liquidator3)
 
-        await time.increase(toSecs({hours: 4, minutes: 2}))
+        await increaseTime(toSecs({ hours: 4, minutes: 2 }))
 
         const balBefore = await this.token.balanceOf.call(liquidator3)
         const { borBalBefore } = await getBalancesBefore(this.token, lender, borrower, arbiter, this.med.address, this.funds.address)
@@ -719,11 +772,11 @@ stablecoins.forEach((stablecoin) => {
 
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        await time.increase(toSecs({hours: 4, minutes: 2}))
+        await increaseTime(toSecs({ hours: 4, minutes: 2 }))
 
         await this.sales.refund(this.sale)
 
-        await time.increase(toSecs({minutes: 2}))
+        await increaseTime(toSecs({ minutes: 2 }))
 
         await expectRevert(this.sales.refund(this.sale), 'VM Exception while processing transaction: revert')
       })
@@ -752,7 +805,7 @@ stablecoins.forEach((stablecoin) => {
 
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        await time.increase(toSecs({hours: 3, minutes: 59}))
+        await increaseTime(toSecs({ hours: 3, minutes: 59 }))
 
         await expectRevert(this.sales.refund(this.sale), 'VM Exception while processing transaction: revert')
       })
@@ -781,7 +834,7 @@ stablecoins.forEach((stablecoin) => {
 
         const discountBuy = await this.sales.discountBuy.call(this.sale)
 
-        await time.increase(toSecs({hours: 3, minutes: 59}))
+        await increaseTime(toSecs({ hours: 3, minutes: 59 }))
 
         await provideSecretsAndAccept(this.sales, this.sale, lendSecs[1], borSecs[1], liquidatorSecs[0])
 
