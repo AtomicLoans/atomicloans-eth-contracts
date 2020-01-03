@@ -602,11 +602,11 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(true, isCompoundEnabledAfter)
         assert.equal(0, balanceAfter)
 
-        const expectedCBalanceAfter = BN(balanceBefore).times(WAD).dividedBy(exchangeRateCurrent).dividedBy(COM).toFixed(4)
-        const expectedCBalanceChange = BN(cErc20BalanceAfter).minus(cErc20BalanceBefore).dividedBy(COM).toFixed(4)
+        const expectedCBalanceAfter = BN(balanceBefore).times(WAD).dividedBy(exchangeRateCurrent).dividedBy(COM).toFixed(3)
+        const expectedCBalanceChange = BN(cErc20BalanceAfter).minus(cErc20BalanceBefore).dividedBy(COM).toFixed(3)
         const expectedBalanceChange = BN(tokenBalanceBefore).minus(tokenBalanceAfter).dividedBy(WAD).toFixed(18)
 
-        const actualCBalanceAfter = BN(cBalanceAfter).dividedBy(COM).toFixed(4)
+        const actualCBalanceAfter = BN(cBalanceAfter).dividedBy(COM).toFixed(3)
         const actualBalanceBefore = BN(balanceBefore).dividedBy(WAD).toFixed(18)
 
         assert.equal(expectedCBalanceAfter, actualCBalanceAfter)
