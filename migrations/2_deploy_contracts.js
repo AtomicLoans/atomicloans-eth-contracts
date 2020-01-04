@@ -40,7 +40,7 @@ module.exports = function(deployer, network, accounts) {
     // Deploy Example SAI
     await deployer.deploy(ExampleSaiCoin); // LOCAL
     var sai = await ExampleSaiCoin.deployed(); // LOCAL
-    // const sai = { address: '0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99' } // KOVAN - Compound SAI Contract
+    // const sai = { address: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2' } // KOVAN - Compound SAI Contract
     // const sai = { address: '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359' } // MAINNET
 
     // Deploy Example USDC
@@ -172,9 +172,9 @@ module.exports = function(deployer, network, accounts) {
     await usdcFunds.setLoans(usdcLoans.address)
     await usdcLoans.setSales(usdcSales.address)
 
-    const daiFunds = await Funds.new(dai.address, '6')
+    const daiFunds = await Funds.new(dai.address, '18')
     await daiFunds.setCompound(dai.address, comptroller.address)
-    const daiLoans = await Loans.new(daiFunds.address, medianizer.address, dai.address, '6')
+    const daiLoans = await Loans.new(daiFunds.address, medianizer.address, dai.address, '18')
     const daiSales = await Sales.new(daiLoans.address, daiFunds.address, medianizer.address, dai.address)
     await daiFunds.setLoans(daiLoans.address)
     await daiLoans.setSales(daiSales.address)
