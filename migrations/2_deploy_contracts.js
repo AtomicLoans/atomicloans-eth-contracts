@@ -52,7 +52,7 @@ module.exports = function(deployer, network, accounts) {
     // Deploy Example DAI
     await deployer.deploy(ExampleDaiCoin);
     var dai = await ExampleDaiCoin.deployed();
-    // const dai = { address: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa' } // KOVAN - Compound DAI Contract
+    // const dai = { address: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa' } // KOVAN - Compound DAI Contract
     // const dai = { address: '0x6b175474e89094c44da98b954eedeac495271d0f' } // MAINNET
 
     // Deploy Example SAI Pausable
@@ -206,10 +206,10 @@ module.exports = function(deployer, network, accounts) {
     console.info('{')
     console.info(`  "SAI": "${sai.address}",`)
     console.info(`  "USDC": "${usdc.address}",`)
-    console.info(`  "DAI": "${usdc.address}",`)
+    console.info(`  "DAI": "${dai.address}",`)
     console.info(`  "CSAI": "${csai.address}",`)
     console.info(`  "CUSDC": "${cusdc.address}",`)
-    console.info(`  "CDAI": "${cusdc.address}",`)
+    console.info(`  "CDAI": "${cdai.address}",`)
     console.info(`  "SAI_FUNDS": "${funds.address}",`)
     console.info(`  "SAI_LOANS": "${loans.address}",`)
     console.info(`  "SAI_SALES": "${sales.address}",`)
