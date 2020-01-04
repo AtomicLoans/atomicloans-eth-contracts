@@ -35,7 +35,7 @@
     "test:interest_decrease": "truffle test ./test/interestDecrease.js",
     "test:spv": "truffle test ./test/spv.js",
     "test:p2wsh": "truffle test ./test/p2wsh.js",
-    "coverage": "npx solidity-coverage"
+    "coverage": "truffle run coverage"
   },
   "devDependencies": {
     "@atomicloans/loan-bundle": "0.3.5",
