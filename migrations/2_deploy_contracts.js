@@ -56,8 +56,8 @@ module.exports = function(deployer, network, accounts) {
     // const dai = { address: '0x6b175474e89094c44da98b954eedeac495271d0f' } // MAINNET
 
     // Deploy Example SAI Pausable
-    await deployer.deploy(ExamplePausableSaiCoin);
-    var pausableSAi = await ExamplePausableSaiCoin.deployed();
+    await deployer.deploy(ExamplePausableSaiCoin); // LOCAL
+    var pausableSAi = await ExamplePausableSaiCoin.deployed(); // LOCAL
 
     await deployer.deploy(MakerMedianizer) // LOCAL
     var makerMedianizer = await MakerMedianizer.deployed(); // LOCAL
@@ -132,7 +132,7 @@ module.exports = function(deployer, network, accounts) {
     var onDemandSpv = await ISPVRequestManager.deployed();
     // LOCAL
 
-    // const csai = { address: '0x0a1e4d0b5c71b955c0a5993023fc48ba6e380496' } // KOVAN
+    // const csai = { address: '0x63c344bf8651222346dd870be254d4347c9359f7' } // KOVAN
     // const csai = { address: '0xf5dce57282a584d2746faf1593d3121fcac444dc' } // MAINNET
 
     // const cusdc = { address: '0xdff375162cfe7d77473c1bec4560dede974e138c' } // KOVAN
