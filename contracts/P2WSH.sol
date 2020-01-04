@@ -1,12 +1,12 @@
 import './Bytes.sol';
-import './Loans.sol';
+import './LoansInterface.sol';
 
 pragma solidity ^0.5.10;
 
 contract P2WSH is Bytes {
-  Loans loans;
+  LoansInterface loans;
 
-  constructor(Loans loans_) public {
+  constructor(LoansInterface loans_) public {
     loans = loans_;
   }
 
