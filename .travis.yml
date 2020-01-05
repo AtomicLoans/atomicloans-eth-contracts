@@ -17,6 +17,7 @@ before_script:
   - mkdir -p /home/travis/.bitcoin && cp bitcoin.conf /home/travis/.bitcoin/bitcoin.conf
   - bitcoind -reindex -txindex -regtest -daemon -rpcport=18443 -rpcuser=bitcoin -rpcpassword=local321 -deprecatedrpc=signrawtransaction
   - CI=false ganache-cli -k petersburg > /dev/null &
+  - export NODE_OPTIONS=–max_old_space_size=8192
 
 jobs:
   include:
@@ -26,4 +27,4 @@ jobs:
         - npx codechecks
     - stage: Coverage
       script:
-        - NODE_OPTIONS=–max_old_space_size=8192 CI=false yarn coverage && cat coverage/lcov.info | coveralls
+        - CI=false yarn coverage && cat coverage/lcov.info | coveralls
