@@ -1,3 +1,7 @@
+const bitcoinjs = require('bitcoinjs-lib')
+const { bitcoin } = require('./helpers/collateral/common.js')
+const config = require('./helpers/collateral/config.js')
+
 const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
@@ -8,6 +12,7 @@ const axios         = require('axios');
 
 const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+const SAIInterestRateModel = artifacts.require('./SAIInterestRateModel')
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
@@ -33,11 +38,28 @@ const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwe
 
 async function getContracts(stablecoin) {
   if (stablecoin == 'SAI') {
-    const funds = await Funds.deployed();
-    const loans = await Loans.deployed();
-    const sales = await Sales.deployed();
-    const token = await ExampleCoin.deployed();
-    const med   = await Med.deployed();
+    const med = await Med.deployed()
+    const token = await ExampleCoin.deployed()
+    const comptroller = await Comptroller.deployed()
+    const saiInterestRateModel = await SAIInterestRateModel.deployed()
+    const cSai  = await CErc20.new(token.address, comptroller.address, saiInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Sai', 'cSAI', '8')
+
+    await comptroller._supportMarket(cSai.address)
+
+    const funds = await Funds.new(token.address, '18')
+    await funds.setCompound(cSai.address, comptroller.address)
+
+    const loans = await Loans.new(funds.address, med.address, token.address, '18')
+    const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
+
+    await funds.setLoans(loans.address)
+    await loans.setSales(sales.address)
+
+    const p2wsh = await P2WSH.deployed()
+    const onDemandSpv = await ISPVRequestManager.deployed()
+
+    await loans.setP2WSH(p2wsh.address)
+    await loans.setOnDemandSpv(onDemandSpv.address)
 
     return { funds, loans, sales, token, med }
   } else if (stablecoin == 'USDC') {
@@ -53,7 +75,7 @@ async function getContracts(stablecoin) {
     await funds.setCompound(cUsdc.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '6')
-    const sales = await Sales.new(loans.address, med.address, token.address)
+    const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
@@ -68,11 +90,26 @@ async function getContracts(stablecoin) {
   }
 }
 
+async function getCurrentTime() {
+  const latestBlockNumber = await web3.eth.getBlockNumber()
+  const latestBlockTimestamp = (await web3.eth.getBlock(latestBlockNumber)).timestamp
+  return latestBlockTimestamp
+}
+
+async function increaseTime(seconds) {
+  await time.increase(seconds)
+
+  const currentTime = await getCurrentTime()
+
+  await bitcoin.client.getMethod('jsonrpc')('setmocktime', currentTime)
+
+  await bitcoin.client.chain.generateBlock(10)
+}
+
 stablecoins.forEach((stablecoin) => {
   const { name, unit } = stablecoin
 
   contract(`${name} Global Interest Rate Decrease`, accounts => {
-
     const lender     = accounts[0]
     const borrower   = accounts[1]
     const arbiter      = accounts[2]
@@ -210,6 +247,31 @@ stablecoins.forEach((stablecoin) => {
     beforeEach(async function () {
       currentTime = await time.latest();
 
+      const blockHeight = await bitcoin.client.chain.getBlockHeight()
+      if (blockHeight < 101) {
+        await bitcoin.client.chain.generateBlock(101)
+      } else {
+        // Bitcoin regtest node can only generate blocks if within 2 hours
+        const latestBlockHash = await bitcoin.client.getMethod('jsonrpc')('getblockhash', blockHeight)
+        const latestBlock = await bitcoin.client.getMethod('jsonrpc')('getblock', latestBlockHash)
+
+        let btcTime = latestBlock.time
+        const ethTime = await getCurrentTime()
+
+        await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+        await bitcoin.client.chain.generateBlock(6)
+
+        if (btcTime > ethTime) {
+          await time.increase(btcTime - ethTime)
+        }
+
+        while (ethTime > btcTime && (ethTime - btcTime) >= toSecs({ hours: 2 })) {
+          await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+          await bitcoin.client.chain.generateBlock(6)
+          btcTime += toSecs({ hours: 1, minutes: 59 })
+        }
+      }
+
       btcPrice = '9340.23'
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
@@ -267,7 +329,7 @@ stablecoins.forEach((stablecoin) => {
         console.info('utilizationRatio', fromWei(utilizationRatio, 'gether'))
         console.info('====================================')
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         const loanParams = [
           this.fund,
@@ -306,7 +368,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate2, 'gether')).lt(BigNumber(rateToSec('11.1'))), true)
 
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         // Push funds to loan fund
         await this.token.approve(this.funds.address, toWei('100', unit))
@@ -329,7 +391,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate3, 'gether')).gte(BigNumber(rateToSec('9.9999'))), true)
         assert.equal(BigNumber(fromWei(globalInterestRate3, 'gether')).lt(BigNumber(rateToSec('10.1'))), true)
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         // Push funds to loan fund
         await this.token.approve(this.funds.address, toWei('140', unit))
@@ -352,7 +414,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate4, 'gether')).gte(BigNumber(rateToSec('8.999'))), true)
         assert.equal(BigNumber(fromWei(globalInterestRate4, 'gether')).lt(BigNumber(rateToSec('9.1'))), true)
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         // Push funds to loan fund
         await this.token.approve(this.funds.address, toWei('200', unit))
@@ -376,7 +438,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate5, 'gether')).lt(BigNumber(rateToSec('8.1'))), true)
 
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         await this.token.approve(this.funds.address, toWei('300', unit))
         await this.funds.deposit(this.fund, toWei('300', unit))
@@ -398,7 +460,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate6, 'gether')).gt(BigNumber(rateToSec('6.999'))), true)
         assert.equal(BigNumber(fromWei(globalInterestRate6, 'gether')).lt(BigNumber(rateToSec('7.1'))), true)
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         await this.token.approve(this.funds.address, toWei('580', unit))
         await this.funds.deposit(this.fund, toWei('580', unit))
@@ -420,8 +482,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate7, 'gether')).gt(BigNumber(rateToSec('5.999'))), true)
         assert.equal(BigNumber(fromWei(globalInterestRate7, 'gether')).lt(BigNumber(rateToSec('6.2'))), true)
 
-
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         await this.token.approve(this.funds.address, toWei('1700', unit))
         await this.funds.deposit(this.fund, toWei('1700', unit))
@@ -449,9 +510,7 @@ stablecoins.forEach((stablecoin) => {
         console.info('marketLiquidity', fromWei(marketLiquidity, unit))
         console.info('totalBorrow', fromWei(totalBorrow, unit))
 
-
-
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         const loanParams7 = [
           this.fund,
@@ -487,7 +546,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate9, 'gether')).lt(BigNumber(rateToSec('6.2'))), true)
 
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
 
         await this.token.approve(this.funds.address, toWei('1200', unit))
@@ -512,7 +571,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate10, 'gether')).lt(BigNumber(rateToSec('5.2'))), true)
 
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
         await this.token.approve(this.funds.address, toWei('1700', unit))
         await this.funds.deposit(this.fund, toWei('1700', unit))
@@ -536,7 +595,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate11, 'gether')).lt(BigNumber(rateToSec('4.2'))), true)
 
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
 
         await this.token.approve(this.funds.address, toWei('2500', unit))
@@ -560,7 +619,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(BigNumber(fromWei(globalInterestRate12, 'gether')).lt(BigNumber(rateToSec('3.3'))), true)
 
 
-        await time.increase(toSecs({ days: 1, minutes: 1 }))
+        await increaseTime(toSecs({ days: 1, minutes: 1 }))
 
 
         await this.token.approve(this.funds.address, toWei('3300', unit))

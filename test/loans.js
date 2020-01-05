@@ -1,3 +1,7 @@
+const bitcoinjs = require('bitcoinjs-lib')
+const { bitcoin } = require('./helpers/collateral/common.js')
+const config = require('./helpers/collateral/config.js')
+
 const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
@@ -8,6 +12,7 @@ const axios         = require('axios');
 
 const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+const ExamplePausableSaiCoin = artifacts.require("./ExamplePausableSaiCoin.sol")
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
@@ -35,12 +40,14 @@ async function getContracts(stablecoin) {
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
     const token = await ExampleCoin.deployed();
+    const pToken = await ExamplePausableSaiCoin.deployed();
     const med   = await Med.deployed();
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, token, pToken, med }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
+    const pToken = await ExamplePausableSaiCoin.deployed()
     const comptroller = await Comptroller.deployed()
     const usdcInterestRateModel = await USDCInterestRateModel.deployed()
     const cUsdc = await CErc20.new(token.address, comptroller.address, usdcInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Usdc', 'cUSDC', '8')
@@ -51,7 +58,7 @@ async function getContracts(stablecoin) {
     await funds.setCompound(cUsdc.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '6')
-    const sales = await Sales.new(loans.address, med.address, token.address)
+    const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
@@ -62,7 +69,7 @@ async function getContracts(stablecoin) {
     await loans.setP2WSH(p2wsh.address)
     await loans.setOnDemandSpv(onDemandSpv.address)
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, token, pToken, med }
   }
 }
 
@@ -72,19 +79,30 @@ async function getCurrentTime() {
   return latestBlockTimestamp
 }
 
+async function increaseTime(seconds) {
+  await time.increase(seconds)
+
+  const currentTime = await getCurrentTime()
+
+  await bitcoin.client.getMethod('jsonrpc')('setmocktime', currentTime)
+
+  await bitcoin.client.chain.generateBlock(10)
+}
+
 stablecoins.forEach((stablecoin) => {
   const { name, unit } = stablecoin
 
   contract(`${name} Loans`, accounts => {
     const lender     = accounts[0]
     const borrower   = accounts[1]
-    const arbiter      = accounts[2]
+    const arbiter    = accounts[2]
     const liquidator = accounts[3]
+    const lender2    = accounts[4]
 
     let currentTime
     let btcPrice
 
-    const loanReq = 5; // 5 SAI
+    const loanReq = 20; // 5 SAI
     const loanRat = 2; // Collateralization ratio of 200%
     let col;
 
@@ -129,16 +147,42 @@ stablecoins.forEach((stablecoin) => {
     beforeEach(async function () {
       currentTime = await time.latest();
 
+      const blockHeight = await bitcoin.client.chain.getBlockHeight()
+      if (blockHeight < 101) {
+        await bitcoin.client.chain.generateBlock(101)
+      } else {
+        // Bitcoin regtest node can only generate blocks if within 2 hours
+        const latestBlockHash = await bitcoin.client.getMethod('jsonrpc')('getblockhash', blockHeight)
+        const latestBlock = await bitcoin.client.getMethod('jsonrpc')('getblock', latestBlockHash)
+
+        let btcTime = latestBlock.time
+        const ethTime = await getCurrentTime()
+
+        await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+        await bitcoin.client.chain.generateBlock(6)
+
+        if (btcTime > ethTime) {
+          await time.increase(btcTime - ethTime)
+        }
+
+        while (ethTime > btcTime && (ethTime - btcTime) >= toSecs({ hours: 2 })) {
+          await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+          await bitcoin.client.chain.generateBlock(6)
+          btcTime += toSecs({ hours: 1, minutes: 59 })
+        }
+      }
+
       btcPrice = '9340.23'
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-      const { funds, loans, sales, token, med } = await getContracts(name)
+      const { funds, loans, sales, token, pToken, med } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
       this.token = token
+      this.pToken = pToken
       this.med = med
 
       this.med.poke(numToBytes32(toWei(btcPrice, 'ether')))
@@ -184,8 +228,344 @@ stablecoins.forEach((stablecoin) => {
         ensure0x(lendpubk)
       ]
 
+      // Ensure arbiter secret hash is next in line
+      let secretHashIndex
+      let secretHashesCount
+
+      secretHashIndex = await this.funds.secretHashIndex.call(arbiter)
+      secretHashesCount = await this.funds.secretHashesCount.call(arbiter)
+
+      while ((parseInt(secretHashesCount) - parseInt(secretHashIndex)) !== 4) {
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('30', unit))
+        await this.funds.deposit(this.fund, toWei('30', unit))
+        await this.funds.request(...loanParams)
+
+        secretHashIndex = await this.funds.secretHashIndex.call(arbiter)
+        secretHashesCount = await this.funds.secretHashesCount.call(arbiter)
+      }
+
       this.loan = await this.funds.request.call(...loanParams)
       await this.funds.request(...loanParams)
+    })
+
+    describe('constructor', function() {
+      it('should fail deploying Loans if token is pausable and paused', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.pToken.address, decimal)
+
+        await this.pToken.pause()
+
+        await expectRevert(Loans.new(funds.address, this.med.address, this.pToken.address, decimal), 'VM Exception while processing transaction: revert')
+
+        await this.pToken.unpause()
+      })
+    })
+
+    describe('setSales', function() {
+      it('should fail if msg.sender is not deployer', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+
+        await expectRevert(loans.setSales(sales.address, { from: accounts[1]}), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('setP2WSH', function() {
+      it('should fail if msg.sender is not deployed', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const p2wsh = await P2WSH.deployed()
+
+        await expectRevert(loans.setP2WSH(p2wsh.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if p2wsh already set', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const p2wsh = await P2WSH.deployed()
+
+        await loans.setP2WSH(p2wsh.address)
+
+        await expectRevert(loans.setP2WSH(p2wsh.address), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('setOnDemandSpv', function() {
+      it('should fail if msg.sender is not deployed', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const onDemandSpv = await ISPVRequestManager.deployed()
+
+        await expectRevert(loans.setOnDemandSpv(onDemandSpv.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('create', function() {
+      it('should fail if fund lender address does not match provided lender address', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender2, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(1)
+
+        await expectRevert(this.loans.create(loanExpiration, usrs, vals, fundId), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('setSecretHashes', function() {
+      it('should fail calling twice', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+
+        const success = await this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        await expectRevert(this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk)), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if called by address which is not the borrower, lender, or funds contract address', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+
+        await expectRevert(this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk), { from: lender2 }), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('fund', function() {
+      it('should fail if secret hashes not set', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+
+        // Push funds to loan fund
+        await this.token.approve(this.loans.address, principal)
+
+        await expectRevert(this.loans.fund(loan), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if called twice', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+        await this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        // Push funds to loan fund
+        await this.token.approve(this.loans.address, principal)
+        await this.loans.fund(loan)
+
+        await expectRevert(this.loans.fund(loan), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if using pausable token that is paused', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.pToken.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.pToken.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.pToken.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await loans.create.call(loanExpiration, usrs, vals, fundId)
+        await loans.create(loanExpiration, usrs, vals, fundId)
+        const success = await loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        // Push funds to loan fund
+        await this.pToken.approve(this.loans.address, principal)
+
+        await this.pToken.pause()
+
+        await expectRevert(loans.fund(loan), 'VM Exception while processing transaction: revert')
+
+        await this.pToken.unpause()
+      })
+    })
+
+    describe('approve', function() {
+      it('should fail if not funded', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+        await this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        // Push funds to loan fund
+        await this.token.approve(this.loans.address, principal)
+        // await this.loans.fund(loan)
+
+        await expectRevert(this.loans.approve(loan), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if msg.sender is not lender', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+        await this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        // Push funds to loan fund
+        await this.token.approve(this.loans.address, principal)
+        await this.loans.fund(loan)
+
+        await expectRevert(this.loans.approve(loan, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if after current time is after approveExpiration', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+        await this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        // Push funds to loan fund
+        await this.token.approve(this.loans.address, principal)
+        await this.loans.fund(loan)
+
+        await increaseTime(toSecs({ days: 1 }))
+
+        await expectRevert(this.loans.approve(loan), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('repay', function() {
+      it('should fail if loan is already off', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
+
+        await expectRevert(this.loans.repay(this.loan, owedForLoan, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if liquidation has started', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        const bal = await this.token.balanceOf.call(borrower)
+
+        this.med.poke(numToBytes32(toWei((btcPrice * 0.6).toString(), 'ether')))
+
+        const safe = await this.loans.safe.call(this.loan)
+        assert.equal(safe, false)
+
+        await this.token.transfer(liquidator, toWei('40', unit))
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
+        await this.loans.liquidate(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
+
+        await expectRevert(this.loans.repay(this.loan, owedForLoan, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if not withdrawn', async function() {
+        await this.loans.approve(this.loan)
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        await expectRevert(this.loans.repay(this.loan, owedForLoan, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if after loanExpiration', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        await increaseTime(toSecs({ days: 2, minutes: 5 }))
+
+        await expectRevert(this.loans.repay(this.loan, owedForLoan, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if amount is more than owedForLoan', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        await expectRevert(this.loans.repay(this.loan, BigNumber(owedForLoan).times(2).toFixed(), { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
     })
 
     describe('accept', function() {
@@ -268,6 +648,82 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(off, true);
         assert.equal(BigNumber(balBefore).plus(principal).plus(interest).toString(), BigNumber(balAfter).toString())
       })
+
+      it('should fail if loan is already accepted', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await this.loans.accept(this.loan, arbiterSecs[0]) // accept loan repayment
+
+        await expectRevert(this.loans.accept(this.loan, arbiterSecs[0]), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if withdrawn and not repaid', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        await expectRevert(this.loans.accept(this.loan, arbiterSecs[0]), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if msg.sender is not lender or arbiter', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await expectRevert(this.loans.accept(this.loan, lendSecs[0], { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if secret does not hash to secretHashB1 or secretHashC1', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await expectRevert(this.loans.accept(this.loan, ensure0x(sha256(Math.random().toString()))), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if current time is greater than acceptExpiration', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await increaseTime(toSecs({ days: 5 }))
+
+        await expectRevert(this.loans.accept(this.loan, lendSecs[0]), 'VM Exception while processing transaction: revert')
+      })
     })
 
     describe('cancel', function() {
@@ -279,10 +735,74 @@ stablecoins.forEach((stablecoin) => {
         const off = await this.loans.off.call(this.loan)
         assert.equal(off, true);
       })
+
+      it('should successfully cancel loan without secret if after seizureExpiration', async function() {
+        await this.loans.approve(this.loan)
+
+        await increaseTime(toSecs({ days: 30 }))
+
+        await this.loans.cancel(this.loan) // cancel loan
+
+        const off = await this.loans.off.call(this.loan)
+        assert.equal(off, true);
+      })
+
+      it('should fail if loan is already accepted', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await this.loans.accept(this.loan, arbiterSecs[0]) // accept loan repayment
+
+        await expectRevert(this.loans.cancel(this.loan), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if not withdrawn', async function() {
+        await this.loans.approve(this.loan)
+
+        await expectRevert(this.loans.cancel(this.loan), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if current time is less than seizureExpiration and no secret is provided', async function() {
+        await this.loans.approve(this.loan)
+
+        await expectRevert(this.loans.cancel(this.loan), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if already liquidated', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        const bal = await this.token.balanceOf.call(borrower)
+
+        this.med.poke(numToBytes32(toWei((btcPrice * 0.6).toString(), 'ether')))
+
+        const safe = await this.loans.safe.call(this.loan)
+        assert.equal(safe, false)
+
+        await this.token.transfer(liquidator, toWei('40', unit))
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
+        await this.loans.liquidate(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
+
+        await expectRevert(this.loans.cancel(this.loan), 'VM Exception while processing transaction: revert')
+      })
     })
 
     describe('refund', function() {
-      it('should returns loan repayment to borrower', async function() {
+      it('should return loan repayment to borrower', async function() {
         await this.loans.approve(this.loan)
 
         await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
@@ -297,7 +817,7 @@ stablecoins.forEach((stablecoin) => {
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
         await this.loans.repay(this.loan, owedForLoan, { from: borrower })
 
-        await time.increase(toSecs({ days: 5 }))
+        await increaseTime(toSecs({ days: 5 }))
 
         const balBeforeRefund = await this.token.balanceOf.call(borrower)
 
@@ -310,6 +830,166 @@ stablecoins.forEach((stablecoin) => {
 
         assert.equal(BigNumber(balBefore).toFixed(), BigNumber(balAfterRefund).toFixed())
         assert.equal(BigNumber(balBeforeRefund).plus(owedForLoan).toFixed(), BigNumber(balAfterRefund).toFixed())
+      })
+
+      it('should return loan repayment to borrower with non-custom fund', async function() {
+        // Generate arbiter secret hashes
+        await this.funds.generate(arbiterSechs, { from: arbiter })
+
+        const fundParams = [
+          toSecs({days: 366}),
+          BigNumber(2).pow(256).minus(1).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        const fund = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        // Push funds to loan fund
+        await this.token.approve(this.funds.address, toWei('100', unit))
+        await this.funds.deposit(fund, toWei('100', unit))
+
+        const col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
+
+        const loanParams = [
+          fund,
+          borrower,
+          toWei('20', unit),
+          col,
+          toSecs({days: 2}),
+          Math.floor(Date.now() / 1000),
+          [ ...borSechs, ...lendSechs ],
+          ensure0x(borpubk),
+          ensure0x(lendpubk)
+        ]
+
+        const loan = await this.funds.request.call(...loanParams)
+        await this.funds.request(...loanParams)
+
+        await this.loans.approve(loan)
+
+        await this.loans.withdraw(loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const balBefore = await this.token.balanceOf.call(borrower)
+
+        const owedForLoan = await this.loans.owedForLoan.call(loan)
+        await this.loans.repay(loan, owedForLoan, { from: borrower })
+
+        await increaseTime(toSecs({ days: 5 }))
+
+        const balBeforeRefund = await this.token.balanceOf.call(borrower)
+
+        await this.loans.refund(loan, { from: borrower })
+
+        const balAfterRefund = await this.token.balanceOf.call(borrower)
+
+        const off = await this.loans.off.call(loan)
+        assert.equal(off, true);
+
+        assert.equal(BigNumber(balBefore).toFixed(), BigNumber(balAfterRefund).toFixed())
+        assert.equal(BigNumber(balBeforeRefund).plus(owedForLoan).toFixed(), BigNumber(balAfterRefund).toFixed())
+      })
+
+      it('should fail if loan is already accepted', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        const paidBefore = await this.loans.paid.call(this.loan)
+
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
+
+        await expectRevert(this.loans.refund(this.loan, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if loan has been liquidated', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        const bal = await this.token.balanceOf.call(borrower)
+
+        this.med.poke(numToBytes32(toWei((btcPrice * 0.6).toString(), 'ether')))
+
+        const safe = await this.loans.safe.call(this.loan)
+        assert.equal(safe, false)
+
+        await this.token.transfer(liquidator, toWei('40', unit))
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
+        await this.loans.liquidate(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
+
+        await expectRevert(this.loans.refund(this.loan, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if before acceptExpiration', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const balBefore = await this.token.balanceOf.call(borrower)
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await expectRevert(this.loans.refund(this.loan, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if not repaid', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        await increaseTime(toSecs({ days: 5 }))
+
+        await expectRevert(this.loans.refund(this.loan, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if msg.sender != borrower', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await increaseTime(toSecs({ days: 5 }))
+
+        await expectRevert(this.loans.refund(this.loan, { from: lender }), 'VM Exception while processing transaction: revert')
       })
     })
 
@@ -348,12 +1028,12 @@ stablecoins.forEach((stablecoin) => {
 
         const bal = await this.token.balanceOf.call(borrower)
 
-        this.med.poke(numToBytes32(toWei((btcPrice * 0.7).toString(), 'ether')))
+        this.med.poke(numToBytes32(toWei((btcPrice * 0.6).toString(), 'ether')))
 
         const safe = await this.loans.safe.call(this.loan)
         assert.equal(safe, false)
 
-        await this.token.transfer(liquidator, toWei('10', unit))
+        await this.token.transfer(liquidator, toWei('40', unit))
         await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
 
         this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
@@ -383,7 +1063,7 @@ stablecoins.forEach((stablecoin) => {
 
         await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
-        await time.increase(toSecs({days: 1, hours: 23}))
+        await increaseTime(toSecs({ days: 1, hours: 23 }))
 
         await expectRevert(this.loans.liquidate(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator }), 'VM Exception while processing transaction: revert')
       })
@@ -393,9 +1073,9 @@ stablecoins.forEach((stablecoin) => {
 
         await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
-        await time.increase(toSecs({days: 2, minutes: 1}))
+        await increaseTime(toSecs({ days: 2, minutes: 1 }))
 
-        await this.token.transfer(liquidator, toWei('10', unit))
+        await this.token.transfer(liquidator, toWei('50', unit))
         await this.token.approve(this.loans.address, toWei('100', unit), { from: liquidator })
 
         this.sale = await this.loans.liquidate.call(this.loan, liquidatorSechs[0], ensure0x(liquidatorpbkh), { from: liquidator })
@@ -413,6 +1093,87 @@ stablecoins.forEach((stablecoin) => {
         await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
 
         await expectRevert(this.loans.withdraw(this.loan, borSecs[0], { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if loan is off', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        const paidBefore = await this.loans.paid.call(this.loan)
+
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        await this.loans.accept(this.loan, lendSecs[0]) // accept loan repayment
+
+        await expectRevert(this.loans.withdraw(this.loan, borSecs[0], { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if not funded', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+        await this.loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        // Push funds to loan fund
+        // await this.token.approve(this.loans.address, principal)
+
+        await expectRevert(this.loans.withdraw(this.loan, borSecs[0], { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if not approved', async function() {
+        await expectRevert(this.loans.withdraw(this.loan, borSecs[0], { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if secret provided does not hash to secretHashA1', async function() {
+        await this.loans.approve(this.loan)
+
+        await expectRevert(this.loans.withdraw(this.loan, borSecs[1], { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if token is pausable and paused', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.pToken.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.pToken.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.pToken.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await loans.create.call(loanExpiration, usrs, vals, fundId)
+        await loans.create(loanExpiration, usrs, vals, fundId)
+        const success = await loans.setSecretHashes(loan, borSechs, lendSechs, arbiterSechs, ensure0x(borpubk), ensure0x(lendpubk), ensure0x(arbiterpubk))
+
+        await this.pToken.transfer(lender, principal)
+        // Push funds to loan fund
+        await this.pToken.approve(loans.address, principal)
+
+        await loans.fund(loan)
+
+        await loans.approve(loan)
+
+        await this.pToken.pause()
+
+        await expectRevert(loans.withdraw(loan, borSecs[0], { from: borrower }), 'VM Exception while processing transaction: revert')
+
+        await this.pToken.unpause()
       })
     })
 
@@ -502,6 +1263,22 @@ stablecoins.forEach((stablecoin) => {
 
         assert.equal(fundedBefore, false)
         assert.equal(fundedAfter, true)
+      })
+
+      it('should return boolean determining whether funds have been depositd into loan', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
+        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const fundId = numToBytes32(0)
+
+        const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
+        await this.loans.create(loanExpiration, usrs, vals, fundId)
+
+        await increaseTime(toSecs({ days: 1 }))
+
+        await this.med.poke(numToBytes32(toWei(btcPrice, 'ether')), false)
+
+        await expectRevert(this.loans.collateralValue(loan), 'VM Exception while processing transaction: revert')
       })
     })
 

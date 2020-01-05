@@ -1,6 +1,6 @@
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 
-pragma solidity ^0.5.2;
+pragma solidity ^0.5.10;
 
 contract ExampleUsdcCoin is ERC20 {
   string public name = "ExampleUsdcCoin"; 
@@ -8,6 +8,6 @@ contract ExampleUsdcCoin is ERC20 {
   uint public decimals = 6;
 
   constructor () public {
-    _mint(msg.sender, 22020000000000000000000);
+    _mint(msg.sender, 82020000000000000000000);
   }
 }

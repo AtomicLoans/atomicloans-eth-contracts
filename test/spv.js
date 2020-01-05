@@ -57,7 +57,7 @@ async function getContracts(stablecoin) {
     await funds.setCompound(cUsdc.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '6')    
-    const sales = await Sales.new(loans.address, med.address, token.address)
+    const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
@@ -1809,10 +1809,12 @@ stablecoins.forEach((stablecoin) => {
 
         const seizableCollateral = await this.loans.seizableCollateral.call(this.loan)
         const temporarySeizableCollateral = await this.loans.temporarySeizableCollateral.call(this.loan)
+        const temporaryRefundableCollateral = await this.loans.temporaryRefundableCollateral.call(this.loan)
         const minSeizableCollateralValue = await this.loans.minSeizableCollateralValue.call(this.loan)
 
         assert.isAbove(parseInt(BigNumber(collateralValue).toFixed()), parseInt(BigNumber(minCollateralValue).toFixed())) // Proving that the minimum collateralization ratio is above 140%
         assert.isAbove(parseInt(BigNumber(seizableCollateral).plus(temporarySeizableCollateral).toFixed()), parseInt(BigNumber(minSeizableCollateralValue).toFixed())) // Proving that the minSeizableValue is satisfied
+        assert.equal(parseInt(BigNumber(temporaryRefundableCollateral).toFixed()), 0)
       })
     })
   })

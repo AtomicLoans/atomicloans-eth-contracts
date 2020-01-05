@@ -1,3 +1,7 @@
+const bitcoinjs = require('bitcoinjs-lib')
+const { bitcoin } = require('./helpers/collateral/common.js')
+const config = require('./helpers/collateral/config.js')
+
 const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
 
 const _ = require('lodash')
@@ -65,7 +69,7 @@ async function getContracts(stablecoin, accounts) {
     await funds.setCompound(cErc20.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '6')
-    const sales = await Sales.new(loans.address, med.address, token.address)
+    const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
@@ -78,6 +82,22 @@ async function getContracts(stablecoin, accounts) {
 
     return { funds, loans, sales, token, med, cErc20, cEther, comptroller }
   }
+}
+
+async function getCurrentTime() {
+  const latestBlockNumber = await web3.eth.getBlockNumber()
+  const latestBlockTimestamp = (await web3.eth.getBlock(latestBlockNumber)).timestamp
+  return latestBlockTimestamp
+}
+
+async function increaseTime(seconds) {
+  await time.increase(seconds)
+
+  const currentTime = await getCurrentTime()
+
+  await bitcoin.client.getMethod('jsonrpc')('setmocktime', currentTime)
+
+  await bitcoin.client.chain.generateBlock(10)
 }
 
 async function createFund(_this, arbiter, account, amount, compoundEnabled) {
@@ -155,6 +175,31 @@ stablecoins.forEach((stablecoin) => {
     beforeEach(async function () {
       currentTime = await time.latest();
 
+      const blockHeight = await bitcoin.client.chain.getBlockHeight()
+      if (blockHeight < 101) {
+        await bitcoin.client.chain.generateBlock(101)
+      } else {
+        // Bitcoin regtest node can only generate blocks if within 2 hours
+        const latestBlockHash = await bitcoin.client.getMethod('jsonrpc')('getblockhash', blockHeight)
+        const latestBlock = await bitcoin.client.getMethod('jsonrpc')('getblock', latestBlockHash)
+
+        let btcTime = latestBlock.time
+        const ethTime = await getCurrentTime()
+
+        await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+        await bitcoin.client.chain.generateBlock(6)
+
+        if (btcTime > ethTime) {
+          await time.increase(btcTime - ethTime)
+        }
+
+        while (ethTime > btcTime && (ethTime - btcTime) >= toSecs({ hours: 2 })) {
+          await bitcoin.client.getMethod('jsonrpc')('setmocktime', btcTime)
+          await bitcoin.client.chain.generateBlock(6)
+          btcTime += toSecs({ hours: 1, minutes: 59 })
+        }
+      }
+
       btcPrice = '9340.23'
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
@@ -224,7 +269,7 @@ stablecoins.forEach((stablecoin) => {
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         assert.equal(0, borrow)
 
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         const exchangeRateCurrent = await this.cErc20.exchangeRateCurrent.call()
         const cErc20BalBeforeDeposit2 = await this.cErc20.balanceOf.call(this.funds.address)
@@ -264,7 +309,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(borrow, 0)
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         const marketLiquidityBefore = await this.funds.marketLiquidity.call()
         const exchangeRateCurrent = await this.cErc20.exchangeRateCurrent.call()
@@ -318,7 +363,7 @@ stablecoins.forEach((stablecoin) => {
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         assert.equal(0, borrow)
 
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         const exchangeRateCurrent = await this.cErc20.exchangeRateCurrent.call()
         const cErc20BalBeforeDeposit2 = await this.cErc20.balanceOf.call(this.funds.address)
@@ -358,7 +403,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(borrow, 0)
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         const exchangeRateCurrent = await this.cErc20.exchangeRateCurrent.call()
 
@@ -411,7 +456,7 @@ stablecoins.forEach((stablecoin) => {
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         assert.equal(0, borrow)
 
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         const exchangeRateCurrent = await this.cErc20.exchangeRateCurrent.call()
         const cErc20BalBeforeDeposit2 = await this.cErc20.balanceOf.call(this.funds.address)
@@ -473,7 +518,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(borrow, 0)
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         // Generate lender secret hashes
         await this.funds.generate(lendSechs)
@@ -534,7 +579,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(borrow, 0)
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         await this.token.approve(this.funds.address, toWei('100', unit))
         await this.funds.deposit(this.fund, toWei('100', unit))
@@ -557,11 +602,11 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(true, isCompoundEnabledAfter)
         assert.equal(0, balanceAfter)
 
-        const expectedCBalanceAfter = BN(balanceBefore).times(WAD).dividedBy(exchangeRateCurrent).dividedBy(COM).toFixed(4)
-        const expectedCBalanceChange = BN(cErc20BalanceAfter).minus(cErc20BalanceBefore).dividedBy(COM).toFixed(4)
+        const expectedCBalanceAfter = BN(balanceBefore).times(WAD).dividedBy(exchangeRateCurrent).dividedBy(COM).toFixed(3)
+        const expectedCBalanceChange = BN(cErc20BalanceAfter).minus(cErc20BalanceBefore).dividedBy(COM).toFixed(3)
         const expectedBalanceChange = BN(tokenBalanceBefore).minus(tokenBalanceAfter).dividedBy(WAD).toFixed(18)
 
-        const actualCBalanceAfter = BN(cBalanceAfter).dividedBy(COM).toFixed(4)
+        const actualCBalanceAfter = BN(cBalanceAfter).dividedBy(COM).toFixed(3)
         const actualBalanceBefore = BN(balanceBefore).dividedBy(WAD).toFixed(18)
 
         assert.equal(expectedCBalanceAfter, actualCBalanceAfter)
@@ -588,7 +633,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(borrow, 0)
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         await this.token.approve(this.funds.address, toWei('100', unit))
         await this.funds.deposit(this.fund, toWei('100', unit))
@@ -651,7 +696,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(borrow, 0)
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         await this.token.approve(this.funds.address, toWei('100', unit))
         await this.funds.deposit(this.fund, toWei('100', unit))
@@ -705,7 +750,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(borrow, 0)
         await this.cErc20.borrow(toWei('10', unit), { from: arbiter })
         
-        await time.increase(toSecs({ hours: 1 }))
+        await increaseTime(toSecs({ hours: 1 }))
 
         await this.token.approve(this.funds.address, toWei('100', unit))
         await this.funds.deposit(this.fund, toWei('100', unit))

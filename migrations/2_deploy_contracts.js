@@ -6,12 +6,14 @@ const BN = require('bignumber.js')
 var ExampleDaiCoin = artifacts.require("./ExampleDaiCoin.sol");
 var ExampleSaiCoin = artifacts.require("./ExampleSaiCoin.sol");
 var ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
+var ExamplePausableSaiCoin = artifacts.require("./ExamplePausableSaiCoin.sol")
 var Medianizer = artifacts.require('./MedianizerExample.sol');
 var ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 var Funds = artifacts.require('./Funds.sol');
 var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
-var P2WSH  = artifacts.require('./P2WSH.sol');
+var P2WSH = artifacts.require('./P2WSH.sol');
+var Bytes = artifacts.require('./Bytes.sol');
 
 var SAIInterestRateModel = artifacts.require('./SAIInterestRateModel.sol')
 var USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
@@ -27,12 +29,18 @@ var MakerMedianizer = artifacts.require('./_MakerMedianizer.sol')
 
 var ALCompound = artifacts.require('./ALCompound.sol')
 
+var isCI = require('is-ci')
+
+if (isCI) {
+  console.info = () => {} // Silence the Deprecation Warning
+}
+
 module.exports = function(deployer, network, accounts) {
   deployer.then(async () => {
     // Deploy Example SAI
     await deployer.deploy(ExampleSaiCoin); // LOCAL
     var sai = await ExampleSaiCoin.deployed(); // LOCAL
-    // const sai = { address: '0xbf7a7169562078c96f0ec1a8afd6ae50f12e5a99' } // KOVAN - Compound SAI Contract
+    // const sai = { address: '0xc4375b7de8af5a38a93548eb8453a498222c4ff2' } // KOVAN - Compound SAI Contract
     // const sai = { address: '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359' } // MAINNET
 
     // Deploy Example USDC
@@ -44,8 +52,12 @@ module.exports = function(deployer, network, accounts) {
     // Deploy Example DAI
     await deployer.deploy(ExampleDaiCoin);
     var dai = await ExampleDaiCoin.deployed();
-    // const dai = { address: '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa' } // KOVAN - Compound DAI Contract
+    // const dai = { address: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa' } // KOVAN - Compound DAI Contract
     // const dai = { address: '0x6b175474e89094c44da98b954eedeac495271d0f' } // MAINNET
+
+    // Deploy Example SAI Pausable
+    await deployer.deploy(ExamplePausableSaiCoin); // LOCAL
+    var pausableSAi = await ExamplePausableSaiCoin.deployed(); // LOCAL
 
     await deployer.deploy(MakerMedianizer) // LOCAL
     var makerMedianizer = await MakerMedianizer.deployed(); // LOCAL
@@ -120,7 +132,7 @@ module.exports = function(deployer, network, accounts) {
     var onDemandSpv = await ISPVRequestManager.deployed();
     // LOCAL
 
-    // const csai = { address: '0x0a1e4d0b5c71b955c0a5993023fc48ba6e380496' } // KOVAN
+    // const csai = { address: '0x63c344bf8651222346dd870be254d4347c9359f7' } // KOVAN
     // const csai = { address: '0xf5dce57282a584d2746faf1593d3121fcac444dc' } // MAINNET
 
     // const cusdc = { address: '0xdff375162cfe7d77473c1bec4560dede974e138c' } // KOVAN
@@ -143,7 +155,7 @@ module.exports = function(deployer, network, accounts) {
     await funds.setCompound(csai.address, comptroller.address);
     await deployer.deploy(Loans, funds.address, medianizer.address, sai.address, '18');
     var loans = await Loans.deployed();
-    await deployer.deploy(Sales, loans.address, medianizer.address, sai.address);
+    await deployer.deploy(Sales, loans.address, funds.address, medianizer.address, sai.address);
     var sales = await Sales.deployed();
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
@@ -156,58 +168,58 @@ module.exports = function(deployer, network, accounts) {
     const usdcFunds = await Funds.new(usdc.address, '6')
     await usdcFunds.setCompound(cusdc.address, comptroller.address)
     const usdcLoans = await Loans.new(usdcFunds.address, medianizer.address, usdc.address, '6')
-    const usdcSales = await Sales.new(usdcLoans.address, medianizer.address, usdc.address)
+    const usdcSales = await Sales.new(usdcLoans.address, usdcFunds.address, medianizer.address, usdc.address)
     await usdcFunds.setLoans(usdcLoans.address)
     await usdcLoans.setSales(usdcSales.address)
 
-    const daiFunds = await Funds.new(dai.address, '6')
+    const daiFunds = await Funds.new(dai.address, '18')
     await daiFunds.setCompound(dai.address, comptroller.address)
-    const daiLoans = await Loans.new(daiFunds.address, medianizer.address, dai.address, '6')
-    const daiSales = await Sales.new(daiLoans.address, medianizer.address, dai.address)
+    const daiLoans = await Loans.new(daiFunds.address, medianizer.address, dai.address, '18')
+    const daiSales = await Sales.new(daiLoans.address, daiFunds.address, medianizer.address, dai.address)
     await daiFunds.setLoans(daiLoans.address)
     await daiLoans.setSales(daiSales.address)
 
     await deployer.deploy(ALCompound, comptroller.address) // LOCAL
 
-    console.log(`SAI_ADDRESS=${sai.address}`)
-    console.log(`USDC_ADDRESS=${usdc.address}`)
-    console.log(`DAI_ADDRESS=${dai.address}`)
+    console.info(`SAI_ADDRESS=${sai.address}`)
+    console.info(`USDC_ADDRESS=${usdc.address}`)
+    console.info(`DAI_ADDRESS=${dai.address}`)
 
-    console.log(`CSAI_ADDRESS=${csai.address}`)
-    console.log(`CUSDC_ADDRESS=${cusdc.address}`)
-    console.log(`CDAI_ADDRESS=${cdai.address}`)
+    console.info(`CSAI_ADDRESS=${csai.address}`)
+    console.info(`CUSDC_ADDRESS=${cusdc.address}`)
+    console.info(`CDAI_ADDRESS=${cdai.address}`)
 
-    console.log(`SAI_LOAN_FUNDS_ADDRESS=${funds.address}`)
-    console.log(`SAI_LOAN_LOANS_ADDRESS=${loans.address}`)
-    console.log(`SAI_LOAN_SALES_ADDRESS=${sales.address}`)
+    console.info(`SAI_LOAN_FUNDS_ADDRESS=${funds.address}`)
+    console.info(`SAI_LOAN_LOANS_ADDRESS=${loans.address}`)
+    console.info(`SAI_LOAN_SALES_ADDRESS=${sales.address}`)
 
-    console.log(`USDC_LOAN_FUNDS_ADDRESS=${usdcFunds.address}`)
-    console.log(`USDC_LOAN_LOANS_ADDRESS=${usdcLoans.address}`)
-    console.log(`USDC_LOAN_SALES_ADDRESS=${usdcSales.address}`)
+    console.info(`USDC_LOAN_FUNDS_ADDRESS=${usdcFunds.address}`)
+    console.info(`USDC_LOAN_LOANS_ADDRESS=${usdcLoans.address}`)
+    console.info(`USDC_LOAN_SALES_ADDRESS=${usdcSales.address}`)
 
-    console.log(`DAI_LOAN_FUNDS_ADDRESS=${daiFunds.address}`)
-    console.log(`DAI_LOAN_LOANS_ADDRESS=${daiLoans.address}`)
-    console.log(`DAI_LOAN_SALES_ADDRESS=${daiSales.address}`)
+    console.info(`DAI_LOAN_FUNDS_ADDRESS=${daiFunds.address}`)
+    console.info(`DAI_LOAN_LOANS_ADDRESS=${daiLoans.address}`)
+    console.info(`DAI_LOAN_SALES_ADDRESS=${daiSales.address}`)
 
-    console.log('==================================')
+    console.info('==================================')
 
-    console.log('{')
-    console.log(`  "SAI": "${sai.address}",`)
-    console.log(`  "USDC": "${usdc.address}",`)
-    console.log(`  "DAI": "${usdc.address}",`)
-    console.log(`  "CSAI": "${csai.address}",`)
-    console.log(`  "CUSDC": "${cusdc.address}",`)
-    console.log(`  "CDAI": "${cusdc.address}",`)
-    console.log(`  "SAI_FUNDS": "${funds.address}",`)
-    console.log(`  "SAI_LOANS": "${loans.address}",`)
-    console.log(`  "SAI_SALES": "${sales.address}",`)
-    console.log(`  "USDC_FUNDS": "${usdcFunds.address}",`)
-    console.log(`  "USDC_LOANS": "${usdcLoans.address}",`)
-    console.log(`  "USDC_SALES": "${usdcSales.address}",`)
-    console.log(`  "DAI_FUNDS": "${daiFunds.address}",`)
-    console.log(`  "DAI_LOANS": "${daiLoans.address}",`)
-    console.log(`  "DAI_SALES": "${daiSales.address}",`)
-    console.log(`  "MEDIANIZER": "${medianizer.address}"`)
-    console.log('}')
+    console.info('{')
+    console.info(`  "SAI": "${sai.address}",`)
+    console.info(`  "USDC": "${usdc.address}",`)
+    console.info(`  "DAI": "${dai.address}",`)
+    console.info(`  "CSAI": "${csai.address}",`)
+    console.info(`  "CUSDC": "${cusdc.address}",`)
+    console.info(`  "CDAI": "${cdai.address}",`)
+    console.info(`  "SAI_FUNDS": "${funds.address}",`)
+    console.info(`  "SAI_LOANS": "${loans.address}",`)
+    console.info(`  "SAI_SALES": "${sales.address}",`)
+    console.info(`  "USDC_FUNDS": "${usdcFunds.address}",`)
+    console.info(`  "USDC_LOANS": "${usdcLoans.address}",`)
+    console.info(`  "USDC_SALES": "${usdcSales.address}",`)
+    console.info(`  "DAI_FUNDS": "${daiFunds.address}",`)
+    console.info(`  "DAI_LOANS": "${daiLoans.address}",`)
+    console.info(`  "DAI_SALES": "${daiSales.address}",`)
+    console.info(`  "MEDIANIZER": "${medianizer.address}"`)
+    console.info('}')
   })
 };

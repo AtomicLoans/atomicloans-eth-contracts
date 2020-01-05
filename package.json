@@ -11,16 +11,17 @@
     "bignumber.js": "^9.0.0",
     "decimal.js": "^10.2.0",
     "dotenv": "^8.1.0",
+    "is-ci": "^2.0.0",
     "lodash": "^4.17.13",
     "openzeppelin-solidity": "^2.2.0",
-    "truffle": "^5.0.33",
+    "truffle": "5.1.5",
     "truffle-contract": "^4.0.29",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-plugin-verify": "^0.3.3",
     "web3": "^1.2.1"
   },
   "scripts": {
-    "test": "truffle test",
+    "test": "truffle test --timeout 600000",
     "test:funds": "truffle test ./test/funds.js",
     "test:loans": "truffle test ./test/loans.js",
     "test:sales": "truffle test ./test/sales.js",
@@ -28,12 +29,13 @@
     "test:alcompound:js": "truffle test ./test/alcompound.js",
     "test:alcompound:sol": "truffle test ./test/TestALCompound.sol",
     "test:alcompound": "truffle test ./test/alcompound.js ./test/TestALCompound.sol",
+    "test:bytes": "truffle test ./test/bytes.js",
     "test:e2e": "truffle test ./test/e2e.js",
     "test:interest_increase": "truffle test ./test/interestIncrease.js",
     "test:interest_decrease": "truffle test ./test/interestDecrease.js",
     "test:spv": "truffle test ./test/spv.js",
     "test:p2wsh": "truffle test ./test/p2wsh.js",
-    "coverage": "npx solidity-coverage"
+    "coverage": "truffle run coverage"
   },
   "devDependencies": {
     "@atomicloans/loan-bundle": "0.3.5",
@@ -45,8 +47,8 @@
     "chai-bignumber": "^3.0.0",
     "chai-bn": "^0.2.0",
     "coveralls": "^3.0.5",
-    "eth-gas-reporter": "^0.2.12",
+    "eth-gas-reporter": "0.2.14",
     "openzeppelin-test-helpers": "^0.5.0",
-    "solidity-coverage": "^0.6.3"
+    "solidity-coverage": "0.7.0"
   }
 }

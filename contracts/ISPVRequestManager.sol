@@ -4,42 +4,44 @@ import './DSMath.sol';
 import {BytesLib} from "@summa-tx/bitcoin-spv-sol/contracts/BytesLib.sol";
 import {BTCUtils} from "@summa-tx/bitcoin-spv-sol/contracts/BTCUtils.sol";
 
-/// @title      ISPVConsumer
-/// @author     Summa (https://summa.one)
-/// @notice     This interface consumes validated transaction information.
-///             It is the primary way that user contracts accept
-/// @dev        Implement this interface to process transactions provided by
-///             the Relay system.
-interface ISPVConsumer {
-  /// @notice     A consumer for Bitcoin transaction information.
-  /// @dev        Users must implement this function. It handles Bitcoin
-  ///             events that have been validated by the Relay contract.
-  ///             It is VERY IMPORTANT that this function validates the
-  ///             msg.sender. The callee must check the origin of the data
-  ///             or risk accepting spurious information.
-  /// @param _txid        The LE(!) txid of the bitcoin transaction that
-  ///                     triggered the notification.
-  /// @param _vin         The length-prefixed input vector of the bitcoin tx
-  ///                     that triggered the notification.
-  /// @param _vout        The length-prefixed output vector of the bitcoin tx
-  ///                     that triggered the notification.
-  /// @param _requestID   The ID of the event request that this notification
-  ///                     satisfies. The ID is returned by
-  ///                     OnDemandSPV.request and should be locally stored by
-  ///                     any contract that makes more than one request.
-  /// @param _inputIndex  The index of the input in the _vin that triggered
-  ///                     the notification.
-  /// @param _outputIndex The index of the output in the _vout that triggered
-  ///                     the notification. Useful for subscribing to transactions
-  ///                     that spend the newly-created UTXO.
-  function spv(
-      bytes32 _txid,
-      bytes calldata _vin,
-      bytes calldata _vout,
-      uint256 _requestID,
-      uint8 _inputIndex,
-      uint8 _outputIndex) external;
-}
+import './ISPVInterfaces.sol';
+
+// /// @title      ISPVConsumer
+// /// @author     Summa (https://summa.one)
+// /// @notice     This interface consumes validated transaction information.
+// ///             It is the primary way that user contracts accept
+// /// @dev        Implement this interface to process transactions provided by
+// ///             the Relay system.
+// interface ISPVConsumer {
+//   /// @notice     A consumer for Bitcoin transaction information.
+//   /// @dev        Users must implement this function. It handles Bitcoin
+//   ///             events that have been validated by the Relay contract.
+//   ///             It is VERY IMPORTANT that this function validates the
+//   ///             msg.sender. The callee must check the origin of the data
+//   ///             or risk accepting spurious information.
+//   /// @param _txid        The LE(!) txid of the bitcoin transaction that
+//   ///                     triggered the notification.
+//   /// @param _vin         The length-prefixed input vector of the bitcoin tx
+//   ///                     that triggered the notification.
+//   /// @param _vout        The length-prefixed output vector of the bitcoin tx
+//   ///                     that triggered the notification.
+//   /// @param _requestID   The ID of the event request that this notification
+//   ///                     satisfies. The ID is returned by
+//   ///                     OnDemandSPV.request and should be locally stored by
+//   ///                     any contract that makes more than one request.
+//   /// @param _inputIndex  The index of the input in the _vin that triggered
+//   ///                     the notification.
+//   /// @param _outputIndex The index of the output in the _vout that triggered
+//   ///                     the notification. Useful for subscribing to transactions
+//   ///                     that spend the newly-created UTXO.
+//   function spv(
+//       bytes32 _txid,
+//       bytes calldata _vin,
+//       bytes calldata _vout,
+//       uint256 _requestID,
+//       uint8 _inputIndex,
+//       uint8 _outputIndex) external;
+// }
 
 // NOTE: This contract is for testing purposes only
 

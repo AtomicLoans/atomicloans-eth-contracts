@@ -55,7 +55,7 @@ async function getContracts(stablecoin) {
     await funds.setCompound(cUsdc.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '6')
-    const sales = await Sales.new(loans.address, med.address, token.address)
+    const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
 
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
@@ -205,7 +205,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 10; // 5 DAI
+    const loanReq = 20; // 5 DAI
     const loanRat = 2; // Collateralization ratio of 200%
     let col;
 
