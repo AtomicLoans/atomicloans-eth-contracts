@@ -26,4 +26,4 @@ jobs:
         - npx codechecks
     - stage: Coverage
       script:
-        - CI=false yarn coverage && cat coverage/lcov.info | coveralls
+        - NODE_OPTIONS=–max_old_space_size=8192 CI=false yarn coverage && cat coverage/lcov.info | coveralls
