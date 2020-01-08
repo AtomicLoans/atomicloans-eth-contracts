@@ -330,9 +330,10 @@ stablecoins.forEach((stablecoin) => {
 
     describe('create', function() {
       it('should fail if fund lender address does not match provided lender address', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender2, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(1)
 
         await expectRevert(this.loans.create(loanExpiration, usrs, vals, fundId), 'VM Exception while processing transaction: revert')
@@ -341,9 +342,10 @@ stablecoins.forEach((stablecoin) => {
 
     describe('setSecretHashes', function() {
       it('should fail calling twice', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -355,9 +357,10 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should fail if called by address which is not the borrower, lender, or funds contract address', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -369,9 +372,10 @@ stablecoins.forEach((stablecoin) => {
 
     describe('fund', function() {
       it('should fail if secret hashes not set', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -384,9 +388,10 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should fail if called twice', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -410,9 +415,10 @@ stablecoins.forEach((stablecoin) => {
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
 
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -432,9 +438,10 @@ stablecoins.forEach((stablecoin) => {
 
     describe('approve', function() {
       it('should fail if not funded', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -449,9 +456,10 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should fail if msg.sender is not lender', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -466,9 +474,10 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should fail if after current time is after approveExpiration', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -613,9 +622,10 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should accept successfully and send funds directly to lender if fundId is 0', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -1117,9 +1127,10 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should fail if not funded', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -1152,9 +1163,10 @@ stablecoins.forEach((stablecoin) => {
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
 
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -1243,9 +1255,10 @@ stablecoins.forEach((stablecoin) => {
 
     describe('funded', function() {
       it('should return boolean determining whether funds have been depositd into loan', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -1266,9 +1279,10 @@ stablecoins.forEach((stablecoin) => {
       })
 
       it('should return boolean determining whether funds have been depositd into loan', async function() {
-        const { loanExpiration, principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, collateral, liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)

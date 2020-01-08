@@ -83,7 +83,6 @@ contract Loans is DSMath {
         uint256 interest;
         uint256 penalty;
         uint256 fee;
-        uint256 collateral;
         uint256 liquidationRatio;
     }
 
@@ -399,7 +398,6 @@ contract Loans is DSMath {
         loans[loan].interest         = vals_[1];
         loans[loan].penalty          = vals_[2];
         loans[loan].fee              = vals_[3];
-        loans[loan].collateral       = vals_[4];
         collaterals[loan].seizableCollateral = minSeizableCollateralValue(loan);
         collaterals[loan].refundableCollateral = sub(vals_[4], collaterals[loan].seizableCollateral);
         loans[loan].liquidationRatio = vals_[5];
