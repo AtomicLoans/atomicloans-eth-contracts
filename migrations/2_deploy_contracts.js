@@ -163,7 +163,6 @@ module.exports = function(deployer, network, accounts) {
     await deployer.deploy(P2WSH, loans.address);
     var p2wsh = await P2WSH.deployed();
     await loans.setP2WSH(p2wsh.address);
-    await loans.setOnDemandSpv(onDemandSpv.address);
 
     const usdcFunds = await Funds.new(usdc.address, '6')
     await usdcFunds.setCompound(cusdc.address, comptroller.address)
@@ -171,6 +170,9 @@ module.exports = function(deployer, network, accounts) {
     const usdcSales = await Sales.new(usdcLoans.address, usdcFunds.address, medianizer.address, usdc.address)
     await usdcFunds.setLoans(usdcLoans.address)
     await usdcLoans.setSales(usdcSales.address)
+    await usdcLoans.setOnDemandSpv(onDemandSpv.address);
+    const usdcP2WSH = await P2WSH.new(usdcLoans.address)
+    await usdcLoans.setP2WSH(usdcP2WSH.address)
 
     const daiFunds = await Funds.new(dai.address, '18')
     await daiFunds.setCompound(dai.address, comptroller.address)
@@ -178,6 +180,9 @@ module.exports = function(deployer, network, accounts) {
     const daiSales = await Sales.new(daiLoans.address, daiFunds.address, medianizer.address, dai.address)
     await daiFunds.setLoans(daiLoans.address)
     await daiLoans.setSales(daiSales.address)
+    await daiLoans.setOnDemandSpv(onDemandSpv.address);
+    const daiP2WSH = await P2WSH.new(daiLoans.address)
+    await daiLoans.setP2WSH(daiP2WSH.address)
 
     await deployer.deploy(ALCompound, comptroller.address) // LOCAL
 
