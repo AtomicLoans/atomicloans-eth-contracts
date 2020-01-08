@@ -46,7 +46,7 @@ module.exports = function(deployer, network, accounts) {
     // Deploy Example USDC
     await deployer.deploy(ExampleUsdcCoin);
     var usdc = await ExampleUsdcCoin.deployed();
-    // const usdc = { address: '0x6e894660985207feb7cf89faf048998c71e8ee89' } // KOVAN - Compound USDC Contract
+    // const usdc = { address: '0x75b0622cec14130172eae9cf166b92e5c112faff' } // KOVAN - Compound USDC Contract
     // const usdc = { address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' } // MAINNET
 
     // Deploy Example DAI
@@ -135,7 +135,7 @@ module.exports = function(deployer, network, accounts) {
     // const csai = { address: '0x63c344bf8651222346dd870be254d4347c9359f7' } // KOVAN
     // const csai = { address: '0xf5dce57282a584d2746faf1593d3121fcac444dc' } // MAINNET
 
-    // const cusdc = { address: '0xdff375162cfe7d77473c1bec4560dede974e138c' } // KOVAN
+    // const cusdc = { address: '0xcfc9bb230f00bffdb560fce2428b4e05f3442e35' } // KOVAN
     // const cusdc = { address: '0x39aa39c021dfbae8fac545936693ac917d5e7563' } // MAINNET
 
     // const cdai = { address: '0xe7bc397dbd069fc7d0109c0636d06888bb50668c' } // KOVAN
