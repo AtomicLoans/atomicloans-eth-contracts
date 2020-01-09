@@ -1,5 +1,5 @@
 {
-  "name": "atomicloans-solidity",
+  "name": "@atomicloans/eth-contracts",
   "version": "0.1.0",
   "dependencies": {
     "@liquality/crypto": "0.4.11",
