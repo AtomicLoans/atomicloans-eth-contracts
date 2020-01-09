@@ -127,6 +127,7 @@ module.exports = function(deployer, network, accounts) {
     // Deploy example Medianizer
     await deployer.deploy(Medianizer);
     var medianizer = await Medianizer.deployed();
+    await medianizer.poke(padLeft(numberToHex(toWei('8000', 'ether')), 64))
 
     await deployer.deploy(ISPVRequestManager);
     var onDemandSpv = await ISPVRequestManager.deployed();
