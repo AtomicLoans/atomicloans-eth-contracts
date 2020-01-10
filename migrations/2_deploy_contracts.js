@@ -29,6 +29,8 @@ var MakerMedianizer = artifacts.require('./_MakerMedianizer.sol')
 
 var ALCompound = artifacts.require('./ALCompound.sol')
 
+var fs = require('fs')
+
 var isCI = require('is-ci')
 
 if (isCI) {
@@ -227,5 +229,26 @@ module.exports = function(deployer, network, accounts) {
     console.info(`  "DAI_SALES": "${daiSales.address}",`)
     console.info(`  "MEDIANIZER": "${medianizer.address}"`)
     console.info('}')
+
+    const contractAddresses = {
+        "SAI": sai.address,
+        "USDC": usdc.address,
+        "DAI": dai.address,
+        "CSAI": csai.address,
+        "CUSDC": cusdc.address,
+        "CDAI": cdai.address,
+        "SAI_FUNDS": funds.address,
+        "SAI_LOANS": loans.address,
+        "SAI_SALES": sales.address,
+        "USDC_FUNDS": usdcFunds.address,
+        "USDC_LOANS": usdcLoans.address,
+        "USDC_SALES": usdcSales.address,
+        "DAI_FUNDS": daiFunds.address,
+        "DAI_LOANS": daiLoans.address,
+        "DAI_SALES": daiSales.address,
+        "MEDIANIZER": medianizer.address
+    }
+
+    fs.writeFile('addresses.json', JSON.stringify(contractAddresses, null,'\t'))
   })
 };
