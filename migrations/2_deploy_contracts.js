@@ -59,7 +59,7 @@ module.exports = function(deployer, network, accounts) {
 
     // Deploy Example SAI Pausable
     await deployer.deploy(ExamplePausableSaiCoin); // LOCAL
-    var pausableSAi = await ExamplePausableSaiCoin.deployed(); // LOCAL
+    var pausableSai = await ExamplePausableSaiCoin.deployed(); // LOCAL
 
     await deployer.deploy(MakerMedianizer) // LOCAL
     var makerMedianizer = await MakerMedianizer.deployed(); // LOCAL
@@ -178,7 +178,7 @@ module.exports = function(deployer, network, accounts) {
     await usdcLoans.setP2WSH(usdcP2WSH.address)
 
     const daiFunds = await Funds.new(dai.address, '18')
-    await daiFunds.setCompound(dai.address, comptroller.address)
+    await daiFunds.setCompound(cdai.address, comptroller.address)
     const daiLoans = await Loans.new(daiFunds.address, medianizer.address, dai.address, '18')
     const daiSales = await Sales.new(daiLoans.address, daiFunds.address, medianizer.address, dai.address)
     await daiFunds.setLoans(daiLoans.address)
@@ -227,7 +227,8 @@ module.exports = function(deployer, network, accounts) {
     console.info(`  "DAI_FUNDS": "${daiFunds.address}",`)
     console.info(`  "DAI_LOANS": "${daiLoans.address}",`)
     console.info(`  "DAI_SALES": "${daiSales.address}",`)
-    console.info(`  "MEDIANIZER": "${medianizer.address}"`)
+    console.info(`  "MEDIANIZER": "${medianizer.address}",`)
+    console.info(`  "ONDEMANDSPV": "${onDemandSpv.address}"`)
     console.info('}')
 
     const contractAddresses = {
@@ -246,7 +247,8 @@ module.exports = function(deployer, network, accounts) {
         "DAI_FUNDS": daiFunds.address,
         "DAI_LOANS": daiLoans.address,
         "DAI_SALES": daiSales.address,
-        "MEDIANIZER": medianizer.address
+        "MEDIANIZER": medianizer.address,
+        "ONDEMANDSPV": onDemandSpv.address
     }
 
     fs.writeFile('addresses.json', JSON.stringify(contractAddresses, null,'\t'))
