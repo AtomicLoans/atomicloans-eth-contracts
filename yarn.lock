@@ -557,10 +557,10 @@
     debug "^4.1.1"
     lodash "^4.17.13"
 
-"@liquality/crypto@0.4.12", "@liquality/crypto@^0.4.12":
-  version "0.4.12"
-  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.12.tgz#2f64424a267d9d021ca4badfc93ca45d64f5d7f4"
-  integrity sha512-LUl+psG8t+ARwVueK4pzbHfdZHktYxMgvoh7z8uKVhA04unEaEb/RpHAUYTpCVXpKpy4plhttT93OKB5Cg5VtQ==
+"@liquality/crypto@0.4.14":
+  version "0.4.14"
+  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.14.tgz#2ec8cf8215a12e6911d15c250d1f02082a7af8c2"
+  integrity sha512-k8KngKd1FjwOrpcjCcRHsyeX1/+OnCxBKE5F++KWgGqONEEUuETlNHaQGEIGnyWjS0LQGz3dpDQqEoiFcZQU0Q==
   dependencies:
     "@babel/runtime" "^7.4.3"
     bech32 "^1.1.3"
