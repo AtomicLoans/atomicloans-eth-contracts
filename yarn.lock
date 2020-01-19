@@ -726,7 +726,17 @@
     "@liquality/provider" "^0.4.13"
     "@liquality/utils" "^0.4.13"
 
-"@liquality/ethereum-utils@0.4.12":
+"@liquality/ethereum-utils@0.4.13":
+  version "0.4.13"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.13.tgz#a3f7966f31a4224a1d432c40fc4bf9ba8aeb4170"
+  integrity sha512-zKCpSiaMK79UFrsevE96Xi9HQz8an9aIagiSjctsB6n+PBuOt64hIBbNrKRcpxotPEUmMC79J4GGYfiSKr3Ieg==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    "@liquality/crypto" "^0.4.13"
+    "@liquality/schema" "^0.4.13"
+    eip55 "^1.0.3"
+
+"@liquality/ethereum-utils@^0.4.12":
   version "0.4.12"
   resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.12.tgz#89f1a3479a114b28c1e8118e4875dc320ebc20bd"
   integrity sha512-vSRzTqF6bYCEXR0cEHSgOvXB3/FWJXHhir4c0QNRbuRevyaQlJFZXHvs/C5sq/Y517YdKVCldlcXkYCLPnycGQ==
