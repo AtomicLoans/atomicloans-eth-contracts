@@ -577,10 +577,10 @@
     bs58 "^4.0.1"
     crypto-hashing "^1.0.0"
 
-"@liquality/crypto@^0.4.12":
-  version "0.4.12"
-  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.12.tgz#2f64424a267d9d021ca4badfc93ca45d64f5d7f4"
-  integrity sha512-LUl+psG8t+ARwVueK4pzbHfdZHktYxMgvoh7z8uKVhA04unEaEb/RpHAUYTpCVXpKpy4plhttT93OKB5Cg5VtQ==
+"@liquality/crypto@^0.4.13":
+  version "0.4.13"
+  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.13.tgz#9f8c0665dc4bbd3ab62d79789f9ca1c23f28d6e3"
+  integrity sha512-5cXp3RihndtPAq56tD0FAmgUWL9MELYNdlaV9NImRFBL94SFmZmZYjijOteQw+caxLHLhZYRnXw9ymia7ese0Q==
   dependencies:
     "@babel/runtime" "^7.4.3"
     bech32 "^1.1.3"
@@ -726,7 +726,17 @@
     "@liquality/provider" "^0.4.12"
     "@liquality/utils" "^0.4.12"
 
-"@liquality/ethereum-utils@0.4.12", "@liquality/ethereum-utils@^0.4.12":
+"@liquality/ethereum-utils@0.4.13":
+  version "0.4.13"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.13.tgz#a3f7966f31a4224a1d432c40fc4bf9ba8aeb4170"
+  integrity sha512-zKCpSiaMK79UFrsevE96Xi9HQz8an9aIagiSjctsB6n+PBuOt64hIBbNrKRcpxotPEUmMC79J4GGYfiSKr3Ieg==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    "@liquality/crypto" "^0.4.13"
+    "@liquality/schema" "^0.4.13"
+    eip55 "^1.0.3"
+
+"@liquality/ethereum-utils@^0.4.12":
   version "0.4.12"
   resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.12.tgz#89f1a3479a114b28c1e8118e4875dc320ebc20bd"
   integrity sha512-vSRzTqF6bYCEXR0cEHSgOvXB3/FWJXHhir4c0QNRbuRevyaQlJFZXHvs/C5sq/Y517YdKVCldlcXkYCLPnycGQ==
@@ -802,6 +812,13 @@
   version "0.4.12"
   resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.12.tgz#43454f7d82a4d48315ed2e6dfe2d7086bab09b11"
   integrity sha512-yy1Ucb+xGxsTK0p1DTJFg9cciLo0on/0Hve9u43misG7mHE/d/vteYCP30DLcYgybBbE2BLsIHzOFi7OGmakdA==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+
+"@liquality/schema@^0.4.13":
+  version "0.4.13"
+  resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.13.tgz#b1d783caf5d0391a3b12f74894a068f5d0a5ea06"
+  integrity sha512-2SRqi8CWOO2WiTUsu5IqeRAH1nox5yTxh19kYF3IDLXLXq0/1JqckBARJLcj+tkLWozM9BTJYsUt0s4dCnW+Og==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
