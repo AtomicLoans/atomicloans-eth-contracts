@@ -726,27 +726,7 @@
     "@liquality/provider" "^0.4.13"
     "@liquality/utils" "^0.4.13"
 
-"@liquality/ethereum-utils@0.4.13":
-  version "0.4.13"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.13.tgz#a3f7966f31a4224a1d432c40fc4bf9ba8aeb4170"
-  integrity sha512-zKCpSiaMK79UFrsevE96Xi9HQz8an9aIagiSjctsB6n+PBuOt64hIBbNrKRcpxotPEUmMC79J4GGYfiSKr3Ieg==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.13"
-    "@liquality/schema" "^0.4.13"
-    eip55 "^1.0.3"
-
-"@liquality/ethereum-utils@^0.4.12":
-  version "0.4.12"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.12.tgz#89f1a3479a114b28c1e8118e4875dc320ebc20bd"
-  integrity sha512-vSRzTqF6bYCEXR0cEHSgOvXB3/FWJXHhir4c0QNRbuRevyaQlJFZXHvs/C5sq/Y517YdKVCldlcXkYCLPnycGQ==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.12"
-    "@liquality/schema" "^0.4.12"
-    eip55 "^1.0.3"
-
-"@liquality/ethereum-utils@^0.4.13":
+"@liquality/ethereum-utils@0.4.13", "@liquality/ethereum-utils@^0.4.13":
   version "0.4.13"
   resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.13.tgz#a3f7966f31a4224a1d432c40fc4bf9ba8aeb4170"
   integrity sha512-zKCpSiaMK79UFrsevE96Xi9HQz8an9aIagiSjctsB6n+PBuOt64hIBbNrKRcpxotPEUmMC79J4GGYfiSKr3Ieg==
@@ -815,13 +795,6 @@
   version "0.4.11"
   resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.11.tgz#4d59229796ed73954e5fc32de41efca4f130a287"
   integrity sha512-I05bWnsaLT9r3tpWl8dde8aIPNs6QBmD6X7liOxhAVjVT4tnlWrOabixF3vLOVbYAhrDwbBm1hUPeqeDrm17cg==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-
-"@liquality/schema@^0.4.12":
-  version "0.4.12"
-  resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.12.tgz#43454f7d82a4d48315ed2e6dfe2d7086bab09b11"
-  integrity sha512-yy1Ucb+xGxsTK0p1DTJFg9cciLo0on/0Hve9u43misG7mHE/d/vteYCP30DLcYgybBbE2BLsIHzOFi7OGmakdA==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
@@ -6139,10 +6112,10 @@ truffle-plugin-verify@^0.3.3:
     querystring "^0.2.0"
     sol-merger "^1.1.0"
 
-truffle@5.1.9:
-  version "5.1.9"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.9.tgz#457bfa71af8eb0098fa551e2591e53dbca0dbe29"
-  integrity sha512-iVEFOqeakcC6tZHDN0j8DU23uR0tM6hpgd1D33NRVNR98UrhnNA99Vy9+wiy9XEBXWycjgcBiRvMO9pWNg0aZg==
+truffle@5.1.10:
+  version "5.1.10"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.10.tgz#6866c6f7b88507415eb2d29a9c6c2ab5eba6df2a"
+  integrity sha512-7dkBjNwabpNUp2LTSsXWUk5TMOfomX9F0mPLDEZgAgmfH3qWG5rBEUn/jw5t0LQfVx8NCG+GIN9FxqiUIEWrYQ==
   dependencies:
     app-module-path "^2.2.0"
     mocha "5.2.0"
