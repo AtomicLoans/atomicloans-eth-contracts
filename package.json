@@ -40,7 +40,7 @@
     "build-contracts": "sol-merger \"./contracts/*.sol\" ./build"
   },
   "devDependencies": {
-    "@atomicloans/loan-bundle": "0.3.5",
+    "@atomicloans/loan-bundle": "0.4.1",
     "@atomicloans/provider": "0.3.5",
     "@codechecks/client": "^0.1.5",
     "@liquality/bundle": "0.4.13",
