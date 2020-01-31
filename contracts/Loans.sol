@@ -488,7 +488,7 @@ contract Loans is DSMath {
 
                 collateralDeposits[loan][collateralDepositIndex[loan]].finalized = true;
 
-                for (uint i = collateralDepositFinalizedIndex[loan]; i < sub(collateralDepositIndex[loan], collateralDepositFinalizedIndex[loan]); i++) { // check if collateralDepositFinalizedIndex should be increased
+                for (uint i = collateralDepositFinalizedIndex[loan]; i < collateralDepositIndex[loan]; i++) { // check if collateralDepositFinalizedIndex should be increased
                     if (collateralDeposits[loan][i].finalized == true) {
                         collateralDepositFinalizedIndex[loan] = add(collateralDepositFinalizedIndex[loan], 1);
                     } else {
