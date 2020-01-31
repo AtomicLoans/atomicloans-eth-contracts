@@ -15,6 +15,7 @@ contract Funds is DSMath, ALCompound {
     uint256 public constant DEFAULT_MAX_LOAN_AMT = 2**256-1; // Max 2**256
     uint256 public constant DEFAULT_MIN_LOAN_DUR = 6 hours;  // 6 hours
     uint256 public constant NUM_SECONDS_IN_YEAR = 365 days;
+    uint256 public constant MAX_LOAN_LENGTH = 10 * NUM_SECONDS_IN_YEAR;
 
     mapping (address => bytes32[]) public secretHashes;    // User secret hashes
     mapping (address => uint256)   public secretHashIndex; // User secret hash index
@@ -372,7 +373,7 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) { 
         require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
-        require(ensureNotZero(maxLoanDur_) != 2**256-1 || ensureNotZero(fundExpiry_) != 2**256-1); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -417,7 +418,7 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) {
         require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
-        require(ensureNotZero(maxLoanDur_) != 2**256-1 || ensureNotZero(fundExpiry_) != 2**256-1); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -477,7 +478,7 @@ contract Funds is DSMath, ALCompound {
         address  arbiter_
     ) public {
         require(msg.sender == lender(fund));
-        require(ensureNotZero(maxLoanDur_) != 2**256-1 || ensureNotZero(fundExpiry_) != 2**256-1); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         funds[fund].maxLoanDur       = maxLoanDur_;
         funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].arbiter          = arbiter_;
