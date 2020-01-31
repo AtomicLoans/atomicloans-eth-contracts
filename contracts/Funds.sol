@@ -380,7 +380,11 @@ contract Funds is DSMath, ALCompound {
         bool     compoundEnabled_,
         uint256  amount_
     ) external returns (bytes32 fund) { 
-        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
+        // #IF TESTING
+        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Exception for deployer during testing
+        // #ELSE:
+        // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
+        // #ENDIF
         require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
@@ -425,7 +429,11 @@ contract Funds is DSMath, ALCompound {
         bool     compoundEnabled_,
         uint256  amount_
     ) external returns (bytes32 fund) {
-        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
+        // #IF TESTING
+        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Exception for deployer during testing
+        // #ELSE:
+        // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
+        // #ENDIF
         require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
