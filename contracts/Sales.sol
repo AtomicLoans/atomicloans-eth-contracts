@@ -14,6 +14,7 @@ contract Sales is DSMath {
 
     uint256 public constant SWAP_EXP = 2 hours;       // Swap Expiration
     uint256 public constant SETTLEMENT_EXP = 4 hours; // Settlement Expiration
+    uint256 public constant MAX_NUM_LIQUIDATIONS = 3; // Maximum number of liquidations that can occur
 
 	address public deployer; // Only the Loans contract can edit data
 
@@ -275,7 +276,7 @@ contract Sales is DSMath {
         require(sales[sale].discountBuy > 0);
         sales[sale].off = true;
         require(token.transfer(sales[sale].liquidator, sales[sale].discountBuy));
-        if (next(sales[sale].loanIndex) == 3) {
+        if (next(sales[sale].loanIndex) == MAX_NUM_LIQUIDATIONS) {
             require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)));
         }
     }

@@ -26,6 +26,7 @@ contract Loans is DSMath {
     uint256 public constant SEIZURE_EXP_THRESHOLD = 2 days;     // seizable expiration threshold
     uint256 public constant LIQUIDATION_DISCOUNT = 930000000000000000; // 93% (7% discount)
     uint256 public constant ADD_COLLATERAL_EXPIRY = 4 hours;
+    uint256 public constant MAX_NUM_LIQUIDATIONS = 3; // Maximum number of liquidations that can occur
 
     mapping (bytes32 => Loan)                public loans;
     mapping (bytes32 => Collateral)          public collaterals;
@@ -312,7 +313,7 @@ contract Loans is DSMath {
     function minSeizableCollateralValue(bytes32 loan) public view returns (uint256) {
         (bytes32 val, bool set) = med.peek();
         uint256 price = uint(val);
-        return div(wdiv(dmul(add(principal(loan), interest(loan))), price), (10 ** 10));
+        return div(wdiv(dmul(add(principal(loan), interest(loan))), price), div(WAD, COL));
     }
 
     function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
@@ -694,7 +695,7 @@ contract Loans is DSMath {
                 funds.calcGlobalInterest();
             }
         } else {
-            require(sales.next(loan) < 3);
+            require(sales.next(loan) < MAX_NUM_LIQUIDATIONS);
             require(now > sales.settlementExpiration(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation after settlement expiration of previous liquidation
             require(!sales.accepted(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation again if previous liquidation discountBuy wasn't taken
         }
