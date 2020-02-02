@@ -2,12 +2,12 @@
 # yarn lockfile v1
 
 
-"@atomicloans/bitcoin-collateral-provider@^0.3.5":
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-provider/-/bitcoin-collateral-provider-0.3.5.tgz#ed10cbbdb5628b820d0abac39775d6f26b2bb2c1"
-  integrity sha512-8aE/JE8szu9aTMj7yMfB9YPowBFsR1LiQpBSd0YrfTjocLPN5EpuWzHrfU2AgC8qZvxHx/qpwLvh2/llnfjPNg==
+"@atomicloans/bitcoin-collateral-provider@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-provider/-/bitcoin-collateral-provider-0.4.0.tgz#1b0d9529b96cdb482830d8bce53376810b9a8792"
+  integrity sha512-EWH/LNY3bBzrrTsorRk1aIxUgiush8hcAUUfQmuFidExNSgVInIQAegh1wEOvuu6c7EWlZbTRTYYOswS32JZTg==
   dependencies:
-    "@atomicloans/provider" "^0.3.5"
+    "@atomicloans/provider" "^0.4.0"
     "@babel/runtime" "^7.4.3"
     "@liquality/bitcoin-networks" "^0.4.3"
     "@liquality/bitcoin-utils" "^0.4.3"
@@ -16,12 +16,12 @@
     "@liquality/utils" "^0.4.3"
     bitcoinjs-lib "^5.1.2"
 
-"@atomicloans/bitcoin-collateral-swap-provider@^0.3.5":
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-swap-provider/-/bitcoin-collateral-swap-provider-0.3.5.tgz#5c2cc7115a11c5b6e8581beed4ef1d114bfd3d30"
-  integrity sha512-3o7xfZftGRJe2XDBKUZE4DBORN218et5E3nMKphNvGwIwzSAvwCRKSIKWJLJF5Df/SeFflSsD72t6cp5OKVh/Q==
+"@atomicloans/bitcoin-collateral-swap-provider@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@atomicloans/bitcoin-collateral-swap-provider/-/bitcoin-collateral-swap-provider-0.4.0.tgz#94d5f6ebe27d59287957cdeb10b9ce74d0874f61"
+  integrity sha512-qQViaWo6QLLYs5bFwp6/0Q6CoXKGtAa9oQwSU4sSE4tSd3KzpLzzs4a4boLu5eDiftXO6J1aQut0uxkT9erjeQ==
   dependencies:
-    "@atomicloans/provider" "^0.3.5"
+    "@atomicloans/provider" "^0.4.0"
     "@babel/runtime" "^7.4.3"
     "@liquality/bitcoin-networks" "^0.4.3"
     "@liquality/bitcoin-utils" "^0.4.3"
@@ -30,24 +30,24 @@
     "@liquality/utils" "^0.4.3"
     bignumber.js "^9.0.0"
 
-"@atomicloans/loan-bundle@0.3.5":
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/@atomicloans/loan-bundle/-/loan-bundle-0.3.5.tgz#fda9f897c3fe4eb977ce0e609dadbc36bdb7ce0b"
-  integrity sha512-O+9GMB1odYhkSS6Et6tpp249RQsXob6VsC36JQgMjkRIhf/lPb2MIoTd8jYoea+gTppdp7cEVtcaFOP4SZeM8w==
+"@atomicloans/loan-bundle@0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@atomicloans/loan-bundle/-/loan-bundle-0.4.0.tgz#db440a8748606031d4720a3354b06395cc2ecac3"
+  integrity sha512-k96p8tWLHfcyKhzSHpIRVQL7WIC5vrpRBiKHgxBfi/BnXMKcRIARKJT0J3iD2xYT2Yy7PvSDyrxCNi0hbi784Q==
   dependencies:
-    "@atomicloans/bitcoin-collateral-provider" "^0.3.5"
-    "@atomicloans/bitcoin-collateral-swap-provider" "^0.3.5"
-    "@atomicloans/loan-client" "^0.3.5"
+    "@atomicloans/bitcoin-collateral-provider" "^0.4.0"
+    "@atomicloans/bitcoin-collateral-swap-provider" "^0.4.0"
+    "@atomicloans/loan-client" "^0.4.0"
     "@babel/runtime" "^7.4.3"
     "@ledgerhq/hw-transport-web-ble" "^5.0.0"
     "@ledgerhq/hw-transport-webusb" "^5.0.0"
     axios "^0.19.0"
     json-bigint "^0.3.0"
 
-"@atomicloans/loan-client@^0.3.5":
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/@atomicloans/loan-client/-/loan-client-0.3.5.tgz#7c72c3f95ab266e3355b81da6329534abb86021b"
-  integrity sha512-mtVS9FRYLlp4SHqwHG4M+rVx7b/X7d/O6gI5PNYZiSXGmQaPTYZfuK9/MbQjqXQfR3Nn2KKI1NkQyb4P05cD/w==
+"@atomicloans/loan-client@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@atomicloans/loan-client/-/loan-client-0.4.0.tgz#46e843bd801a721a056dd83b2b29cfe82ab52cf5"
+  integrity sha512-/r0Z/zIXrVjY/SWiWYKewIdkU6fBUEgXVzZttXCe7Sb+3MHRmtYydAnm7SqujgmewzVoSKe68cfpGqSHeGNalw==
   dependencies:
     "@babel/runtime" "^7.4.3"
     "@liquality/client" "^0.4.3"
@@ -66,10 +66,10 @@
   dependencies:
     "@babel/runtime" "^7.4.3"
 
-"@atomicloans/provider@^0.3.5":
-  version "0.3.5"
-  resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.3.5.tgz#47f9318d779c8c6dbecd29ca179aa2dbf9127c5b"
-  integrity sha512-dtVNGF7s9H0wHEQgWq5u+0tU15HIqfM750zIHKk0l+9EObq9oYzvgdHZYyQSXKvne95H5+Q5T5k9Hl8r89AGFQ==
+"@atomicloans/provider@^0.4.0":
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.4.0.tgz#cff333496370fbb8625293e4901e2749c788f51d"
+  integrity sha512-RjzOerJQhnwV1UtYMjKWzG/ag0ZeE6WCJngGdjuDkqUQjIrdfNYFSBwiWS9sz2vRpHuJjUag7WiM48TlaiOl8w==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
