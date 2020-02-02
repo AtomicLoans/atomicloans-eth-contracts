@@ -564,7 +564,7 @@
     debug "^4.1.1"
     lodash "^4.17.13"
 
-"@liquality/crypto@0.4.15":
+"@liquality/crypto@0.4.15", "@liquality/crypto@^0.4.15":
   version "0.4.15"
   resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.15.tgz#87ac36389c4d8dbd1c1fd958a16d3c5e0ed9fffd"
   integrity sha512-j8a/QmT/Q2OEewICX5jytVgiiwGsXSzftyobmL/HXL81e6Kbinrxo++NQN/1M3p9oUWy79khRfcXeBHaXauHEg==
@@ -733,7 +733,17 @@
     "@liquality/provider" "^0.4.13"
     "@liquality/utils" "^0.4.13"
 
-"@liquality/ethereum-utils@0.4.13", "@liquality/ethereum-utils@^0.4.13":
+"@liquality/ethereum-utils@0.4.15":
+  version "0.4.15"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.15.tgz#14e00e8e3cea44e419a4a27cff10a1438ba1d299"
+  integrity sha512-T/GcjzafZZ/GNIC2bafKD3tTgufU/vxI/zDvyKoHA8yRG4GW+suc6Xeou49UBjsLiJ/vTi1MPF5GAVsjHZ6Avg==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    "@liquality/crypto" "^0.4.15"
+    "@liquality/schema" "^0.4.15"
+    eip55 "^1.0.3"
+
+"@liquality/ethereum-utils@^0.4.13":
   version "0.4.13"
   resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.13.tgz#a3f7966f31a4224a1d432c40fc4bf9ba8aeb4170"
   integrity sha512-zKCpSiaMK79UFrsevE96Xi9HQz8an9aIagiSjctsB6n+PBuOt64hIBbNrKRcpxotPEUmMC79J4GGYfiSKr3Ieg==
@@ -809,6 +819,13 @@
   version "0.4.13"
   resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.13.tgz#b1d783caf5d0391a3b12f74894a068f5d0a5ea06"
   integrity sha512-2SRqi8CWOO2WiTUsu5IqeRAH1nox5yTxh19kYF3IDLXLXq0/1JqckBARJLcj+tkLWozM9BTJYsUt0s4dCnW+Og==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+
+"@liquality/schema@^0.4.15":
+  version "0.4.15"
+  resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.15.tgz#4d08aa70e6e24916c8f3aafe1a2b3aed8e182788"
+  integrity sha512-f6VZMz4/3omqrwym+jRs00ZSbw23RZBX8MKzJxtYWlAoCZ+iRgfwt9CiTtu+RXYwmMmklDijolf2OqAHHpmQSg==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
