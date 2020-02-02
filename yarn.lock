@@ -59,7 +59,14 @@
     debug "^4.1.1"
     lodash "^4.17.11"
 
-"@atomicloans/provider@0.3.5", "@atomicloans/provider@^0.3.5":
+"@atomicloans/provider@0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.4.1.tgz#e50cc76f7a7226cc60959cbe223124ba0dded00f"
+  integrity sha512-5zXLzaP8O4k+lN3D4BfdID6FZzJsvRroE5hDudTcweKTkAN2ZIgijCMVPM9dmEVdZEyQPYNtAqDp3T2InDhUYQ==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+
+"@atomicloans/provider@^0.3.5":
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.3.5.tgz#47f9318d779c8c6dbecd29ca179aa2dbf9127c5b"
   integrity sha512-dtVNGF7s9H0wHEQgWq5u+0tU15HIqfM750zIHKk0l+9EObq9oYzvgdHZYyQSXKvne95H5+Q5T5k9Hl8r89AGFQ==
@@ -726,27 +733,7 @@
     "@liquality/provider" "^0.4.13"
     "@liquality/utils" "^0.4.13"
 
-"@liquality/ethereum-utils@0.4.13":
-  version "0.4.13"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.13.tgz#a3f7966f31a4224a1d432c40fc4bf9ba8aeb4170"
-  integrity sha512-zKCpSiaMK79UFrsevE96Xi9HQz8an9aIagiSjctsB6n+PBuOt64hIBbNrKRcpxotPEUmMC79J4GGYfiSKr3Ieg==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.13"
-    "@liquality/schema" "^0.4.13"
-    eip55 "^1.0.3"
-
-"@liquality/ethereum-utils@^0.4.12":
-  version "0.4.12"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.12.tgz#89f1a3479a114b28c1e8118e4875dc320ebc20bd"
-  integrity sha512-vSRzTqF6bYCEXR0cEHSgOvXB3/FWJXHhir4c0QNRbuRevyaQlJFZXHvs/C5sq/Y517YdKVCldlcXkYCLPnycGQ==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.12"
-    "@liquality/schema" "^0.4.12"
-    eip55 "^1.0.3"
-
-"@liquality/ethereum-utils@^0.4.13":
+"@liquality/ethereum-utils@0.4.13", "@liquality/ethereum-utils@^0.4.13":
   version "0.4.13"
   resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.13.tgz#a3f7966f31a4224a1d432c40fc4bf9ba8aeb4170"
   integrity sha512-zKCpSiaMK79UFrsevE96Xi9HQz8an9aIagiSjctsB6n+PBuOt64hIBbNrKRcpxotPEUmMC79J4GGYfiSKr3Ieg==
@@ -815,13 +802,6 @@
   version "0.4.11"
   resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.11.tgz#4d59229796ed73954e5fc32de41efca4f130a287"
   integrity sha512-I05bWnsaLT9r3tpWl8dde8aIPNs6QBmD6X7liOxhAVjVT4tnlWrOabixF3vLOVbYAhrDwbBm1hUPeqeDrm17cg==
-  dependencies:
-    "@babel/runtime" "^7.4.3"
-
-"@liquality/schema@^0.4.12":
-  version "0.4.12"
-  resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.12.tgz#43454f7d82a4d48315ed2e6dfe2d7086bab09b11"
-  integrity sha512-yy1Ucb+xGxsTK0p1DTJFg9cciLo0on/0Hve9u43misG7mHE/d/vteYCP30DLcYgybBbE2BLsIHzOFi7OGmakdA==
   dependencies:
     "@babel/runtime" "^7.4.3"
 

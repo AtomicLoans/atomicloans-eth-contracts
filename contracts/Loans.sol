@@ -312,7 +312,7 @@ contract Loans is DSMath {
     function minSeizableCollateralValue(bytes32 loan) public view returns (uint256) {
         (bytes32 val, bool set) = med.peek();
         uint256 price = uint(val);
-        return div(wdiv(dmul(add(principal(loan), interest(loan))), price), (10 ** 12));
+        return div(wdiv(dmul(add(principal(loan), interest(loan))), price), (10 ** 10));
     }
 
     function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
