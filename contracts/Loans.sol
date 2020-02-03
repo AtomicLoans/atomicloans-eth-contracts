@@ -42,7 +42,6 @@ contract Loans is DSMath {
     mapping (address => bytes32[])           public lenderLoans;
 
     mapping (uint256 => RequestDetails)      public requestsDetails;
-    mapping (uint256 => bool)                public requestsValid;
 
     mapping (uint256 => uint256)             public finalRequestToInitialRequest;
 
@@ -53,6 +52,7 @@ contract Loans is DSMath {
 
     mapping (address => mapping(uint256 => bool))              public addressToTimestamp;
     mapping (bytes32 => mapping(uint8 => uint256))             public txidToOutputIndexToCollateralDepositIndex;
+    mapping (bytes32 => mapping(uint8 => bool))                public txidToOutputToRequestValid;
 
     ERC20 public token; // ERC20 Debt Stablecoin
     uint256 public decimals;
@@ -480,7 +480,7 @@ contract Loans is DSMath {
         require(BytesLib.toBytes32(BTCUtils.extractHash(outputAtIndex)) == requestsDetails[_requestID].p2wshAddress); // ensure p2wsh is generated properly
 
         if (requestsDetails[_requestID].finalized) { // 6 confirmations
-            if (requestsValid[finalRequestToInitialRequest[_requestID]]) { // Check that request is valid
+            if (txidToOutputToRequestValid[_txid][_outputIndex]) { // Check that request is valid
                 if (requestsDetails[_requestID].seizable) {
                     collaterals[loan].seizableCollateral = add(collaterals[loan].seizableCollateral, amount);
 
@@ -498,24 +498,30 @@ contract Loans is DSMath {
 
                 collateralDeposits[loan][txidToOutputIndexToCollateralDepositIndex[_txid][_outputIndex]].finalized = true;
 
-                for (uint i = collateralDepositFinalizedIndex[loan]; i <= collateralDepositIndex[loan]; i++) { // check if collateralDepositFinalizedIndex should be increased
-                    if (collateralDeposits[loan][i].finalized == true) {
-                        collateralDepositFinalizedIndex[loan] = add(collateralDepositFinalizedIndex[loan], 1);
+                _updateCollateralDepositFinalizedIndex(loan);
+            } else { // In the case that 6 conf comes before 1 conf
+                if (amount >= div(collateral(loan), 100)) { // Ensure amount is greater than 1% of collateral value
+                    txidToOutputToRequestValid[_txid][_outputIndex] = true;
+                    _setCollateralDeposit(loan, collateralDepositIndex[loan], amount, requestsDetails[_requestID].seizable);
+                    collateralDeposits[loan][collateralDepositIndex[loan]].finalized = true;
+                    txidToOutputIndexToCollateralDepositIndex[_txid][_outputIndex] = collateralDepositIndex[loan];
+                    collateralDepositIndex[loan] = add(collateralDepositIndex[loan], 1);
+
+                    if (requestsDetails[_requestID].seizable) {
+                        collaterals[loan].seizableCollateral = add(collaterals[loan].seizableCollateral, amount);
                     } else {
-                        break;
+                        collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, amount);
                     }
+
+                    _updateExistingRefundableCollateral(loan);
+                    _updateCollateralDepositFinalizedIndex(loan);
                 }
             }
         } else { // 1 confirmation
-            if (amount >= div(collateral(loan), 100)) { // Ensure amount is greater than 1% of collateral value
-                requestsValid[_requestID] = true;
-
-                collateralDeposits[loan][collateralDepositIndex[loan]].amount = amount;
-                collateralDeposits[loan][collateralDepositIndex[loan]].seizable = requestsDetails[_requestID].seizable;
-                collateralDeposits[loan][collateralDepositIndex[loan]].expiry = now + ADD_COLLATERAL_EXPIRY;
-
+            if (amount >= div(collateral(loan), 100) && !txidToOutputToRequestValid[_txid][_outputIndex]) { // Ensure amount is greater than 1% of collateral value
+                txidToOutputToRequestValid[_txid][_outputIndex] = true;
+                _setCollateralDeposit(loan, collateralDepositIndex[loan], amount, requestsDetails[_requestID].seizable);
                 txidToOutputIndexToCollateralDepositIndex[_txid][_outputIndex] = collateralDepositIndex[loan];
-
                 collateralDepositIndex[loan] = add(collateralDepositIndex[loan], 1);
 
                 if (requestsDetails[_requestID].seizable) {
@@ -524,11 +530,31 @@ contract Loans is DSMath {
                     temporaryCollaterals[loan].refundableCollateral = add(temporaryCollaterals[loan].refundableCollateral, amount);
                 }
 
-                // check existing refundable collaterals
-                if (add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= minSeizableCollateralValue(loan) && collaterals[loan].unaccountedRefundableCollateral != 0) {
-                    collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, collaterals[loan].unaccountedRefundableCollateral);
-                    collaterals[loan].unaccountedRefundableCollateral = 0;
-                }
+                _updateExistingRefundableCollateral(loan);
+            }
+        }
+    }
+
+    function _setCollateralDeposit (bytes32 loan, uint256 collateralDepositIndex_, uint256 amount_, bool seizable_) private {
+        collateralDeposits[loan][collateralDepositIndex_].amount = amount_;
+        collateralDeposits[loan][collateralDepositIndex_].seizable = seizable_;
+        collateralDeposits[loan][collateralDepositIndex_].expiry = now + ADD_COLLATERAL_EXPIRY;
+    }
+
+    function _updateExistingRefundableCollateral (bytes32 loan) private {
+        // check existing refundable collaterals
+        if (add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= minSeizableCollateralValue(loan) && collaterals[loan].unaccountedRefundableCollateral != 0) {
+            collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, collaterals[loan].unaccountedRefundableCollateral);
+            collaterals[loan].unaccountedRefundableCollateral = 0;
+        }
+    }
+
+    function _updateCollateralDepositFinalizedIndex (bytes32 loan) private {
+        for (uint i = collateralDepositFinalizedIndex[loan]; i <= collateralDepositIndex[loan]; i++) { // check if collateralDepositFinalizedIndex should be increased
+            if (collateralDeposits[loan][i].finalized == true) {
+                collateralDepositFinalizedIndex[loan] = add(collateralDepositFinalizedIndex[loan], 1);
+            } else {
+                break;
             }
         }
     }

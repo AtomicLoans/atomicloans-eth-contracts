@@ -1332,6 +1332,72 @@ stablecoins.forEach((stablecoin) => {
         assert.isBelow(parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_2).toFixed()), parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_1).toFixed()))
         assert.isBelow(parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_3).toFixed()), parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_1).toFixed()))
       })
+
+      it('should correctly update state if 6 conf proof comes before 1 conf proof', async function() {
+        const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
+
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+
+        const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
+
+        await this.med.poke(numToBytes32(toWei((parseFloat(btcPrice) * 1.2).toString(), 'ether'))) // Ensure minSeizableCollateral not satisfied
+
+        const lockMoreCollateralParams = [colParams.pubKeys, colParams.secretHashes, colParams.expirations]
+        const lockMoreCollateralAddresses = await bitcoin.client.loan.collateral.getLockAddresses(...lockMoreCollateralParams)
+        const { refundableAddress, seizableAddress } = lockMoreCollateralAddresses
+        const { refundableValue, seizableValue } = colParams.values
+
+        // Lock More Collateral 1
+        const lockMoreCollateral_1_TxHash = await bitcoin.client.loan.collateral.lock(colParams.values, ...lockMoreCollateralParams)
+        const lockMoreCollateral_1_TxHashForProof = ensure0x(Buffer.from(lockMoreCollateral_1_TxHash, 'hex').reverse().toString('hex'))
+
+        const lockMoreCollateral_1_TxRaw = await bitcoin.client.getMethod('getRawTransactionByHash')(lockMoreCollateral_1_TxHash)
+        const lockMoreCollateral_1_Tx = await bitcoin.client.getMethod('decodeRawTransaction')(lockMoreCollateral_1_TxRaw)
+
+        const lockMoreCollateral_1_RefundableVout = lockMoreCollateral_1_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === refundableAddress)
+        const lockMoreCollateral_1_SeizableVout = lockMoreCollateral_1_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === seizableAddress)
+
+        const lockMoreCollateral_1_BitcoinJsTx = bitcoinjs.Transaction.fromHex(lockMoreCollateral_1_TxRaw)
+        const lockMoreCollateral_1_Vin = ensure0x(lockMoreCollateral_1_BitcoinJsTx.getVin())
+        const lockMoreCollateral_1_Vout = ensure0x(lockMoreCollateral_1_BitcoinJsTx.getVout())
+
+        await bitcoin.client.chain.generateBlock(1)
+
+        const refundableInputIndex_1 = 0
+        const refundableOutputIndex_1 = lockMoreCollateral_1_RefundableVout.n
+
+        const seizableInputIndex_1 = 0
+        const seizableOutputIndex_1 = lockMoreCollateral_1_SeizableVout.n
+
+        const collateralValueBeforeSixAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
+        expect(collateralValueBeforeSixAddingRefundableCollateral_1.toNumber()).to.equal(refundableValue + seizableValue)
+
+        // // SPV FILL REQUEST REFUNDABLE COLLATERAL #1 SIX CONFIRMATION
+        const fillRefundRequest_1_SixConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDSixConf, refundableInputIndex_1, refundableOutputIndex_1)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDSixConf, refundableInputIndex_1, refundableOutputIndex_1)
+        expect(fillRefundRequest_1_SixConfSuccess).to.equal(true)
+
+        const collateralValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(collateralValueBeforeSixAddingRefundableCollateral_1.toNumber() + refundableValue)
+        expect(CDIValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(1)
+        expect(CDFIValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(1)
+
+        // SPV FILL REQUEST REFUNDABLE COLLATERAL #4 ONE CONFIRMATION
+        const fillRefundRequest_1_OneConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDOneConf, refundableInputIndex_1, refundableOutputIndex_1)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDOneConf, refundableInputIndex_1, refundableOutputIndex_1)
+        expect(fillRefundRequest_1_OneConfSuccess).to.equal(true)
+
+        const collateralValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(collateralValueAfterSixAddingRefundableCollateral_1.toNumber())
+        expect(CDIValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(1)
+        expect(CDFIValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(1)
+      })
     })
 
     describe('Locking collateral multiple times', function() {
@@ -1402,7 +1468,7 @@ stablecoins.forEach((stablecoin) => {
 
           const gasUsed = fillRequestReceipt.receipt.gasUsed
 
-          assert.isBelow(parseInt(gasUsed), 1e6)
+          assert.isBelow(parseInt(gasUsed), 1500000)
         }
 
         const collateralValueAfterSixAddingRefundableCollateral = await this.loans.collateral.call(this.loan)
