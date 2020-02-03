@@ -31,6 +31,7 @@ const { rateToSec, numToBytes32 } = utils;
 const { toWei, fromWei } = web3.utils;
 
 const BTC_TO_SAT = 10**8
+const YEAR_IN_SECONDS = BigNumber(31536000)
 
 console.info = () => {} // Silence the Deprecation Warning
 
@@ -288,7 +289,7 @@ stablecoins.forEach((stablecoin) => {
 
       const fundParams = [
         toSecs({days: 366}),
-        BigNumber(2).pow(256).minus(1).toFixed(),
+        YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
         arbiter,
         false,
         0

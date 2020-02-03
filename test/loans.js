@@ -31,6 +31,7 @@ const { rateToSec, numToBytes32 } = utils;
 const { toWei, fromWei } = web3.utils;
 
 const BTC_TO_SAT = 10**8
+const YEAR_IN_SECONDS = BigNumber(31536000)
 
 const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
@@ -192,7 +193,7 @@ stablecoins.forEach((stablecoin) => {
         toWei('100', unit),
         toSecs({days: 1}),
         toSecs({days: 366}),
-        BigNumber(2).pow(256).minus(1).toFixed(),
+        YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
         toWei('1.5', 'gether'), // 150% collateralization ratio
         toWei(rateToSec('16.5'), 'gether'), // 16.50%
         toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -848,7 +849,7 @@ stablecoins.forEach((stablecoin) => {
 
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           false,
           0

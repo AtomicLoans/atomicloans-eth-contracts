@@ -31,6 +31,7 @@ const { rateToSec, numToBytes32 } = utils;
 const { toWei, fromWei } = web3.utils;
 
 const BTC_TO_SAT = 10**8
+const YEAR_IN_SECONDS = BigNumber(31536000)
 
 const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
@@ -182,7 +183,7 @@ stablecoins.forEach((stablecoin) => {
         toWei('100', unit),
         toSecs({days: 1}),
         toSecs({days: 366}),
-        BigNumber(2).pow(256).minus(1).toFixed(),
+        YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
         toWei('1.5', 'gether'), // 150% collateralization ratio
         toWei(rateToSec('16.5'), 'gether'), // 16.50%
         toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -200,7 +201,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if user tries to create two loan funds', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           false,
           0
@@ -214,7 +215,7 @@ stablecoins.forEach((stablecoin) => {
       it('should succeed in updating non-custom loan fund', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           false,
           0
@@ -226,7 +227,7 @@ stablecoins.forEach((stablecoin) => {
         const newFundExpiry = Math.floor(Date.now() / 1000) + toSecs({days: 366})
 
         const fundParams2 = [
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).toFixed(),
           newFundExpiry,
           arbiter
         ]
@@ -236,14 +237,14 @@ stablecoins.forEach((stablecoin) => {
         const maxLoanDur = await this.funds.maxLoanDur.call(this.fund2)
         const fundExpiry = await this.funds.fundExpiry.call(this.fund2)
 
-        assert.equal(maxLoanDur, BigNumber(2).pow(256).minus(1).toFixed())
+        assert.equal(maxLoanDur, YEAR_IN_SECONDS.times(2).toFixed())
         assert.equal(fundExpiry, newFundExpiry)
       })
 
-      it('should fail in updating non-custom loan fund with 2**256-1 maxLoanDur and fundExpiry', async function() {
+      it('should fail in updating non-custom loan fund with > 10 years maxLoanDur', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           false,
           0
@@ -253,18 +254,39 @@ stablecoins.forEach((stablecoin) => {
         await this.funds.create(...fundParams)
 
         const fundParams3 = [
-          BigNumber(2).pow(256).minus(1).toFixed(),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(11).plus(1),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter
         ]
 
         await expectRevert(this.funds.update(this.fund3, ...fundParams3), 'VM Exception while processing transaction: revert')
       })
 
-      it('should fail creating loan fund with 2**256-1 fundExpiry and maxLoanDur', async function() {
+      it('should fail in updating non-custom loan fund with > 10 years fundExpiry', async function() {
         const fundParams = [
-          BigNumber(2).pow(256).minus(1).toFixed(),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          toSecs({days: 366}),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
+          arbiter,
+          false,
+          0
+        ]
+
+        this.fund3 = await this.funds.create.call(...fundParams)
+        await this.funds.create(...fundParams)
+
+        const fundParams3 = [
+          toSecs({days: 366}),
+          YEAR_IN_SECONDS.times(11).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
+          arbiter
+        ]
+
+        await expectRevert(this.funds.update(this.fund3, ...fundParams3), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail creating loan fund with > 10 years fundExpiry and maxLoanDur', async function() {
+        const fundParams = [
+          YEAR_IN_SECONDS.times(11).plus(1),
+          YEAR_IN_SECONDS.times(11).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           false,
           0
@@ -288,7 +310,7 @@ stablecoins.forEach((stablecoin) => {
       it('should succeed in withdrawing from non-custom loan fund', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           true,
           0
@@ -320,7 +342,7 @@ stablecoins.forEach((stablecoin) => {
 
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           false,
           toWei('100', unit)
@@ -349,7 +371,7 @@ stablecoins.forEach((stablecoin) => {
 
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           true,
           toWei('100', unit)
@@ -361,7 +383,7 @@ stablecoins.forEach((stablecoin) => {
       it('should deposit funds on create if amount > 0', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           false,
           toWei('100', unit)
@@ -390,7 +412,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -405,13 +427,13 @@ stablecoins.forEach((stablecoin) => {
         await expectRevert(this.funds.createCustom(...fundParams, { from: lender3 }), 'VM Exception while processing transaction: revert')
       })
 
-      it('should fail creating custom loan fund with 2**256-1 fundExpiry and maxLoanDur', async function() {
+      it('should fail creating custom loan fund with 10 years+ fundExpiry and maxLoanDur', async function() {
         const fundParams = [
           toWei('1', unit),
           toWei('100', unit),
           toSecs({days: 1}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(11).plus(1).toFixed(),
+          YEAR_IN_SECONDS.times(11).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -461,7 +483,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -498,7 +520,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -525,7 +547,7 @@ stablecoins.forEach((stablecoin) => {
 
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           false,
           0
@@ -540,7 +562,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cTokenMarketLiquidity if not custom and compoundEnabled', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           true,
           0
@@ -569,7 +591,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -706,7 +728,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -745,7 +767,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('99', unit),
           toSecs({days: 2}),
           toSecs({days: 364}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei(rateToSec('16'), 'gether'), // 16.0%
           toWei(rateToSec('2.75'), 'gether'), //  3.00%
           toWei(rateToSec('0.5'), 'gether'), //  0.75%
@@ -774,13 +796,13 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(liquidationRatio, toWei('1.5', 'gether'))
       })
 
-      it('should fail changing of fund details with 2**256-1 fundExpiry and maxLoanDur', async function() {
+      it('should fail changing of fund details with 10 years+ fundExpiry and maxLoanDur', async function() {
         const fundParams = [
           toWei('2', unit),
           toWei('99', unit),
           toSecs({days: 2}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(11).plus(1).toFixed(),
+          YEAR_IN_SECONDS.times(11).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei(rateToSec('16'), 'gether'), // 16.0%
           toWei(rateToSec('2.75'), 'gether'), //  3.00%
           toWei(rateToSec('0.5'), 'gether'), //  0.75%
@@ -796,7 +818,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if not called by lender', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           false,
           0
@@ -808,7 +830,7 @@ stablecoins.forEach((stablecoin) => {
         const newFundExpiry = Math.floor(Date.now() / 1000) + toSecs({days: 366})
 
         const fundParams2 = [
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(1).toFixed(),
           newFundExpiry,
           arbiter
         ]
@@ -824,7 +846,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -838,7 +860,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if trying to update non-custom fund', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           false,
           0
@@ -854,7 +876,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('100', unit),
           toSecs({days: 1}),
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
           toWei(rateToSec('3'), 'gether'), //  3.00%
@@ -964,7 +986,7 @@ stablecoins.forEach((stablecoin) => {
 
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter,
           true,
           0
@@ -1083,7 +1105,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('1', unit),
           toWei('100', unit),
           toSecs({days: 1}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).toFixed(),
           parseInt(fromWei(currentTime, 'wei')) + toSecs({days: 30}),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
@@ -1125,7 +1147,7 @@ stablecoins.forEach((stablecoin) => {
           toWei('1', unit),
           toWei('100', unit),
           toSecs({days: 1}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).toFixed(),
           parseInt(fromWei(currentTime, 'wei')) + toSecs({days: 30}),
           toWei('1.5', 'gether'), // 150% collateralization ratio
           toWei(rateToSec('16.5'), 'gether'), // 16.50%
@@ -1338,7 +1360,7 @@ stablecoins.forEach((stablecoin) => {
 
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           false,
           0
@@ -1353,7 +1375,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if compound already enabled', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           true,
           0
@@ -1368,7 +1390,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if msg.sender isn\'t lender', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           false,
           0
@@ -1385,7 +1407,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if compound isn\'t already enabled', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           false,
           0
@@ -1400,7 +1422,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if msg.sender isn\'t lender', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          BigNumber(2).pow(256).minus(1).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter,
           true,
           0

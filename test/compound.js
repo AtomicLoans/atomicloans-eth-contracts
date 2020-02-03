@@ -41,7 +41,7 @@ const COL = 10 ** 8
 const WAD = 10 ** 18
 const RAY = 10 ** 27
 
-const YEAR_IN_SECONDS = BN(31556952)
+const YEAR_IN_SECONDS = BN(31536000)
 
 BN.config({ ROUNDING_MODE: BN.ROUND_DOWN })
 
@@ -105,7 +105,7 @@ async function increaseTime(seconds) {
 async function createFund(_this, arbiter, account, amount, compoundEnabled) {
   const fundParams = [
     toSecs({days: 366}),
-    YEAR_IN_SECONDS.times(2).toFixed(),
+    YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
     arbiter, 
     compoundEnabled,
     0
@@ -224,7 +224,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          YEAR_IN_SECONDS.times(2).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter, 
           true,
           0
@@ -334,7 +334,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          YEAR_IN_SECONDS.times(2).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter, 
           true,
           0
@@ -427,7 +427,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update cBalance based on compound exchange rate of cTokens', async function() {
         const fundParams = [
           toSecs({days: 366}),
-          YEAR_IN_SECONDS.times(2).toFixed(),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
           arbiter, 
           true,
           0

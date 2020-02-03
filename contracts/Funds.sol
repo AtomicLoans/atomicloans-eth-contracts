@@ -373,7 +373,7 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) { 
         require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
-        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -418,7 +418,7 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) {
         require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Only allow one loan fund per address
-        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -478,7 +478,7 @@ contract Funds is DSMath, ALCompound {
         address  arbiter_
     ) public {
         require(msg.sender == lender(fund));
-        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         funds[fund].maxLoanDur       = maxLoanDur_;
         funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].arbiter          = arbiter_;
