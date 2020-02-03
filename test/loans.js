@@ -34,6 +34,17 @@ const BTC_TO_SAT = 10**8
 
 const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
+const mockDateNow = () => {
+  let current = Date.now()
+
+  return () => {
+    current += 5000;
+    return current;
+  }
+}
+
+global.Date.now = mockDateNow();
+
 async function getContracts(stablecoin) {
   if (stablecoin == 'SAI') {
     const funds = await Funds.deployed();

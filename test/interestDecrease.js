@@ -34,6 +34,17 @@ const BTC_TO_SAT = 10**8
 
 console.info = () => {} // Silence the Deprecation Warning
 
+const mockDateNow = () => {
+  let current = Date.now()
+
+  return () => {
+    current += 5000;
+    return current;
+  }
+}
+
+global.Date.now = mockDateNow();
+
 const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
 async function getContracts(stablecoin) {
