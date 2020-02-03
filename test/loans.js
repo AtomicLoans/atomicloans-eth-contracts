@@ -333,6 +333,16 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender2, arbiter ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
+        const fundId = numToBytes32(1)
+
+        await expectRevert(this.loans.create(loanExpiration, usrs, vals, fundId), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if requestTimestamp is duplicated', async function() {
+        const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(1)
 
@@ -345,7 +355,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -360,7 +370,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -375,7 +385,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -391,7 +401,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -418,7 +428,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -441,7 +451,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -459,7 +469,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -477,7 +487,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -625,7 +635,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -1130,7 +1140,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -1166,7 +1176,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -1258,7 +1268,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
@@ -1282,7 +1292,7 @@ stablecoins.forEach((stablecoin) => {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
         const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
-        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
+        const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
 
         const loan = await this.loans.create.call(loanExpiration, usrs, vals, fundId)
