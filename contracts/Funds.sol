@@ -675,7 +675,7 @@ contract Funds is DSMath, ALCompound {
     function calcGlobalInterest() public {
         marketLiquidity = add(tokenMarketLiquidity, wmul(cTokenMarketLiquidity, cTokenExchangeRate()));
 
-        if (now > (lastGlobalInterestUpdated + interestUpdateDelay)) {
+        if (now > (add(lastGlobalInterestUpdated, interestUpdateDelay))) {
             uint256 utilizationRatio;
             if (totalBorrow != 0) { utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow)); }
 
