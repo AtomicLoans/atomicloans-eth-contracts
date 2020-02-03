@@ -52,6 +52,7 @@ contract Loans is DSMath {
     mapping (bytes32 => uint256)                               public collateralDepositFinalizedIndex;
 
     mapping (address => mapping(uint256 => bool))              public addressToTimestamp;
+    mapping (bytes32 => mapping(uint8 => uint256))             public txidToOutputIndexToCollateralDepositIndex;
 
     ERC20 public token; // ERC20 Debt Stablecoin
     uint256 public decimals;
@@ -468,22 +469,19 @@ contract Loans is DSMath {
      *                     the notification. Useful for subscribing to transactions
      *                     that spend the newly-created UTXO.
      */
-    function spv(bytes32, bytes calldata, bytes calldata _vout, uint256 _requestID, uint8, uint8 _outputIndex) external {
+    function spv(bytes32 _txid, bytes calldata, bytes calldata _vout, uint256 _requestID, uint8, uint8 _outputIndex) external {
         require(msg.sender == address(onDemandSpv));
 
         bytes memory outputAtIndex = BTCUtils.extractOutputAtIndex(_vout, _outputIndex);
-        bytes32 p2wshAddress = BytesLib.toBytes32(BTCUtils.extractHash(outputAtIndex));
         uint256 amount = uint(BTCUtils.extractValue(outputAtIndex));
 
         bytes32 loan = requestsDetails[_requestID].loan;
-        bool finalized = requestsDetails[_requestID].finalized;
-        bool seizable = requestsDetails[_requestID].seizable;
 
-        require(p2wshAddress == requestsDetails[_requestID].p2wshAddress); // ensure p2wsh is generated properly
+        require(BytesLib.toBytes32(BTCUtils.extractHash(outputAtIndex)) == requestsDetails[_requestID].p2wshAddress); // ensure p2wsh is generated properly
 
-        if (finalized) { // 6 confirmations
+        if (requestsDetails[_requestID].finalized) { // 6 confirmations
             if (requestsValid[finalRequestToInitialRequest[_requestID]]) { // Check that request is valid
-                if (seizable) {
+                if (requestsDetails[_requestID].seizable) {
                     collaterals[loan].seizableCollateral = add(collaterals[loan].seizableCollateral, amount);
 
                     temporaryCollaterals[loan].seizableCollateral = sub(temporaryCollaterals[loan].seizableCollateral, amount);
@@ -498,9 +496,9 @@ contract Loans is DSMath {
                     temporaryCollaterals[loan].refundableCollateral = sub(temporaryCollaterals[loan].refundableCollateral, amount);
                 }
 
-                collateralDeposits[loan][collateralDepositIndex[loan]].finalized = true;
+                collateralDeposits[loan][txidToOutputIndexToCollateralDepositIndex[_txid][_outputIndex]].finalized = true;
 
-                for (uint i = collateralDepositFinalizedIndex[loan]; i < sub(collateralDepositIndex[loan], collateralDepositFinalizedIndex[loan]); i++) { // check if collateralDepositFinalizedIndex should be increased
+                for (uint i = collateralDepositFinalizedIndex[loan]; i <= collateralDepositIndex[loan]; i++) { // check if collateralDepositFinalizedIndex should be increased
                     if (collateralDeposits[loan][i].finalized == true) {
                         collateralDepositFinalizedIndex[loan] = add(collateralDepositFinalizedIndex[loan], 1);
                     } else {
@@ -513,12 +511,14 @@ contract Loans is DSMath {
                 requestsValid[_requestID] = true;
 
                 collateralDeposits[loan][collateralDepositIndex[loan]].amount = amount;
-                collateralDeposits[loan][collateralDepositIndex[loan]].seizable = seizable;
+                collateralDeposits[loan][collateralDepositIndex[loan]].seizable = requestsDetails[_requestID].seizable;
                 collateralDeposits[loan][collateralDepositIndex[loan]].expiry = now + ADD_COLLATERAL_EXPIRY;
+
+                txidToOutputIndexToCollateralDepositIndex[_txid][_outputIndex] = collateralDepositIndex[loan];
 
                 collateralDepositIndex[loan] = add(collateralDepositIndex[loan], 1);
 
-                if (seizable) {
+                if (requestsDetails[_requestID].seizable) {
                     temporaryCollaterals[loan].seizableCollateral = add(temporaryCollaterals[loan].seizableCollateral, amount);
                 } else {
                     temporaryCollaterals[loan].refundableCollateral = add(temporaryCollaterals[loan].refundableCollateral, amount);

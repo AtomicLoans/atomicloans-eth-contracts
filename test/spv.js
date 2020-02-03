@@ -1041,10 +1041,301 @@ stablecoins.forEach((stablecoin) => {
         const { acceptSecret } = await this.loans.secretHashes.call(this.loan)
         await unlockCollateral(acceptSecret, borrowerBTC, lockTxHash, colParams, col)
       })
+
+      it('should account for delayed 6 conf proofs in collateral value', async function() {
+        const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
+
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+
+        const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
+
+        await this.med.poke(numToBytes32(toWei((parseFloat(btcPrice) * 1.2).toString(), 'ether'))) // Ensure minSeizableCollateral not satisfied
+
+        const lockMoreCollateralParams = [colParams.pubKeys, colParams.secretHashes, colParams.expirations]
+        const lockMoreCollateralAddresses = await bitcoin.client.loan.collateral.getLockAddresses(...lockMoreCollateralParams)
+        const { refundableAddress, seizableAddress } = lockMoreCollateralAddresses
+        const { refundableValue, seizableValue } = colParams.values
+
+        // Lock More Collateral 1
+        const lockMoreCollateral_1_TxHash = await bitcoin.client.loan.collateral.lock(colParams.values, ...lockMoreCollateralParams)
+        const lockMoreCollateral_1_TxHashForProof = ensure0x(Buffer.from(lockMoreCollateral_1_TxHash, 'hex').reverse().toString('hex'))
+
+        const lockMoreCollateral_1_TxRaw = await bitcoin.client.getMethod('getRawTransactionByHash')(lockMoreCollateral_1_TxHash)
+        const lockMoreCollateral_1_Tx = await bitcoin.client.getMethod('decodeRawTransaction')(lockMoreCollateral_1_TxRaw)
+
+        const lockMoreCollateral_1_RefundableVout = lockMoreCollateral_1_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === refundableAddress)
+        const lockMoreCollateral_1_SeizableVout = lockMoreCollateral_1_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === seizableAddress)
+
+        const lockMoreCollateral_1_BitcoinJsTx = bitcoinjs.Transaction.fromHex(lockMoreCollateral_1_TxRaw)
+        const lockMoreCollateral_1_Vin = ensure0x(lockMoreCollateral_1_BitcoinJsTx.getVin())
+        const lockMoreCollateral_1_Vout = ensure0x(lockMoreCollateral_1_BitcoinJsTx.getVout())
+
+        // Lock More Collateral 2
+        const lockMoreCollateral_2_TxHash = await bitcoin.client.loan.collateral.lock(colParams.values, ...lockMoreCollateralParams)
+        const lockMoreCollateral_2_TxHashForProof = ensure0x(Buffer.from(lockMoreCollateral_2_TxHash, 'hex').reverse().toString('hex'))
+
+        const lockMoreCollateral_2_TxRaw = await bitcoin.client.getMethod('getRawTransactionByHash')(lockMoreCollateral_2_TxHash)
+        const lockMoreCollateral_2_Tx = await bitcoin.client.getMethod('decodeRawTransaction')(lockMoreCollateral_2_TxRaw)
+
+        const lockMoreCollateral_2_RefundableVout = lockMoreCollateral_2_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === refundableAddress)
+        const lockMoreCollateral_2_SeizableVout = lockMoreCollateral_2_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === seizableAddress)
+
+        const lockMoreCollateral_2_BitcoinJsTx = bitcoinjs.Transaction.fromHex(lockMoreCollateral_2_TxRaw)
+        const lockMoreCollateral_2_Vin = ensure0x(lockMoreCollateral_2_BitcoinJsTx.getVin())
+        const lockMoreCollateral_2_Vout = ensure0x(lockMoreCollateral_2_BitcoinJsTx.getVout())
+
+        // Lock More Collateral 3
+        const lockMoreCollateral_3_TxHash = await bitcoin.client.loan.collateral.lock(colParams.values, ...lockMoreCollateralParams)
+        const lockMoreCollateral_3_TxHashForProof = ensure0x(Buffer.from(lockMoreCollateral_3_TxHash, 'hex').reverse().toString('hex'))
+
+        const lockMoreCollateral_3_TxRaw = await bitcoin.client.getMethod('getRawTransactionByHash')(lockMoreCollateral_3_TxHash)
+        const lockMoreCollateral_3_Tx = await bitcoin.client.getMethod('decodeRawTransaction')(lockMoreCollateral_3_TxRaw)
+
+        const lockMoreCollateral_3_RefundableVout = lockMoreCollateral_3_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === refundableAddress)
+        const lockMoreCollateral_3_SeizableVout = lockMoreCollateral_3_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === seizableAddress)
+
+        const lockMoreCollateral_3_BitcoinJsTx = bitcoinjs.Transaction.fromHex(lockMoreCollateral_3_TxRaw)
+        const lockMoreCollateral_3_Vin = ensure0x(lockMoreCollateral_3_BitcoinJsTx.getVin())
+        const lockMoreCollateral_3_Vout = ensure0x(lockMoreCollateral_3_BitcoinJsTx.getVout())
+
+        // Lock More Collateral 3
+        const lockMoreCollateral_4_TxHash = await bitcoin.client.loan.collateral.lock(colParams.values, ...lockMoreCollateralParams)
+        const lockMoreCollateral_4_TxHashForProof = ensure0x(Buffer.from(lockMoreCollateral_4_TxHash, 'hex').reverse().toString('hex'))
+
+        const lockMoreCollateral_4_TxRaw = await bitcoin.client.getMethod('getRawTransactionByHash')(lockMoreCollateral_4_TxHash)
+        const lockMoreCollateral_4_Tx = await bitcoin.client.getMethod('decodeRawTransaction')(lockMoreCollateral_4_TxRaw)
+
+        const lockMoreCollateral_4_RefundableVout = lockMoreCollateral_4_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === refundableAddress)
+        const lockMoreCollateral_4_SeizableVout = lockMoreCollateral_4_Tx._raw.data.vout.find(vout => vout.scriptPubKey.addresses[0] === seizableAddress)
+
+        const lockMoreCollateral_4_BitcoinJsTx = bitcoinjs.Transaction.fromHex(lockMoreCollateral_4_TxRaw)
+        const lockMoreCollateral_4_Vin = ensure0x(lockMoreCollateral_4_BitcoinJsTx.getVin())
+        const lockMoreCollateral_4_Vout = ensure0x(lockMoreCollateral_4_BitcoinJsTx.getVout())
+
+        await bitcoin.client.chain.generateBlock(1)
+
+        const refundableInputIndex_1 = 0
+        const refundableOutputIndex_1 = lockMoreCollateral_1_RefundableVout.n
+
+        const refundableInputIndex_2 = 0
+        const refundableOutputIndex_2 = lockMoreCollateral_2_RefundableVout.n
+
+        const refundableInputIndex_3 = 0
+        const refundableOutputIndex_3 = lockMoreCollateral_3_RefundableVout.n
+
+        const refundableInputIndex_4 = 0
+        const refundableOutputIndex_4 = lockMoreCollateral_4_RefundableVout.n
+
+        const seizableInputIndex_1 = 0
+        const seizableOutputIndex_1 = lockMoreCollateral_1_SeizableVout.n
+
+        const seizableInputIndex_2 = 0
+        const seizableOutputIndex_2 = lockMoreCollateral_2_SeizableVout.n
+
+        const seizableInputIndex_3 = 0
+        const seizableOutputIndex_3 = lockMoreCollateral_3_SeizableVout.n
+
+        const seizableInputIndex_4 = 0
+        const seizableOutputIndex_4 = lockMoreCollateral_4_SeizableVout.n
+
+        // SPV FILL REQUEST REFUNDABLE COLLATERAL #1 ONE CONFIRMATION
+        const fillRefundRequest_1_OneConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDOneConf, refundableInputIndex_1, refundableOutputIndex_1)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDOneConf, refundableInputIndex_1, refundableOutputIndex_1)
+        expect(fillRefundRequest_1_OneConfSuccess).to.equal(true)
+
+        const collateralValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(refundableValue + seizableValue + refundableValue)
+        expect(CDIValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(1)
+        expect(CDFIValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(0)
+
+        await increaseTime(toSecs({ hours: 1 }))
+
+        // SPV FILL REQUEST REFUNDABLE COLLATERAL #2 ONE CONFIRMATION
+        const fillRefundRequest_2_OneConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, refundRequestIDOneConf, refundableInputIndex_2, refundableOutputIndex_2)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, refundRequestIDOneConf, refundableInputIndex_2, refundableOutputIndex_2)
+        expect(fillRefundRequest_2_OneConfSuccess).to.equal(true)
+
+        const collateralValueAfterOneAddingRefundableCollateral_2 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_2 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_2 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterOneAddingRefundableCollateral_2.toNumber()).to.equal(collateralValueAfterOneAddingRefundableCollateral_1.toNumber() + refundableValue)
+        expect(CDIValueAfterOneAddingRefundableCollateral_2.toNumber()).to.equal(2)
+        expect(CDFIValueAfterOneAddingRefundableCollateral_2.toNumber()).to.equal(0)
+
+        await increaseTime(toSecs({ hours: 1 }))
+
+        // SPV FILL REQUEST REFUNDABLE COLLATERAL #3 ONE CONFIRMATION
+        const fillRefundRequest_3_OneConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, refundRequestIDOneConf, refundableInputIndex_3, refundableOutputIndex_3)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, refundRequestIDOneConf, refundableInputIndex_3, refundableOutputIndex_3)
+        expect(fillRefundRequest_3_OneConfSuccess).to.equal(true)
+
+        const collateralValueAfterOneAddingRefundableCollateral_3 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_3 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_3 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterOneAddingRefundableCollateral_3.toNumber()).to.equal(collateralValueAfterOneAddingRefundableCollateral_2.toNumber() + refundableValue)
+        expect(CDIValueAfterOneAddingRefundableCollateral_3.toNumber()).to.equal(3)
+        expect(CDFIValueAfterOneAddingRefundableCollateral_3.toNumber()).to.equal(0)
+
+        await increaseTime(toSecs({ hours: 1 }))
+
+        // SPV FILL REQUEST SEIZABLE COLLATERAL #1 ONE CONFIRMATION
+        const fillSeizeRequest_1_OneConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, seizeRequestIDOneConf, seizableInputIndex_1, seizableOutputIndex_1)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, seizeRequestIDOneConf, seizableInputIndex_1, seizableOutputIndex_1)
+        expect(fillSeizeRequest_1_OneConfSuccess).to.equal(true)
+
+        const collateralValueAfterOneAddingSeizableCollateral_1 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterOneAddingSeizableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingSeizableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterOneAddingSeizableCollateral_1.toNumber()).to.equal(collateralValueAfterOneAddingRefundableCollateral_3.toNumber() + seizableValue)
+        expect(CDIValueAfterOneAddingSeizableCollateral_1.toNumber()).to.equal(4)
+        expect(CDFIValueAfterOneAddingSeizableCollateral_1.toNumber()).to.equal(0)
+
+        await increaseTime(toSecs({ hours: 1 }))
+
+        // SPV FILL REQUEST SEIZABLE COLLATERAL #2 ONE CONFIRMATION
+        const fillSeizeRequest_2_OneConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, seizeRequestIDOneConf, seizableInputIndex_2, seizableOutputIndex_2)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, seizeRequestIDOneConf, seizableInputIndex_2, seizableOutputIndex_2)
+        expect(fillSeizeRequest_2_OneConfSuccess).to.equal(true)
+
+        const collateralValueAfterOneAddingSeizableCollateral_2 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterOneAddingSeizableCollateral_2 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingSeizableCollateral_2 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterOneAddingSeizableCollateral_2.toNumber()).to.equal(refundableValue + seizableValue) // should go back to original collateral amount since more than 4 hours has passed
+        expect(CDIValueAfterOneAddingSeizableCollateral_2.toNumber()).to.equal(5)
+        expect(CDFIValueAfterOneAddingSeizableCollateral_2.toNumber()).to.equal(0)
+
+        await increaseTime(toSecs({ hours: 1 }))
+
+        // SPV FILL REQUEST SEIZABLE COLLATERAL #3 ONE CONFIRMATION
+        const fillSeizeRequest_3_OneConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, seizeRequestIDOneConf, seizableInputIndex_3, seizableOutputIndex_3)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, seizeRequestIDOneConf, seizableInputIndex_3, seizableOutputIndex_3)
+        expect(fillSeizeRequest_3_OneConfSuccess).to.equal(true)
+
+        const collateralValueAfterOneAddingSeizableCollateral_3 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterOneAddingSeizableCollateral_3 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingSeizableCollateral_3 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterOneAddingSeizableCollateral_3.toNumber()).to.equal(refundableValue + seizableValue)
+        expect(CDIValueAfterOneAddingSeizableCollateral_3.toNumber()).to.equal(6)
+        expect(CDFIValueAfterOneAddingSeizableCollateral_3.toNumber()).to.equal(0)
+
+        await bitcoin.client.chain.generateBlock(5)
+
+        await increaseTime(toSecs({ hours: 5 }))
+
+        // SPV FILL REQUEST SEIZABLE COLLATERAL #3 SIX CONFIRMATION
+        const fillSeizeRequest_3_SixConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, seizeRequestIDSixConf, seizableInputIndex_3, seizableOutputIndex_3)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, seizeRequestIDSixConf, seizableInputIndex_3, seizableOutputIndex_3)
+        expect(fillSeizeRequest_3_SixConfSuccess).to.equal(true)
+
+        const collateralValueAfterSixAddingSeizableCollateral_3 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterSixAddingSeizableCollateral_3 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingSeizableCollateral_3 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterSixAddingSeizableCollateral_3.toNumber()).to.equal(collateralValueAfterOneAddingSeizableCollateral_3.toNumber() + seizableValue)
+        expect(CDIValueAfterSixAddingSeizableCollateral_3.toNumber()).to.equal(6)
+        expect(CDFIValueAfterSixAddingSeizableCollateral_3.toNumber()).to.equal(0)
+
+        // SPV FILL REQUEST SEIZABLE COLLATERAL #2 SIX CONFIRMATION
+        const fillSeizeRequest_2_SixConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, seizeRequestIDSixConf, seizableInputIndex_2, seizableOutputIndex_2)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, seizeRequestIDSixConf, seizableInputIndex_2, seizableOutputIndex_2)
+        expect(fillSeizeRequest_2_SixConfSuccess).to.equal(true)
+
+        const collateralValueAfterSixAddingSeizableCollateral_2 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterSixAddingSeizableCollateral_2 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingSeizableCollateral_2 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterSixAddingSeizableCollateral_2.toNumber()).to.equal(collateralValueAfterSixAddingSeizableCollateral_3.toNumber() + seizableValue)
+        expect(CDIValueAfterSixAddingSeizableCollateral_2.toNumber()).to.equal(6)
+        expect(CDFIValueAfterSixAddingSeizableCollateral_2.toNumber()).to.equal(0)
+
+        // SPV FILL REQUEST SEIZABLE COLLATERAL #1 SIX CONFIRMATION
+        const fillSeizeRequest_1_SixConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, seizeRequestIDSixConf, seizableInputIndex_1, seizableOutputIndex_1)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, seizeRequestIDSixConf, seizableInputIndex_1, seizableOutputIndex_1)
+        expect(fillSeizeRequest_1_SixConfSuccess).to.equal(true)
+
+        const collateralValueAfterSixAddingSeizableCollateral_1 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterSixAddingSeizableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingSeizableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterSixAddingSeizableCollateral_1.toNumber()).to.equal(collateralValueAfterSixAddingSeizableCollateral_2.toNumber() + seizableValue)
+        expect(CDIValueAfterSixAddingSeizableCollateral_1.toNumber()).to.equal(6)
+        expect(CDFIValueAfterSixAddingSeizableCollateral_1.toNumber()).to.equal(0)
+
+        // SPV FILL REQUEST REFUNDABLE COLLATERAL #3 SIX CONFIRMATION
+        const fillRefundRequest_3_SixConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, refundRequestIDSixConf, refundableInputIndex_3, refundableOutputIndex_3)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, refundRequestIDSixConf, refundableInputIndex_3, refundableOutputIndex_3)
+        expect(fillRefundRequest_3_SixConfSuccess).to.equal(true)
+
+        const collateralValueAfterSixAddingRefundableCollateral_3 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterSixAddingRefundableCollateral_3 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingRefundableCollateral_3 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterSixAddingRefundableCollateral_3.toNumber()).to.equal(collateralValueAfterSixAddingSeizableCollateral_1.toNumber() + refundableValue)
+        expect(CDIValueAfterSixAddingRefundableCollateral_3.toNumber()).to.equal(6)
+        expect(CDFIValueAfterSixAddingRefundableCollateral_3.toNumber()).to.equal(0)
+
+        // SPV FILL REQUEST REFUNDABLE COLLATERAL #2 SIX CONFIRMATION
+        const fillRefundRequest_2_SixConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, refundRequestIDSixConf, refundableInputIndex_2, refundableOutputIndex_2)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, refundRequestIDSixConf, refundableInputIndex_2, refundableOutputIndex_2)
+        expect(fillRefundRequest_2_SixConfSuccess).to.equal(true)
+
+        const collateralValueAfterSixAddingRefundableCollateral_2 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterSixAddingRefundableCollateral_2 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingRefundableCollateral_2 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterSixAddingRefundableCollateral_2.toNumber()).to.equal(collateralValueAfterSixAddingRefundableCollateral_3.toNumber() + refundableValue)
+        expect(CDIValueAfterSixAddingRefundableCollateral_2.toNumber()).to.equal(6)
+        expect(CDFIValueAfterSixAddingRefundableCollateral_2.toNumber()).to.equal(0)
+
+        // SPV FILL REQUEST REFUNDABLE COLLATERAL #1 SIX CONFIRMATION
+        const fillRefundRequest_1_SixConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDSixConf, refundableInputIndex_1, refundableOutputIndex_1)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDSixConf, refundableInputIndex_1, refundableOutputIndex_1)
+        expect(fillRefundRequest_1_SixConfSuccess).to.equal(true)
+
+        const collateralValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(collateralValueAfterSixAddingRefundableCollateral_2.toNumber() + refundableValue)
+        expect(CDIValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(6)
+        expect(CDFIValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(6)
+
+        await increaseTime(toSecs({ hours: 5 }))
+
+        // SPV FILL REQUEST REFUNDABLE COLLATERAL #4 ONE CONFIRMATION
+        const fillRefundRequest_4_OneConfSuccess = await this.onDemandSpv.fillRequest.call(lockMoreCollateral_4_TxHashForProof, lockMoreCollateral_4_Vin, lockMoreCollateral_4_Vout, refundRequestIDOneConf, refundableInputIndex_4, refundableOutputIndex_4)
+        await this.onDemandSpv.fillRequest(lockMoreCollateral_4_TxHashForProof, lockMoreCollateral_4_Vin, lockMoreCollateral_4_Vout, refundRequestIDOneConf, refundableInputIndex_4, refundableOutputIndex_4)
+        expect(fillRefundRequest_4_OneConfSuccess).to.equal(true)
+
+        const collateralValueAfterOneAddingRefundableCollateral_4 = await this.loans.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_4 = await this.loans.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_4 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+
+        expect(collateralValueAfterOneAddingRefundableCollateral_4.toNumber()).to.equal(collateralValueAfterSixAddingRefundableCollateral_1.toNumber() + refundableValue)
+        expect(CDIValueAfterOneAddingRefundableCollateral_4.toNumber()).to.equal(7)
+        expect(CDFIValueAfterOneAddingRefundableCollateral_4.toNumber()).to.equal(6)
+
+        const collateralValueAfterTimeout = await this.loans.collateral.call(this.loan)
+
+        assert.isAbove(parseInt(BigNumber(collateralValueAfterOneAddingRefundableCollateral_1).toFixed()), parseInt(BigNumber(collateralValueBeforeAddingCollateral).toFixed()))
+        assert.isAbove(parseInt(BigNumber(collateralValueAfterOneAddingRefundableCollateral_2).toFixed()), parseInt(BigNumber(collateralValueAfterOneAddingRefundableCollateral_1).toFixed()))
+        assert.isAbove(parseInt(BigNumber(collateralValueAfterOneAddingRefundableCollateral_3).toFixed()), parseInt(BigNumber(collateralValueAfterOneAddingRefundableCollateral_2).toFixed()))
+        assert.isAbove(parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_1).toFixed()), parseInt(BigNumber(collateralValueAfterOneAddingRefundableCollateral_3).toFixed()))
+        assert.isBelow(parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_2).toFixed()), parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_1).toFixed()))
+        assert.isBelow(parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_3).toFixed()), parseInt(BigNumber(collateralValueAfterOneAddingSeizableCollateral_1).toFixed()))
+      })
     })
 
     describe('Locking collateral multiple times', function() {
-      it('should allow adding of temporary refundable collateral 200 times without running out of gas', async function() {
+      it('should allow adding of temporary refundable collateral 100 times without running out of gas', async function() {
         this.timeout(9900000);
 
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
