@@ -1389,16 +1389,20 @@ stablecoins.forEach((stablecoin) => {
 
         await bitcoin.client.chain.generateBlock(5)
 
-        for (let i = 0; i < timesToLockRefundable; i++) {
+        for (let i = timesToLockRefundable - 1; i >= 0; i--) {
           const lockRefundableTx = lockRefundableTxs[i]
           const { txHashForProof, vin, vout, inputIndex, outputIndex } = lockRefundableTx
 
           // SPV FILL REQUEST REFUNDABLE COLLATERAL SIX CONFIRMATION
           const fillRefundRequestSixConfSuccess = await this.onDemandSpv.fillRequest.call(txHashForProof, vin, vout, refundRequestIDSixConf, inputIndex, outputIndex)
-          await this.onDemandSpv.fillRequest(txHashForProof, vin, vout, refundRequestIDSixConf, inputIndex, outputIndex)
+          const fillRequestReceipt = await this.onDemandSpv.fillRequest(txHashForProof, vin, vout, refundRequestIDSixConf, inputIndex, outputIndex)
           expect(fillRefundRequestSixConfSuccess).to.equal(true)
 
           lockRefundableTxs[i].fillRefundRequestSixConfSuccess = fillRefundRequestSixConfSuccess
+
+          const gasUsed = fillRequestReceipt.receipt.gasUsed
+
+          assert.isBelow(parseInt(gasUsed), 1e6)
         }
 
         const collateralValueAfterSixAddingRefundableCollateral = await this.loans.collateral.call(this.loan)
