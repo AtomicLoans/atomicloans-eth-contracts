@@ -343,6 +343,13 @@ contract Loans is DSMath {
         require(token.approve(address(funds), 2**256-1));
     }
 
+    // NOTE: THE FOLLOWING FUNCTIONS CAN ONLY BE CALLED BY THE DEPLOYER OF THE
+    //       CONTRACT ONCE. THIS IS TO ALLOW FOR FUNDS, LOANS, AND SALES
+    //       CONTRACTS TO BE DEPLOYED SEPARATELY (DUE TO GAS LIMIT RESTRICTIONS).
+    //       IF YOU ARE USING THIS CONTRACT, ENSURE THAT THESE FUNCTIONS HAVE
+    //       ALREADY BEEN CALLED BEFORE DEPOSITING FUNDS.
+    // ======================================================================
+
     /**
      * @dev Sets Sales contract
      * @param sales_ Address of Sales contract
@@ -369,9 +376,10 @@ contract Loans is DSMath {
      */
     function setOnDemandSpv(ISPVRequestManager onDemandSpv_) external {
         require(msg.sender == deployer);
-        // require(address(onDemandSpv) == address(0)); // TODO verify if this should be unchangeable
+        require(address(onDemandSpv) == address(0));
         onDemandSpv = onDemandSpv_;
     }
+    // ======================================================================
     
     /**
      * @notice Creates a new loan agreement
