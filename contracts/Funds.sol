@@ -111,6 +111,13 @@ contract Funds is DSMath, ALCompound {
         // utilizationInterestDivisor = ((e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) * (10^27)) / ( (( e^(ln(1.110)/(60*60*24*365)) -1 ) * ( 60*60*24*365 )) - ((e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365)))
     }
 
+    // NOTE: THE FOLLOWING FUNCTIONS CAN ONLY BE CALLED BY THE DEPLOYER OF THE
+    //       CONTRACT ONCE. THIS IS TO ALLOW FOR FUNDS, LOANS, AND SALES
+    //       CONTRACTS TO BE DEPLOYED SEPARATELY (DUE TO GAS LIMIT RESTRICTIONS).
+    //       IF YOU ARE USING THIS CONTRACT, ENSURE THAT THESE FUNCTIONS HAVE
+    //       ALREADY BEEN CALLED BEFORE DEPOSITING FUNDS.
+    // ======================================================================
+
     /**
      * @dev Sets Loans contract
      * @param loans_ Address of Loans contract
@@ -134,6 +141,7 @@ contract Funds is DSMath, ALCompound {
         comptroller = comptroller_;
         compoundSet = true;
     }
+    // ======================================================================
 
     // NOTE: THE FOLLOWING FUNCTIONS ALLOW VARIABLES TO BE MODIFIED BY THE 
     //       DEPLOYER, SINCE THE ALGORITHM FOR CALCULATING GLOBAL INTEREST 

@@ -313,7 +313,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('setOnDemandSpv', function() {
-      it('should fail if msg.sender is not deployed', async function() {
+      it('should fail if msg.sender is not deployer', async function() {
         const decimal = stablecoin.unit === 'ether' ? '18' : '6'
 
         const funds = await Funds.new(this.token.address, decimal)
@@ -326,6 +326,23 @@ stablecoins.forEach((stablecoin) => {
         const onDemandSpv = await ISPVRequestManager.deployed()
 
         await expectRevert(loans.setOnDemandSpv(onDemandSpv.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if onDemandSpv already set', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const onDemandSpv = await ISPVRequestManager.deployed()
+
+        await loans.setOnDemandSpv(onDemandSpv.address)
+
+        await expectRevert(loans.setOnDemandSpv(onDemandSpv.address), 'VM Exception while processing transaction: revert')
       })
     })
 
