@@ -39,6 +39,17 @@ const stablecoins = [
   { name: 'USDC', unit: 'mwei', multiplier: SZABO, divisor: WAD, precision: 10 }
 ]
 
+const mockDateNow = () => {
+  let current = Date.now()
+
+  return () => {
+    current += 5000;
+    return current;
+  }
+}
+
+global.Date.now = mockDateNow();
+
 async function getContracts(stablecoin) {
   if (stablecoin == 'SAI') {
     const funds = await Funds.deployed();

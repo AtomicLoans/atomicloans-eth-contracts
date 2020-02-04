@@ -51,6 +51,7 @@ contract Loans is DSMath {
     mapping (bytes32 => uint256)                               public collateralDepositIndex;
     mapping (bytes32 => uint256)                               public collateralDepositFinalizedIndex;
 
+    mapping (address => mapping(uint256 => bool))              public addressToTimestamp;
 
     ERC20 public token; // ERC20 Debt Stablecoin
     uint256 public decimals;
@@ -395,6 +396,8 @@ contract Loans is DSMath {
         bytes32             fundIndex_
     ) external returns (bytes32 loan) {
         if (fundIndex_ != bytes32(0)) { require(funds.lender(fundIndex_) == usrs_[1]); }
+        require(!addressToTimestamp[usrs_[0]][vals_[6]]);
+
         loanIndex = add(loanIndex, 1);
         loan = bytes32(loanIndex);
         loans[loan].createdAt        = now;
@@ -414,6 +417,7 @@ contract Loans is DSMath {
         secretHashes[loan].set       = false;
         borrowerLoans[usrs_[0]].push(bytes32(loanIndex));
         lenderLoans[usrs_[1]].push(bytes32(loanIndex));
+        addressToTimestamp[usrs_[0]][vals_[6]] = true;
 
         emit Create(loan);
     }
