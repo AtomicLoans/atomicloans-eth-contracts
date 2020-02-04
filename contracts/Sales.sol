@@ -15,6 +15,7 @@ contract Sales is DSMath {
     uint256 public constant SWAP_EXP = 2 hours;       // Swap Expiration
     uint256 public constant SETTLEMENT_EXP = 4 hours; // Settlement Expiration
     uint256 public constant MAX_NUM_LIQUIDATIONS = 3; // Maximum number of liquidations that can occur
+    uint256 public constant MAX_UINT_256 = 2**256-1;
 
 	address public deployer; // Only the Loans contract can edit data
 
@@ -109,7 +110,7 @@ contract Sales is DSMath {
         funds    = funds_;
         med      = med_;
         token    = token_;
-        require(token.approve(address(funds), 2**256-1));
+        require(token.approve(address(funds), MAX_UINT_256));
     }
 
     function next(bytes32 loan) public view returns (uint256) {

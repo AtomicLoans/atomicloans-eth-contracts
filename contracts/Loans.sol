@@ -27,6 +27,7 @@ contract Loans is DSMath {
     uint256 public constant LIQUIDATION_DISCOUNT = 930000000000000000; // 93% (7% discount)
     uint256 public constant ADD_COLLATERAL_EXPIRY = 4 hours;
     uint256 public constant MAX_NUM_LIQUIDATIONS = 3; // Maximum number of liquidations that can occur
+    uint256 public constant MAX_UINT_256 = 2**256-1;
 
     mapping (bytes32 => Loan)                public loans;
     mapping (bytes32 => Collateral)          public collaterals;
@@ -341,7 +342,7 @@ contract Loans is DSMath {
         med      = med_;
         token    = token_;
         decimals = decimals_;
-        require(token.approve(address(funds), 2**256-1));
+        require(token.approve(address(funds), MAX_UINT_256));
     }
 
     // NOTE: THE FOLLOWING FUNCTIONS CAN ONLY BE CALLED BY THE DEPLOYER OF THE

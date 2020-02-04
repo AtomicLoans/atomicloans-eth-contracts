@@ -16,6 +16,7 @@ contract Funds is DSMath, ALCompound {
     uint256 public constant DEFAULT_MIN_LOAN_DUR = 6 hours;  // 6 hours
     uint256 public constant NUM_SECONDS_IN_YEAR = 365 days;
     uint256 public constant MAX_LOAN_LENGTH = 10 * NUM_SECONDS_IN_YEAR;
+    uint256 public constant MAX_UINT_256 = 2**256-1;
 
     mapping (address => bytes32[]) public secretHashes;    // User secret hashes
     mapping (address => uint256)   public secretHashIndex; // User secret hash index
@@ -126,7 +127,7 @@ contract Funds is DSMath, ALCompound {
         require(msg.sender == deployer);
         require(address(loans) == address(0));
         loans = loans_;
-        require(token.approve(address(loans_), 2**256-1));
+        require(token.approve(address(loans_), MAX_UINT_256));
     }
 
     /**
@@ -717,7 +718,7 @@ contract Funds is DSMath, ALCompound {
      * @param value The value to be sanity checked
      */
     function ensureNotZero(uint256 value) public pure returns (uint256) {
-        if (value == 0) { return 2**256-1; }
+        if (value == 0) { return MAX_UINT_256; }
         else            { return value; }
     }
 
