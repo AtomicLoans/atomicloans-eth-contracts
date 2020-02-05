@@ -726,7 +726,7 @@ contract Funds is DSMath, ALCompound {
      * @param value The value to be sanity checked
      */
     function ensureNotZero(uint256 value) public pure returns (uint256) {
-        if (value == 0) { return MAX_UINT_256; }
+        if (value == 0) { return MAX_LOAN_LENGTH; }
         else            { return value; }
     }
 
