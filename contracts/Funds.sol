@@ -386,13 +386,13 @@ contract Funds is DSMath, ALCompound {
         // #ELSE:
         // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
-        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_);
-        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_);
+        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_, false);
+        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_, true);
         funds[fund].arbiter          = arbiter_;
         bools[fund].custom           = false;
         bools[fund].compoundEnabled  = compoundEnabled_;
@@ -435,7 +435,7 @@ contract Funds is DSMath, ALCompound {
         // #ELSE:
         // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -443,8 +443,8 @@ contract Funds is DSMath, ALCompound {
         funds[fund].minLoanAmt       = minLoanAmt_;
         funds[fund].maxLoanAmt       = maxLoanAmt_;
         funds[fund].minLoanDur       = minLoanDur_;
-        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_);
-        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_);
+        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_, false);
+        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_, true);
         funds[fund].interest         = interest_;
         funds[fund].penalty          = penalty_;
         funds[fund].fee              = fee_;
@@ -452,7 +452,7 @@ contract Funds is DSMath, ALCompound {
         funds[fund].arbiter          = arbiter_;
         bools[fund].custom           = true;
         bools[fund].compoundEnabled  = compoundEnabled_;
-        fundOwner[msg.sender]        = bytes32(fundIndex);
+        fundOwner[msg.sender]         = bytes32(fundIndex);
         if (amount_ > 0) { deposit(fund, amount_); }
 
         emit Create(fund);
@@ -495,7 +495,7 @@ contract Funds is DSMath, ALCompound {
         address  arbiter_
     ) public {
         require(msg.sender == lender(fund));
-        require(ensureNotZero(maxLoanDur_) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         funds[fund].maxLoanDur       = maxLoanDur_;
         funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].arbiter          = arbiter_;
@@ -722,12 +722,17 @@ contract Funds is DSMath, ALCompound {
     }
 
     /*
-     * @dev Ensure null values for fundExpiry and maxLoanDur are set to 2**256-1
+     * @dev Ensure null values for fundExpiry and maxLoanDur are set to MAX_LOAN_LENGTH
      * @param value The value to be sanity checked
      */
-    function ensureNotZero(uint256 value) public pure returns (uint256) {
-        if (value == 0) { return MAX_LOAN_LENGTH; }
-        else            { return value; }
+    function ensureNotZero(uint256 value, bool addNow) public view returns (uint256) {
+        if (value == 0) {
+            if (addNow) {
+                return now + MAX_LOAN_LENGTH;
+            }
+            return MAX_LOAN_LENGTH;
+        }
+        return value;
     }
 
     /*
