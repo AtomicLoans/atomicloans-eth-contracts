@@ -10,12 +10,13 @@ contract Funds is DSMath, ALCompound {
     Loans loans;
 
     uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;   // 140% (1.4x in RAY) minimum collateralization ratio
-    uint256 public constant DEFAULT_LIQUIDATION_PENALTY = 1000000000937303470807876289; // 3% (3 in RAY) liquidation penalty
+    uint256 public constant DEFAULT_LIQUIDATION_PENALTY = 1000000000937303470807876289; // 3% (3 in RAY) liquidation penalty ((1.000000000937303470807876289) ^ (60 *  60 * 24 * 365)) - 1 = ~0.03
     uint256 public constant DEFAULT_MIN_LOAN_AMT = 20 ether; // Min 20 WAD
     uint256 public constant DEFAULT_MAX_LOAN_AMT = 2**256-1; // Max 2**256
     uint256 public constant DEFAULT_MIN_LOAN_DUR = 6 hours;  // 6 hours
     uint256 public constant NUM_SECONDS_IN_YEAR = 365 days;
     uint256 public constant MAX_LOAN_LENGTH = 10 * NUM_SECONDS_IN_YEAR;
+    uint256 public constant MAX_UINT_256 = 2**256-1;
 
     mapping (address => bytes32[]) public secretHashes;    // User secret hashes
     mapping (address => uint256)   public secretHashIndex; // User secret hash index
@@ -102,7 +103,7 @@ contract Funds is DSMath, ALCompound {
         maxInterestRateNumerator    = 182321557320989604265864303; // ~20%  ( (e^(ln(1.200)/(60*60*24*365)) - 1) * (60*60*24*365) )
         minInterestRateNumerator    =  24692612600038629323181834; // ~2.5% ( (e^(ln(1.025)/(60*60*24*365)) - 1) * (60*60*24*365) )
         interestUpdateDelay = 86400; // 1 DAY
-        defaultArbiterFee = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional arbiter fee
+        defaultArbiterFee = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional arbiter fee ((1.000000000236936036262880196) ^ (60 *  60 * 24 * 365)) - 1 = ~0.0075
         globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
 
         // utilizationInterestDivisor calculation (this is aiming for utilizationInterestDivisor to allow max change from 10% APR to be 11% APR despite using compound interest)
@@ -126,7 +127,7 @@ contract Funds is DSMath, ALCompound {
         require(msg.sender == deployer);
         require(address(loans) == address(0));
         loans = loans_;
-        require(token.approve(address(loans_), 2**256-1));
+        require(token.approve(address(loans_), MAX_UINT_256));
     }
 
     /**
@@ -212,7 +213,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setDefaultArbiterFee(uint256 defaultArbiterFee_) external {
         require(msg.sender == deployer);
-        require(defaultArbiterFee_ <= 1000000000315522921573372069); // ~1%
+        require(defaultArbiterFee_ <= 1000000000315522921573372069); // ~1% ((1.000000000315522921573372069) ^ (60 *  60 * 24 * 365)) - 1 = ~0.01
         defaultArbiterFee = defaultArbiterFee_;
     }
     // ======================================================================
@@ -717,7 +718,7 @@ contract Funds is DSMath, ALCompound {
      * @param value The value to be sanity checked
      */
     function ensureNotZero(uint256 value) public pure returns (uint256) {
-        if (value == 0) { return 2**256-1; }
+        if (value == 0) { return MAX_UINT_256; }
         else            { return value; }
     }
 
