@@ -568,8 +568,8 @@ contract Loans is DSMath {
     function fund(bytes32 loan) external {
         require(secretHashes[loan].set);
         require(bools[loan].funded == false);
-        require(token.transferFrom(msg.sender, address(this), principal(loan)));
         bools[loan].funded = true;
+        require(token.transferFrom(msg.sender, address(this), principal(loan)));
     }
 
     /**
@@ -594,9 +594,9 @@ contract Loans is DSMath {
         require(bools[loan].approved == true);
         require(bools[loan].withdrawn == false);
         require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
+        bools[loan].withdrawn = true;
         require(token.transfer(loans[loan].borrower, principal(loan)));
 
-        bools[loan].withdrawn = true;
         secretHashes[loan].withdrawSecret = secretA1;
         requestSpv(loan);
     }
@@ -637,11 +637,11 @@ contract Loans is DSMath {
         require(msg.sender       == loans[loan].borrower);
         bools[loan].off = true;
         loans[loan].closedTimestamp = now;
-        require(token.transfer(loans[loan].borrower, owedForLoan(loan)));
         if (funds.custom(fundIndex[loan]) == false) {
             funds.decreaseTotalBorrow(loans[loan].principal);
             funds.calcGlobalInterest();
         }
+        require(token.transfer(loans[loan].borrower, owedForLoan(loan)));
     }
 
     /**
@@ -735,8 +735,10 @@ contract Loans is DSMath {
         SecretHashes storage h = secretHashes[loan];
         uint256 i = sales.next(loan);
         sale_ = sales.create(loan, loans[loan].borrower, loans[loan].lender, loans[loan].arbiter, msg.sender, h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i], secretHash, pubKeyHash);
-        if (bools[loan].sale == false) { require(token.transfer(address(sales), repaid(loan))); }
-        bools[loan].sale = true;
+        if (bools[loan].sale == false) {
+            bools[loan].sale = true;
+            require(token.transfer(address(sales), repaid(loan)));
+        }
         cancelSpv(loan);
     }
 
