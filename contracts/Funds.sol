@@ -386,7 +386,7 @@ contract Funds is DSMath, ALCompound {
         // #ELSE:
         // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
@@ -435,7 +435,7 @@ contract Funds is DSMath, ALCompound {
         // #ELSE:
         // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
         if (!compoundSet) { require(compoundEnabled_ == false); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
