@@ -105,7 +105,7 @@ contract Sales is DSMath {
     }
 
     constructor (Loans loans_, FundsInterface funds_, Medianizer med_, ERC20 token_) public {
-        require(address(loans_) != address(0), "Loanss address must be non-zero");
+        require(address(loans_) != address(0), "Loans address must be non-zero");
         require(address(funds_) != address(0), "Funds address must be non-zero");
         require(address(med_) != address(0), "Medianizer address must be non-zero");
         require(address(token_) != address(0), "Token address must be non-zero");
