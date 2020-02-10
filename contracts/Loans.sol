@@ -314,7 +314,7 @@ contract Loans is DSMath {
     }
 
     function minSeizableCollateralValue(bytes32 loan) public view returns (uint256) {
-        (bytes32 val, bool set) = med.peek();
+        (bytes32 val,) = med.peek();
         uint256 price = uint(val);
         return div(wdiv(dmul(add(principal(loan), interest(loan))), price), div(WAD, COL));
     }

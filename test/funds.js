@@ -1193,6 +1193,26 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
+    describe('ensureNotZero', function() {
+      it('should convert 0 to MAX_LOAN_LENGTH if addNow bool is false', async function() {
+        const MAX_LOAN_LENGTH = await this.funds.MAX_LOAN_LENGTH.call()
+
+        const ensureNotZeroValue = await this.funds.ensureNotZero.call(0, false)
+
+        expect(BigNumber(MAX_LOAN_LENGTH).toFixed()).to.equal(BigNumber(ensureNotZeroValue).toFixed())
+      })
+
+      it('should convert 0 to MAX_LOAN_LENGTH + now if addNow bool is true', async function() {
+        const currentTime = Math.floor(Date.now() / 1000)
+
+        const MAX_LOAN_LENGTH = await this.funds.MAX_LOAN_LENGTH.call()
+        const ensureNotZeroValue = await this.funds.ensureNotZero.call(0, true)
+
+        assert.isAbove(BigNumber(currentTime).plus(MAX_LOAN_LENGTH).plus(1e8).toNumber(), BigNumber(ensureNotZeroValue).toNumber())
+        assert.isBelow(BigNumber(currentTime).plus(MAX_LOAN_LENGTH).minus(1e8).toNumber(), BigNumber(ensureNotZeroValue).toNumber())
+      })
+    })
+
     describe('setLoans', function() {
       it('should not allow setLoans to be called twice', async function() {
         await expectRevert(this.funds.setLoans(this.loans.address), 'VM Exception while processing transaction: revert')
