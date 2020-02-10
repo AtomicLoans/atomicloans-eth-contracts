@@ -366,9 +366,9 @@ contract Loans is DSMath {
      * @param sales_ Address of Sales contract
      */
     function setSales(SalesInterface sales_) external {
-        require(msg.sender == deployer);
-        require(address(sales) == address(0));
-        require(address(sales_) != address(0), "Sales address must be non-zero");
+        require(msg.sender == deployer, "Loans.setSales: Only the deployer can perform this");
+        require(address(sales) == address(0), "Loans.setSales: The Sales address has already been set");
+        require(address(sales_) != address(0), "Loans.setSales: Sales address must be non-zero");
         sales = sales_;
     }
 
@@ -377,9 +377,9 @@ contract Loans is DSMath {
      * @param p2wsh_ Address of P2WSH contract
      */
     function setP2WSH(P2WSHInterface p2wsh_) external {
-        require(msg.sender == deployer);
-        require(address(p2wsh) == address(0));
-        require(address(p2wsh_) != address(0), "P2WSH address must be non-zero");
+        require(msg.sender == deployer, "Loans.setP2WSH: Only the deployer can perform this");
+        require(address(p2wsh) == address(0), "Loans.setP2WSH: The P2WSH address has already been set");
+        require(address(p2wsh_) != address(0), "Loans.setP2WSH: P2WSH address must be non-zero");
         p2wsh = p2wsh_;
     }
 
@@ -388,9 +388,9 @@ contract Loans is DSMath {
      * @param onDemandSpv_ Address of OnDemandSpv contract
      */
     function setOnDemandSpv(ISPVRequestManager onDemandSpv_) external {
-        require(msg.sender == deployer);
-        require(address(onDemandSpv) == address(0));
-        require(address(onDemandSpv_) != address(0), "OnDemandSpv address must be non-zero");
+        require(msg.sender == deployer, "Loans.setOnDemandSpv: Only the deployer can perform this");
+        require(address(onDemandSpv) == address(0), "Loans.setOnDemandSpv: The OnDemandSpv address has already been set");
+        require(address(onDemandSpv_) != address(0), "Loans.setOnDemandSpv: OnDemandSpv address must be non-zero");
         onDemandSpv = onDemandSpv_;
     }
     // ======================================================================
@@ -409,7 +409,7 @@ contract Loans is DSMath {
         bytes32             fundIndex_
     ) external returns (bytes32 loan) {
         if (fundIndex_ != bytes32(0)) { require(funds.lender(fundIndex_) == usrs_[1]); }
-        require(!addressToTimestamp[usrs_[0]][vals_[6]]);
+        require(!addressToTimestamp[usrs_[0]][vals_[6]], "Loans.create: Duplicate request timestamps are not allowed");
         require(loanExpiration_ > now, "Loans.create: loanExpiration must be greater than `now`");
         require(usrs_[0] != address(0) && usrs_[1] != address(0), "Loans.create: Borrower and Lender address must be non-zero");
         require(vals_[0] != 0 && vals_[4] != 0 && vals_[5] != 0 && vals_[6] != 0, "Loans.create: Loan principal, collateral value, liquidation ratio, and request timestamp must be non-zero");
@@ -457,7 +457,7 @@ contract Loans is DSMath {
         bytes      calldata lenderPubKey_,
         bytes      calldata arbiterPubKey_
     ) external {
-        require(!secretHashes[loan].set);
+        require(!secretHashes[loan].set, "Loans.setSecretHashes: Secret hashes must not already be set");
         require(msg.sender == loans[loan].borrower || msg.sender == loans[loan].lender || msg.sender == address(funds));
         secretHashes[loan].secretHashA1 = borrowerSecretHashes[0];
         secretHashes[loan].secretHashAs = [ borrowerSecretHashes[1], borrowerSecretHashes[2], borrowerSecretHashes[3] ];
@@ -579,10 +579,10 @@ contract Loans is DSMath {
      * @param loan The Id of the Loan
      */
     function fund(bytes32 loan) external {
-        require(secretHashes[loan].set);
-        require(bools[loan].funded == false);
+        require(secretHashes[loan].set, "Loans.fund: Secret hashes must be set");
+        require(bools[loan].funded == false, "Loans.fund: Loan is already funded");
         bools[loan].funded = true;
-        require(token.transferFrom(msg.sender, address(this), principal(loan)));
+        require(token.transferFrom(msg.sender, address(this), principal(loan)), "Loans.fund: Failed to transfer tokens");
     }
 
     /**
@@ -590,9 +590,9 @@ contract Loans is DSMath {
      * @param loan The Id of the Loan
      */
     function approve(bytes32 loan) external { // Approve locking of collateral
-    	require(bools[loan].funded == true);
-    	require(loans[loan].lender == msg.sender);
-    	require(now                <= approveExpiration(loan));
+    	require(bools[loan].funded == true, "Loans.approve: Loan must be funded");
+    	require(loans[loan].lender == msg.sender, "Loans.approve: Only the lender can approve the loan");
+    	require(now                <= approveExpiration(loan), "Loans.approve: Loan is past the approve deadline");
     	bools[loan].approved = true;
     }
 
@@ -602,13 +602,13 @@ contract Loans is DSMath {
      * @param secretA1 Secret A1 provided by the borrower
      */
     function withdraw(bytes32 loan, bytes32 secretA1) external {
-        require(!off(loan));
-        require(bools[loan].funded == true);
-        require(bools[loan].approved == true);
-        require(bools[loan].withdrawn == false);
-        require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1);
+        require(!off(loan), "Loans.withdraw: Loan cannot be inactive");
+        require(bools[loan].funded == true, "Loans.withdraw: Loan must be funded");
+        require(bools[loan].approved == true, "Loans.withdraw: Loan must be approved");
+        require(bools[loan].withdrawn == false, "Loans.withdraw: Loan principal has already been withdrawn");
+        require(sha256(abi.encodePacked(secretA1)) == secretHashes[loan].secretHashA1, "Loans.withdraw: Secret does not match");
         bools[loan].withdrawn = true;
-        require(token.transfer(loans[loan].borrower, principal(loan)));
+        require(token.transfer(loans[loan].borrower, principal(loan)), "Loans.withdraw: Failed to transfer tokens");
 
         secretHashes[loan].withdrawSecret = secretA1;
         requestSpv(loan);
@@ -622,12 +622,12 @@ contract Loans is DSMath {
      *        Note: Anyone can repay the loan
      */
     function repay(bytes32 loan, uint256 amount) external {
-        require(!off(loan));
-        require(!sale(loan));
-        require(bools[loan].withdrawn     == true);
-        require(now                       <= loans[loan].loanExpiration);
-        require(add(amount, repaid(loan)) <= owedForLoan(loan));
-        require(token.transferFrom(msg.sender, address(this), amount));
+        require(!off(loan), "Loans.repay: Loan cannot be inactive");
+        require(!sale(loan), "Loans.repay: Loan cannot be undergoing a liquidation");
+        require(bools[loan].withdrawn     == true, "Loans.repay: Loan principal must be withdrawn");
+        require(now                       <= loans[loan].loanExpiration, "Loans.repay: Loan cannot have expired");
+        require(add(amount, repaid(loan)) <= owedForLoan(loan), "Loans.repay: Cannot repay more than the owed amount");
+        require(token.transferFrom(msg.sender, address(this), amount), "Loans.repay: Failed to transfer tokens");
         repayments[loan] = add(amount, repayments[loan]);
         if (repaid(loan) == owedForLoan(loan)) {
             bools[loan].paid = true;
@@ -643,18 +643,18 @@ contract Loans is DSMath {
      *        Note: If Lender does not accept repayment, liquidation cannot occur
      */
     function refund(bytes32 loan) external {
-        require(!off(loan));
-        require(!sale(loan));
-        require(now              >  acceptExpiration(loan));
-        require(bools[loan].paid == true);
-        require(msg.sender       == loans[loan].borrower);
+        require(!off(loan), "Loans.refund: Loan cannot be inactive");
+        require(!sale(loan), "Loans.refund: Loan cannot be undergoing a liquidation");
+        require(now              >  acceptExpiration(loan), "Loans.refund: Cannot request refund until after acceptExpiration");
+        require(bools[loan].paid == true, "Loans.refund: The loan must be repaid");
+        require(msg.sender       == loans[loan].borrower, "Loans.refund: Only the borrower can request a refund");
         bools[loan].off = true;
         loans[loan].closedTimestamp = now;
         if (funds.custom(fundIndex[loan]) == false) {
             funds.decreaseTotalBorrow(loans[loan].principal);
             funds.calcGlobalInterest();
         }
-        require(token.transfer(loans[loan].borrower, owedForLoan(loan)));
+        require(token.transfer(loans[loan].borrower, owedForLoan(loan)), "Loans.refund: Failed to transfer tokens");
     }
 
     /**
@@ -668,10 +668,10 @@ contract Loans is DSMath {
     }
 
     function cancel(bytes32 loan) external {
-        require(!off(loan));
-        require(bools[loan].withdrawn == false);
-        require(now                              >= seizureExpiration(loan));
-        require(bools[loan].sale                 == false);
+        require(!off(loan), "Loans.cancel: Loan must not be inactive");
+        require(bools[loan].withdrawn == false, "Loans.cancel: Loan principal must not be withdrawn");
+        require(now >= seizureExpiration(loan), "Loans.cancel: Seizure deadline has not been reached");
+        require(bools[loan].sale == false, "Loans.cancel: Loan must not be undergoing liquidation");
         close(loan);
     }
 
@@ -682,12 +682,12 @@ contract Loans is DSMath {
      * @param secret Secret B1 revealed by the Lender
      */
     function accept(bytes32 loan, bytes32 secret) public {
-        require(!off(loan));
-        require(bools[loan].withdrawn == false   || bools[loan].paid == true);
-        require(msg.sender == loans[loan].lender || msg.sender == loans[loan].arbiter);
-        require(sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashB1 || sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashC1);
-        require(now                              <= acceptExpiration(loan));
-        require(bools[loan].sale                 == false);
+        require(!off(loan), "Loans.accept: Loan must not be inactive");
+        require(bools[loan].withdrawn == false   || bools[loan].paid == true, "Loans.accept: Loan must be either not withdrawn or repaid");
+        require(msg.sender == loans[loan].lender || msg.sender == loans[loan].arbiter, "Loans.accept: Loan acceptance can only be performed by the lender or arbiter");
+        require(sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashB1 || sha256(abi.encodePacked(secret)) == secretHashes[loan].secretHashC1, "Loans.accept: Invalid secret");
+        require(now                              <= acceptExpiration(loan), "Loans.accept: Acceptance deadline has past");
+        require(bools[loan].sale                 == false, "Loans.accept: Loan must not be going under liquidation");
         secretHashes[loan].acceptSecret = secret;
         close(loan);
     }
@@ -725,9 +725,9 @@ contract Loans is DSMath {
      * @return sale_ The Id of the Sale (Liquidation)
      */
     function liquidate(bytes32 loan, bytes32 secretHash, bytes20 pubKeyHash) external returns (bytes32 sale_) {
-        require(!off(loan));
-        require(bools[loan].withdrawn == true);
-        require(msg.sender != loans[loan].borrower && msg.sender != loans[loan].lender);
+        require(!off(loan), "Loans.liquidate: Loan must not be inactive");
+        require(bools[loan].withdrawn == true, "Loans.liquidate: Loan principal must be withdrawn");
+        require(msg.sender != loans[loan].borrower && msg.sender != loans[loan].lender, "Loans.liquidate: Liquidator must be a third-party");
         require(secretHash != bytes32(0) && pubKeyHash != bytes32(0), "Loans.liquidate: secretHash and pubKeyHash must be non-zero");
         if (sales.next(loan) == 0) {
             if (now > loans[loan].loanExpiration) {
@@ -740,9 +740,9 @@ contract Loans is DSMath {
                 funds.calcGlobalInterest();
             }
         } else {
-            require(sales.next(loan) < MAX_NUM_LIQUIDATIONS);
-            require(now > sales.settlementExpiration(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation after settlement expiration of previous liquidation
-            require(!sales.accepted(sales.saleIndexByLoan(loan, sales.next(loan) - 1))); // Can only start liquidation again if previous liquidation discountBuy wasn't taken
+            require(sales.next(loan) < MAX_NUM_LIQUIDATIONS, "Loans.liquidate: Max number of liquidations reached");
+            require(now > sales.settlementExpiration(sales.saleIndexByLoan(loan, sales.next(loan) - 1)), "Loans.liquidate: Can only start liquidation after settlement expiration of previous liquidation");
+            require(!sales.accepted(sales.saleIndexByLoan(loan, sales.next(loan) - 1)), "Loans.liquidate: Can only start liquidation again if previous liquidation discountBuy wasn't taken");
         }
         require(token.balanceOf(msg.sender) >= ddiv(discountCollateralValue(loan)));
         require(token.transferFrom(msg.sender, address(sales), ddiv(discountCollateralValue(loan))));
