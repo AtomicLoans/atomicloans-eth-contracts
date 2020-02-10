@@ -1,7 +1,7 @@
+pragma solidity 0.5.10;
+
 import './Bytes.sol';
 import './LoansInterface.sol';
-
-pragma solidity ^0.5.10;
 
 contract P2WSH is Bytes {
   LoansInterface loans;

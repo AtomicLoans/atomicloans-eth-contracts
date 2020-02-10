@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.5.10;
 
 contract Bytes {
     function scriptNumSize(uint256 i) public pure returns (uint256) {

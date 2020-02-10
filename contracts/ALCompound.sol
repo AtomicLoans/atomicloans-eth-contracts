@@ -1,6 +1,6 @@
-import './DSMath.sol';
+pragma solidity 0.5.10;
 
-pragma solidity ^0.5.10;
+import './DSMath.sol';
 
 interface CTokenInterface {
     function redeem(uint redeemTokens) external returns (uint);

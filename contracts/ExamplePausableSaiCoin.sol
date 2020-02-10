@@ -1,6 +1,6 @@
-import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Pausable.sol';
+pragma solidity 0.5.10;
 
-pragma solidity ^0.5.10;
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20Pausable.sol';
 
 contract ExamplePausableSaiCoin is ERC20Pausable {
   string public name = "ExamplePausableSAICoin"; 
