@@ -341,6 +341,10 @@ contract Loans is DSMath {
     }
 
     constructor (FundsInterface funds_, Medianizer med_, ERC20 token_, uint256 decimals_) public {
+        require(address(funds_) != address(0), "Funds address must be non-zero");
+        require(address(med_) != address(0), "Medianizer address must be non-zero");
+        require(address(token_) != address(0), "Token address must be non-zero");
+
         deployer = msg.sender;
         funds    = funds_;
         med      = med_;
@@ -363,6 +367,7 @@ contract Loans is DSMath {
     function setSales(SalesInterface sales_) external {
         require(msg.sender == deployer);
         require(address(sales) == address(0));
+        require(address(sales_) != address(0), "Sales address must be non-zero");
         sales = sales_;
     }
 
@@ -373,6 +378,7 @@ contract Loans is DSMath {
     function setP2WSH(P2WSHInterface p2wsh_) external {
         require(msg.sender == deployer);
         require(address(p2wsh) == address(0));
+        require(address(p2wsh_) != address(0), "P2WSH address must be non-zero");
         p2wsh = p2wsh_;
     }
 
@@ -383,6 +389,7 @@ contract Loans is DSMath {
     function setOnDemandSpv(ISPVRequestManager onDemandSpv_) external {
         require(msg.sender == deployer);
         require(address(onDemandSpv) == address(0));
+        require(address(onDemandSpv_) != address(0), "OnDemandSpv address must be non-zero");
         onDemandSpv = onDemandSpv_;
     }
     // ======================================================================
