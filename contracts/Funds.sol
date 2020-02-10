@@ -1,10 +1,10 @@
+pragma solidity 0.5.10;
+
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
 import './Loans.sol';
 import './ALCompound.sol';
-
-pragma solidity ^0.5.10;
 
 contract Funds is DSMath, ALCompound {
     Loans loans;

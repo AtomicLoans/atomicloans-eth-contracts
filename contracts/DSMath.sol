@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity 0.5.10;
 
 contract DSMath {
     function add(uint x, uint y) internal pure returns (uint z) {

@@ -1,3 +1,5 @@
+pragma solidity 0.5.10;
+
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
@@ -10,8 +12,6 @@ import './P2WSHInterface.sol';
 import './ISPVRequestManager.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
-
-pragma solidity ^0.5.10;
 
 contract Loans is DSMath {
     FundsInterface funds;
@@ -103,7 +103,7 @@ contract Loans is DSMath {
      * @member arbiterPubKey Arbiter Bitcoin Public Key
      *
      *         Note: This struct is unnecessary for the Ethereum
-     *               contract itself, but is used as a point of 
+     *               contract itself, but is used as a point of
      *               reference for generating the correct P2WSH for
      *               locking Bitcoin collateral
      */
@@ -384,7 +384,7 @@ contract Loans is DSMath {
         onDemandSpv = onDemandSpv_;
     }
     // ======================================================================
-    
+
     /**
      * @notice Creates a new loan agreement
      * @param loanExpiration_ The timestamp for the end of the loan

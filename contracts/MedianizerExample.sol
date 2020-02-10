@@ -1,6 +1,6 @@
-import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
+pragma solidity 0.5.10;
 
-pragma solidity ^0.5.10;
+import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 
 contract MedianizerExample {
     bool    has;
