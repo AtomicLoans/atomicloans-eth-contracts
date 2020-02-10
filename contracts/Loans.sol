@@ -66,13 +66,15 @@ contract Loans is DSMath {
      * @member borrower The address of the borrower
      * @member lender The address of the lender
      * @member arbiter The address of the arbiter
-     * @member createAt The creation timestamp of the loan
+     * @member createdAt The creation timestamp of the loan
      * @member loanExpiration The timestamp for the end of the loan
+     * @member requestTimestamp The timestamp for when the loan is requested
+     * @member closedTimestamp The timestamp for when the loan is closed
+     * @member penalty The amount of tokens to be paid as a penalty for defaulting or allowing the loan to be liquidated
      * @member principal The amount of principal in tokens to be paid back at the end of the loan
      * @member interest The amount of interest in tokens to be paid back by the end of the loan
      * @member penalty The amount of tokens to be paid as a penalty for defaulting or allowing the loan to be liquidated
      * @member fee The amount of tokens paid to the arbiter
-     * @member collateral The amount of collateral in satoshis
      * @member liquidationRatio The ratio of collateral to debt where the loan can be liquidated
      */
     struct Loan {
