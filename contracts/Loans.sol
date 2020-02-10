@@ -316,14 +316,15 @@ contract Loans is DSMath {
     }
 
     function minSeizableCollateralValue(bytes32 loan) public view returns (uint256) {
-        (bytes32 val,) = med.peek();
+        (bytes32 val, bool set) = med.peek();
+        require(set, "Loans.minSeizableCollateralValue: Medianizer must be set");
         uint256 price = uint(val);
         return div(wdiv(dmul(add(principal(loan), interest(loan))), price), div(WAD, COL));
     }
 
     function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
         (bytes32 val, bool set) = med.peek();
-        require(set);
+        require(set, "Loans.collateralValue: Medianizer must be set");
         uint256 price = uint(val);
         return cmul(price, collateral(loan)); // Multiply value dependent on number of decimals with currency
     }
@@ -455,7 +456,7 @@ contract Loans is DSMath {
         bytes      calldata borrowerPubKey_,
         bytes      calldata lenderPubKey_,
         bytes      calldata arbiterPubKey_
-    ) external returns (bool) {
+    ) external {
         require(!secretHashes[loan].set);
         require(msg.sender == loans[loan].borrower || msg.sender == loans[loan].lender || msg.sender == address(funds));
         secretHashes[loan].secretHashA1 = borrowerSecretHashes[0];
@@ -703,7 +704,7 @@ contract Loans is DSMath {
                 }
                 funds.deposit(fundIndex[loan], loans[loan].principal);
             }
-        } else if (bools[loan].withdrawn == true) {
+        } else {
             if (fundIndex[loan] == bytes32(0)) {
                 require(token.transfer(loans[loan].lender, owedToLender(loan)));
             } else {
@@ -727,6 +728,7 @@ contract Loans is DSMath {
         require(!off(loan));
         require(bools[loan].withdrawn == true);
         require(msg.sender != loans[loan].borrower && msg.sender != loans[loan].lender);
+        require(secretHash != bytes32(0) && pubKeyHash != bytes32(0), "Loans.liquidate: secretHash and pubKeyHash must be non-zero");
         if (sales.next(loan) == 0) {
             if (now > loans[loan].loanExpiration) {
                 require(bools[loan].paid == false);

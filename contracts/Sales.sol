@@ -174,7 +174,7 @@ contract Sales is DSMath {
      *
      *         Note: More info on the collateral swap script can be seen here:
                      https://github.com/AtomicLoans/chainabstractionlayer-loans
-                     */
+    */
     function provideSig(
         bytes32        sale,
         bytes calldata refundableSig,
