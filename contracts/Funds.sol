@@ -384,10 +384,10 @@ contract Funds is DSMath, ALCompound {
         // #IF TESTING
         require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Exception for deployer during testing
         // #ELSE:
-        // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
+        // require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
-        if (!compoundSet) { require(compoundEnabled_ == false); }
+        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH, "Funds.create: fundExpiry and maxLoanDur cannot exceed 10 years"); // Make sure someone can't request a loan for eternity
+        if (!compoundSet) { require(compoundEnabled_ == false, "Funds.create: Cannot enable Compound as it has not been configured"); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
@@ -435,8 +435,11 @@ contract Funds is DSMath, ALCompound {
         // #ELSE:
         // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
-        if (!compoundSet) { require(compoundEnabled_ == false); }
+        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH, "Funds.createCustom: fundExpiry and maxLoanDur cannot exceed 10 years"); // Make sure someone can't request a loan for eternity
+        require(maxLoanAmt_ >= minLoanAmt_, "Funds.createCustom: maxLoanAmt must be greater than or equal to minLoanAmt");
+        require(ensureNotZero(maxLoanDur_, false)  >= minLoanDur_, "Funds.createCustom: maxLoanDur must be greater than or equal to minLoanDur");
+
+        if (!compoundSet) { require(compoundEnabled_ == false, "Funds.createCustom: Cannot enable Compound as it has not been configured"); }
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
         funds[fund].lender           = msg.sender;
@@ -484,7 +487,7 @@ contract Funds is DSMath, ALCompound {
      * @param fund The Id of a Loan Fund
      * @param maxLoanDur_ Maximum length of loan that can be requested from Loan Fund in seconds
      * @param fundExpiry_ Timestamp when all funds should be removable from Loan Fund
-     * @param arbiter_ The address of the arbiter for a Loan fund
+     * @param arbiter_ Optional address of the arbiter for a Loan fund
      *
      *        Note: msg.sender must be the lender of the Loan Fund
      */
@@ -494,8 +497,8 @@ contract Funds is DSMath, ALCompound {
         uint256  fundExpiry_,
         address  arbiter_
     ) public {
-        require(msg.sender == lender(fund));
-        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
+        require(msg.sender == lender(fund), "Funds.update: Only the lender can update the fund");
+        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH, "Funds.update: fundExpiry and maxLoanDur cannot exceed 10 years");  // Make sure someone can't request a loan for eternity
         funds[fund].maxLoanDur       = maxLoanDur_;
         funds[fund].fundExpiry       = fundExpiry_;
         funds[fund].arbiter          = arbiter_;
@@ -513,7 +516,7 @@ contract Funds is DSMath, ALCompound {
      * @param penalty_ The liquidation penalty rate per second for a Loan Fund in RAY per second
      * @param fee_ The optional automation fee rate of Loan Fund in RAY per second
      * @param liquidationRatio_ The liquidation ratio of Loan Fund in RAY
-     * @param arbiter_ The address of the arbiter for a Loan fund
+     * @param arbiter_ Optional address of the arbiter for a Loan fund
      *
      *        Note: msg.sender must be the lender of the Loan Fund
      */
@@ -530,7 +533,9 @@ contract Funds is DSMath, ALCompound {
         uint256  liquidationRatio_,
         address  arbiter_
     ) external {
-        require(bools[fund].custom);
+        require(bools[fund].custom, "Funds.updateCustom: Fund must be a custom fund");
+        require(maxLoanAmt_ >= minLoanAmt_, "Funds.updateCustom: maxLoanAmt must be greater than or equal to minLoanAmt");
+        require(ensureNotZero(maxLoanDur_, false)  >= minLoanDur_, "Funds.updateCustom: maxLoanDur must be greater than or equal to minLoanDur");
         update(fund, maxLoanDur_, fundExpiry_, arbiter_);
         funds[fund].minLoanAmt       = minLoanAmt_;
         funds[fund].maxLoanAmt       = maxLoanAmt_;
@@ -566,12 +571,13 @@ contract Funds is DSMath, ALCompound {
         bytes      calldata pubKeyA_,
         bytes      calldata pubKeyB_
     ) external returns (bytes32 loanIndex) {
-        require(msg.sender == lender(fund));
-        require(amount_    <= balance(fund));
-        require(amount_    >= minLoanAmt(fund));
-        require(amount_    <= maxLoanAmt(fund));
-        require(loanDur_   >= minLoanDur(fund));
-        require(loanDur_   <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund));
+        require(msg.sender == lender(fund), "Funds.request: Only the lender can fulfill a loan request");
+        require(amount_    <= balance(fund), "Funds.request: Insufficient balance");
+        require(amount_    >= minLoanAmt(fund), "Funds.request: Amount requested must be greater than minLoanAmt");
+        require(amount_    <= maxLoanAmt(fund), "Funds.request: Amount requested must be less than maxLoanAmt");
+        require(loanDur_   >= minLoanDur(fund), "Funds.request: Loan duration must be greater than minLoanDur");
+        require(loanDur_   <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund), "Funds.request: Loan duration must be less than maxLoanDur and expiry");
+        require(borrower_ != address(0), "Borrower address must be non-zero");
 
         loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_, requestTimestamp_);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);
