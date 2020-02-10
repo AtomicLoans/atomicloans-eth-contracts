@@ -398,7 +398,7 @@ contract Loans is DSMath {
      * @notice Creates a new loan agreement
      * @param loanExpiration_ The timestamp for the end of the loan
      * @param usrs_ Array of three addresses containing the borrower, lender, and optional arbiter address
-     * @param vals_ Array of six uints containing loan principal, interest, liquidation penalty, optional arbiter fee, collateral amount, liquidation ratio
+     * @param vals_ Array of seven uints containing loan principal, interest, liquidation penalty, optional arbiter fee, collateral amount, liquidation ratio, and request timestamp
      * @param fundIndex_ The optional Fund Index
      */
     function create(
@@ -409,6 +409,9 @@ contract Loans is DSMath {
     ) external returns (bytes32 loan) {
         if (fundIndex_ != bytes32(0)) { require(funds.lender(fundIndex_) == usrs_[1]); }
         require(!addressToTimestamp[usrs_[0]][vals_[6]]);
+        require(loanExpiration_ > now, "Loans.create: loanExpiration must be greater than `now`");
+        require(usrs_[0] != address(0) && usrs_[1] != address(0), "Loans.create: Borrower and Lender address must be non-zero");
+        require(vals_[0] != 0 && vals_[4] != 0 && vals_[5] != 0 && vals_[6] != 0, "Loans.create: Loan principal, collateral value, liquidation ratio, and request timestamp must be non-zero");
 
         loanIndex = add(loanIndex, 1);
         loan = bytes32(loanIndex);
