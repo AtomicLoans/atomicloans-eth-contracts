@@ -162,10 +162,16 @@ module.exports = function(deployer, network, accounts) {
     var sales = await Sales.deployed();
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
-    await loans.setOnDemandSpv(onDemandSpv.address);
+    // await loans.setOnDemandSpv(onDemandSpv.address);
+
+    await deployer.deploy(Spv);
+    var spv = await Spv.deployed();
+    await spv.setOnDemandSpv(onDemandSpv.address);
+
     await deployer.deploy(P2WSH, loans.address);
     var p2wsh = await P2WSH.deployed();
-    await loans.setP2WSH(p2wsh.address);
+    // await loans.setP2WSH(p2wsh.address);
+    await spv.setP2WSH(p2wsh.address);
 
     const usdcFunds = await Funds.new(usdc.address, '6')
     await usdcFunds.setCompound(cusdc.address, comptroller.address)

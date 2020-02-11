@@ -8,11 +8,93 @@ import {BTCUtils} from "@summa-tx/bitcoin-spv-sol/contracts/BTCUtils.sol";
 
 import './FundsInterface.sol';
 import './SalesInterface.sol';
+import './Loans.sol';
 import './P2WSHInterface.sol';
 import './ISPVRequestManager.sol';
-import './SpvInterface.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
+
+contract Spv is DSMath {
+    P2WSHInterface p2wsh;
+    Loans loans;
+
+    constructor (Loans loans_) public {
+        loans = loans_;
+    }
+
+    /**
+     * @dev Sets P2WSH contract
+     * @param p2wsh_ Address of P2WSH contract
+     */
+    function setP2WSH(P2WSHInterface p2wsh_) external {
+        require(msg.sender == deployer, "Loans.setP2WSH: Only the deployer can perform this");
+        require(address(p2wsh) == address(0), "Loans.setP2WSH: The P2WSH address has already been set");
+        require(address(p2wsh_) != address(0), "Loans.setP2WSH: P2WSH address must be non-zero");
+        p2wsh = p2wsh_;
+    }
+
+    /**
+     * @dev Sets OnDemandSpv contract address
+     * @param onDemandSpv_ Address of OnDemandSpv contract
+     */
+    function setOnDemandSpv(ISPVRequestManager onDemandSpv_) external {
+        require(msg.sender == deployer, "Loans.setOnDemandSpv: Only the deployer can perform this");
+        require(address(onDemandSpv) == address(0), "Loans.setOnDemandSpv: The OnDemandSpv address has already been set");
+        require(address(onDemandSpv_) != address(0), "Loans.setOnDemandSpv: OnDemandSpv address must be non-zero");
+        onDemandSpv = onDemandSpv_;
+    }
+
+    function requestSpv(bytes32 loan) internal {
+        (, bytes32 refundableP2WSH) = p2wsh.getP2WSH(loan, false); // refundable collateral
+        (, bytes32 seizableP2WSH) = p2wsh.getP2WSH(loan, true); // seizable collateral
+
+        uint256 onePercentOfCollateral = div(collateral(loan), 100);
+
+        uint256 refundRequestIDOneConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", refundableP2WSH), uint64(onePercentOfCollateral), address(this), 1);
+        uint256 refundRequestIDSixConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", refundableP2WSH), uint64(onePercentOfCollateral), address(this), 6);
+
+        uint256 seizeRequestIDOneConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", seizableP2WSH), uint64(onePercentOfCollateral), address(this), 1);
+        uint256 seizeRequestIDSixConf = onDemandSpv.request(hex"", abi.encodePacked(hex"220020", seizableP2WSH), uint64(onePercentOfCollateral), address(this), 6);
+
+        loans.loanRequests[loan].refundRequestIDOneConf = refundRequestIDOneConf;
+        loanRequests[loan].refundRequestIDSixConf = refundRequestIDSixConf;
+        loanRequests[loan].seizeRequestIDOneConf = seizeRequestIDOneConf;
+        loanRequests[loan].seizeRequestIDSixConf = seizeRequestIDSixConf;
+
+        requestsDetails[refundRequestIDOneConf].loan = loan;
+        requestsDetails[refundRequestIDOneConf].p2wshAddress = refundableP2WSH;
+
+        requestsDetails[refundRequestIDSixConf].loan = loan;
+        requestsDetails[refundRequestIDSixConf].finalized = true;
+        requestsDetails[refundRequestIDSixConf].p2wshAddress = refundableP2WSH;
+
+        finalRequestToInitialRequest[refundRequestIDSixConf] = refundRequestIDOneConf;
+
+        requestsDetails[seizeRequestIDOneConf].loan = loan;
+        requestsDetails[seizeRequestIDOneConf].seizable = true;
+        requestsDetails[seizeRequestIDOneConf].p2wshAddress = seizableP2WSH;
+
+        requestsDetails[seizeRequestIDSixConf].loan = loan;
+        requestsDetails[seizeRequestIDSixConf].seizable = true;
+        requestsDetails[seizeRequestIDSixConf].finalized = true;
+        requestsDetails[seizeRequestIDSixConf].p2wshAddress = seizableP2WSH;
+
+        finalRequestToInitialRequest[seizeRequestIDSixConf] = seizeRequestIDOneConf;
+    }
+
+    function cancelSpv(bytes32 loan) internal {
+        (uint256 refundRequestIDOneConf, uint256 refundRequestIDSixConf, uint256 seizeRequestIDOneConf, uint256 seizeRequestIDSixConf) = loans.loanRequests(loan);
+
+        require(onDemandSpv.cancelRequest(refundRequestIDOneConf));
+        require(onDemandSpv.cancelRequest(refundRequestIDSixConf));
+        require(onDemandSpv.cancelRequest(seizeRequestIDOneConf));
+        require(onDemandSpv.cancelRequest(seizeRequestIDSixConf));
+    }
+}
+
+
+
+
 
 contract Loans is DSMath {
     FundsInterface funds;
@@ -20,7 +102,6 @@ contract Loans is DSMath {
     SalesInterface sales;
     P2WSHInterface p2wsh;
     ISPVRequestManager onDemandSpv;
-    SpvInterface spv;
 
     uint256 public constant APPROVE_EXP_THRESHOLD = 2 hours;    // approval expiration threshold
     uint256 public constant ACCEPT_EXP_THRESHOLD = 2 days;      // acceptance expiration threshold
@@ -394,17 +475,6 @@ contract Loans is DSMath {
         require(address(onDemandSpv) == address(0), "Loans.setOnDemandSpv: The OnDemandSpv address has already been set");
         require(address(onDemandSpv_) != address(0), "Loans.setOnDemandSpv: OnDemandSpv address must be non-zero");
         onDemandSpv = onDemandSpv_;
-    }
-
-    /**
-     * @dev Sets Spv contract
-     * @param spv_ Address of Spv contract
-     */
-    function setSpv(SpvInterface spv_) external {
-        require(msg.sender == deployer, "Loans.setSales: Only the deployer can perform this");
-        require(address(spv) == address(0), "Loans.setSales: The Sales address has already been set");
-        require(address(spv_) != address(0), "Loans.setSales: Sales address must be non-zero");
-        spv = spv_;
     }
     // ======================================================================
 
