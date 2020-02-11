@@ -105,9 +105,9 @@ contract Funds is DSMath, ALCompound {
         decimals = decimals_;
         utilizationInterestDivisor = 10531702972595856680093239305; // 10.53 in RAY (~10:1 ratio for % change in utilization ratio to % change in interest rate)
         maxUtilizationDelta = 95310179948351216961192521; // Global Interest Rate Numerator can change up to 9.53% in RAY (~10% change in utilization ratio = ~1% change in interest rate)
-        globalInterestRateNumerator =  95310179948351216961192521; // ~10%  ( (e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) )
-        maxInterestRateNumerator    = 182321557320989604265864303; // ~20%  ( (e^(ln(1.200)/(60*60*24*365)) - 1) * (60*60*24*365) )
-        minInterestRateNumerator    =  24692612600038629323181834; // ~2.5% ( (e^(ln(1.025)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        globalInterestRateNumerator = 95310179948351216961192521; // ~10%  ( (e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        maxInterestRateNumerator = 182321557320989604265864303; // ~20%  ( (e^(ln(1.200)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        minInterestRateNumerator = 24692612600038629323181834; // ~2.5% ( (e^(ln(1.025)/(60*60*24*365)) - 1) * (60*60*24*365) )
         interestUpdateDelay = 86400; // 1 DAY
         defaultArbiterFee = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional arbiter fee ((1.000000000236936036262880196) ^ (60 *  60 * 24 * 365)) - 1 = ~0.0075
         globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
@@ -234,8 +234,8 @@ contract Funds is DSMath, ALCompound {
      * @return The minimum amount of tokens that can be requested from a Loan Fund
      */
     function minLoanAmt(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].minLoanAmt; }
-        else                    { return div(DEFAULT_MIN_LOAN_AMT, (10 ** sub(18, decimals))); }
+        if (bools[fund].custom) {return funds[fund].minLoanAmt;}
+        else                    {return div(DEFAULT_MIN_LOAN_AMT, (10 ** sub(18, decimals)));}
     }
 
     /**
@@ -244,8 +244,8 @@ contract Funds is DSMath, ALCompound {
      * @return The maximum amount of tokens that can be requested from a Loan Fund
      */
     function maxLoanAmt(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].maxLoanAmt; }
-        else                    { return DEFAULT_MAX_LOAN_AMT; }
+        if (bools[fund].custom) {return funds[fund].maxLoanAmt;}
+        else                    {return DEFAULT_MAX_LOAN_AMT;}
     }
 
     /**
@@ -254,8 +254,8 @@ contract Funds is DSMath, ALCompound {
      * @return The minimum duration loan that can be requested from a Loan Fund
      */
     function minLoanDur(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].minLoanDur; }
-        else                    { return DEFAULT_MIN_LOAN_DUR; }
+        if (bools[fund].custom) {return funds[fund].minLoanDur;}
+        else                    {return DEFAULT_MIN_LOAN_DUR;}
     }
 
     /**
@@ -282,8 +282,8 @@ contract Funds is DSMath, ALCompound {
      * @return The interest rate per second for a Loan Fund in RAY per second
      */
     function interest(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].interest; }
-        else                    { return globalInterestRate; }
+        if (bools[fund].custom) {return funds[fund].interest;}
+        else                    {return globalInterestRate;}
     }
 
     /**
@@ -292,8 +292,8 @@ contract Funds is DSMath, ALCompound {
      * @return The liquidation penalty rate per second for a Loan Fund in RAY per second
      */
     function penalty(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].penalty; }
-        else                    { return DEFAULT_LIQUIDATION_PENALTY; }
+        if (bools[fund].custom) {return funds[fund].penalty;}
+        else                    {return DEFAULT_LIQUIDATION_PENALTY;}
     }
 
     /**
@@ -302,8 +302,8 @@ contract Funds is DSMath, ALCompound {
      * @return The optional automation fee rate of Loan Fund in RAY per second
      */
     function fee(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].fee; }
-        else                    { return defaultArbiterFee; }
+        if (bools[fund].custom) {return funds[fund].fee;}
+        else                    {return defaultArbiterFee;}
     }
 
     /**
@@ -312,8 +312,8 @@ contract Funds is DSMath, ALCompound {
      * @return The liquidation ratio of Loan Fund in RAY
      */
     function liquidationRatio(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].liquidationRatio; }
-        else                    { return DEFAULT_LIQUIDATION_RATIO; }
+        if (bools[fund].custom) {return funds[fund].liquidationRatio;}
+        else                    {return DEFAULT_LIQUIDATION_RATIO;}
     }
 
     /**
@@ -383,22 +383,25 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) {
         // #IF TESTING
-        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Exception for deployer during testing
+        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer, "Funds.create: Only one loan fund allowed per address");
         // #ELSE:
         // require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH, "Funds.create: fundExpiry and maxLoanDur cannot exceed 10 years"); // Make sure someone can't request a loan for eternity
-        if (!compoundSet) { require(compoundEnabled_ == false, "Funds.create: Cannot enable Compound as it has not been configured"); }
+        require(
+            ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH,
+            "Funds.create: fundExpiry and maxLoanDur cannot exceed 10 years"
+        ); // Make sure someone can't request a loan for longer than 10 years
+        if (!compoundSet) {require(compoundEnabled_ == false, "Funds.create: Cannot enable Compound as it has not been configured");}
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
-        funds[fund].lender           = msg.sender;
-        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_, false);
-        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_, true);
-        funds[fund].arbiter          = arbiter_;
-        bools[fund].custom           = false;
-        bools[fund].compoundEnabled  = compoundEnabled_;
-        fundOwner[msg.sender]        = bytes32(fundIndex);
-        if (amount_ > 0) { deposit(fund, amount_); }
+        funds[fund].lender = msg.sender;
+        funds[fund].maxLoanDur = ensureNotZero(maxLoanDur_, false);
+        funds[fund].fundExpiry = ensureNotZero(fundExpiry_, true);
+        funds[fund].arbiter = arbiter_;
+        bools[fund].custom = false;
+        bools[fund].compoundEnabled = compoundEnabled_;
+        fundOwner[msg.sender] = bytes32(fundIndex);
+        if (amount_ > 0) {deposit(fund, amount_);}
 
         emit Create(fund);
     }
@@ -432,32 +435,35 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) {
         // #IF TESTING
-        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Exception for deployer during testing
+        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer, "Funds.create: Only one loan fund allowed per address"); // Exception for deployer during testing
         // #ELSE:
-        // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
+        // require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH, "Funds.createCustom: fundExpiry and maxLoanDur cannot exceed 10 years"); // Make sure someone can't request a loan for eternity
+        require(
+            ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH,
+            "Funds.createCustom: fundExpiry and maxLoanDur cannot exceed 10 years"
+        ); // Make sure someone can't request a loan for longer than 10 years
         require(maxLoanAmt_ >= minLoanAmt_, "Funds.createCustom: maxLoanAmt must be greater than or equal to minLoanAmt");
-        require(ensureNotZero(maxLoanDur_, false)  >= minLoanDur_, "Funds.createCustom: maxLoanDur must be greater than or equal to minLoanDur");
+        require(ensureNotZero(maxLoanDur_, false) >= minLoanDur_, "Funds.createCustom: maxLoanDur must be greater than or equal to minLoanDur");
 
-        if (!compoundSet) { require(compoundEnabled_ == false, "Funds.createCustom: Cannot enable Compound as it has not been configured"); }
+        if (!compoundSet) {require(compoundEnabled_ == false, "Funds.createCustom: Cannot enable Compound as it has not been configured");}
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
-        funds[fund].lender           = msg.sender;
-        funds[fund].minLoanAmt       = minLoanAmt_;
-        funds[fund].maxLoanAmt       = maxLoanAmt_;
-        funds[fund].minLoanDur       = minLoanDur_;
-        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_, false);
-        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_, true);
-        funds[fund].interest         = interest_;
-        funds[fund].penalty          = penalty_;
-        funds[fund].fee              = fee_;
+        funds[fund].lender = msg.sender;
+        funds[fund].minLoanAmt = minLoanAmt_;
+        funds[fund].maxLoanAmt = maxLoanAmt_;
+        funds[fund].minLoanDur = minLoanDur_;
+        funds[fund].maxLoanDur = ensureNotZero(maxLoanDur_, false);
+        funds[fund].fundExpiry = ensureNotZero(fundExpiry_, true);
+        funds[fund].interest = interest_;
+        funds[fund].penalty = penalty_;
+        funds[fund].fee = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
-        funds[fund].arbiter          = arbiter_;
-        bools[fund].custom           = true;
-        bools[fund].compoundEnabled  = compoundEnabled_;
-        fundOwner[msg.sender]         = bytes32(fundIndex);
-        if (amount_ > 0) { deposit(fund, amount_); }
+        funds[fund].arbiter = arbiter_;
+        bools[fund].custom = true;
+        bools[fund].compoundEnabled = compoundEnabled_;
+        fundOwner[msg.sender] = bytes32(fundIndex);
+        if (amount_ > 0) {deposit(fund, amount_);}
 
         emit Create(fund);
     }
@@ -475,12 +481,12 @@ contract Funds is DSMath, ALCompound {
             mintCToken(address(token), address(cToken), amount_);
             uint256 cTokenToAdd = div(mul(amount_, WAD), cToken.exchangeRateCurrent());
             funds[fund].cBalance = add(funds[fund].cBalance, cTokenToAdd);
-            if (!custom(fund)) { cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToAdd); }
+            if (!custom(fund)) {cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToAdd);}
         } else {
             funds[fund].balance = add(funds[fund].balance, amount_);
-            if (!custom(fund)) { tokenMarketLiquidity = add(tokenMarketLiquidity, amount_); }
+            if (!custom(fund)) {tokenMarketLiquidity = add(tokenMarketLiquidity, amount_);}
         }
-        if (!custom(fund)) { calcGlobalInterest(); }
+        if (!custom(fund)) {calcGlobalInterest();}
     }
 
     /**
@@ -499,10 +505,13 @@ contract Funds is DSMath, ALCompound {
         address  arbiter_
     ) public {
         require(msg.sender == lender(fund), "Funds.update: Only the lender can update the fund");
-        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH, "Funds.update: fundExpiry and maxLoanDur cannot exceed 10 years");  // Make sure someone can't request a loan for eternity
-        funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].fundExpiry       = fundExpiry_;
-        funds[fund].arbiter          = arbiter_;
+        require(
+            ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH,
+            "Funds.update: fundExpiry and maxLoanDur cannot exceed 10 years"
+        );  // Make sure someone can't request a loan for eternity
+        funds[fund].maxLoanDur = maxLoanDur_;
+        funds[fund].fundExpiry = fundExpiry_;
+        funds[fund].arbiter = arbiter_;
     }
 
     /**
@@ -536,14 +545,14 @@ contract Funds is DSMath, ALCompound {
     ) external {
         require(bools[fund].custom, "Funds.updateCustom: Fund must be a custom fund");
         require(maxLoanAmt_ >= minLoanAmt_, "Funds.updateCustom: maxLoanAmt must be greater than or equal to minLoanAmt");
-        require(ensureNotZero(maxLoanDur_, false)  >= minLoanDur_, "Funds.updateCustom: maxLoanDur must be greater than or equal to minLoanDur");
+        require(ensureNotZero(maxLoanDur_, false) >= minLoanDur_, "Funds.updateCustom: maxLoanDur must be greater than or equal to minLoanDur");
         update(fund, maxLoanDur_, fundExpiry_, arbiter_);
-        funds[fund].minLoanAmt       = minLoanAmt_;
-        funds[fund].maxLoanAmt       = maxLoanAmt_;
-        funds[fund].minLoanDur       = minLoanDur_;
-        funds[fund].interest         = interest_;
-        funds[fund].penalty          = penalty_;
-        funds[fund].fee              = fee_;
+        funds[fund].minLoanAmt = minLoanAmt_;
+        funds[fund].maxLoanAmt = maxLoanAmt_;
+        funds[fund].minLoanDur = minLoanDur_;
+        funds[fund].interest = interest_;
+        funds[fund].penalty = penalty_;
+        funds[fund].fee = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
     }
 
@@ -573,12 +582,16 @@ contract Funds is DSMath, ALCompound {
         bytes      calldata pubKeyB_
     ) external returns (bytes32 loanIndex) {
         require(msg.sender == lender(fund), "Funds.request: Only the lender can fulfill a loan request");
-        require(amount_    <= balance(fund), "Funds.request: Insufficient balance");
-        require(amount_    >= minLoanAmt(fund), "Funds.request: Amount requested must be greater than minLoanAmt");
-        require(amount_    <= maxLoanAmt(fund), "Funds.request: Amount requested must be less than maxLoanAmt");
-        require(loanDur_   >= minLoanDur(fund), "Funds.request: Loan duration must be greater than minLoanDur");
-        require(loanDur_   <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund), "Funds.request: Loan duration must be less than maxLoanDur and expiry");
-        require(borrower_ != address(0), "Borrower address must be non-zero");
+        require(amount_ <= balance(fund), "Funds.request: Insufficient balance");
+        require(amount_ >= minLoanAmt(fund), "Funds.request: Amount requested must be greater than minLoanAmt");
+        require(amount_ <= maxLoanAmt(fund), "Funds.request: Amount requested must be less than maxLoanAmt");
+        require(loanDur_ >= minLoanDur(fund), "Funds.request: Loan duration must be greater than minLoanDur");
+        require(loanDur_ <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund), "Funds.request: Loan duration must be less than maxLoanDur and expiry");
+        require(borrower_ != address(0), "Funds.request: Borrower address must be non-zero");
+        require(secretHashes_[0] != bytes32(0) && secretHashes_[1] != bytes32(0), "Funds.request: SecretHash1 & SecretHash2 should be non-zero");
+        require(secretHashes_[2] != bytes32(0) && secretHashes_[3] != bytes32(0), "Funds.request: SecretHash3 & SecretHash4 should be non-zero");
+        require(secretHashes_[4] != bytes32(0) && secretHashes_[5] != bytes32(0), "Funds.request: SecretHash5 & SecretHash6 should be non-zero");
+        require(secretHashes_[6] != bytes32(0) && secretHashes_[7] != bytes32(0), "Funds.request: SecretHash7 & SecretHash8 should be non-zero");
 
         loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_, requestTimestamp_);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);
@@ -602,8 +615,8 @@ contract Funds is DSMath, ALCompound {
      * @param recipient_ Address that should receive the funds
      */
     function withdrawTo(bytes32 fund, uint256 amount_, address recipient_) public {
-        require(msg.sender     == lender(fund), "Funds.withdrawTo: Only the lender can withdraw tokens");
-        require(balance(fund)  >= amount_, "Funds.withdrawTo: Insufficient balance");
+        require(msg.sender == lender(fund), "Funds.withdrawTo: Only the lender can withdraw tokens");
+        require(balance(fund) >= amount_, "Funds.withdrawTo: Insufficient balance");
         if (bools[fund].compoundEnabled) {
             uint256 cBalanceBefore = cToken.balanceOf(address(this));
             redeemUnderlying(address(cToken), amount_);
@@ -611,13 +624,13 @@ contract Funds is DSMath, ALCompound {
             uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
             funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
             require(token.transfer(recipient_, amount_), "Funds.withdrawTo: Token transfer failed");
-            if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
+            if (!custom(fund)) {cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove);}
         } else {
             funds[fund].balance = sub(funds[fund].balance, amount_);
             require(token.transfer(recipient_, amount_), "Funds.withdrawTo: Token transfer failed");
-            if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_); }
+            if (!custom(fund)) {tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_);}
         }
-        if (!custom(fund)) { calcGlobalInterest(); }
+        if (!custom(fund)) {calcGlobalInterest();}
     }
 
     /**
@@ -701,7 +714,7 @@ contract Funds is DSMath, ALCompound {
 
         if (now > (add(lastGlobalInterestUpdated, interestUpdateDelay))) {
             uint256 utilizationRatio;
-            if (totalBorrow != 0) { utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow)); }
+            if (totalBorrow != 0) {utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow));}
 
             if (utilizationRatio > lastUtilizationRatio) {
                 uint256 changeUtilizationRatio = sub(utilizationRatio, lastUtilizationRatio);
@@ -812,10 +825,10 @@ contract Funds is DSMath, ALCompound {
             uint256 cBalanceAfter = cToken.balanceOf(address(this));
             uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
             funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
-            if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
+            if (!custom(fund)) {cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove);}
         } else {
             funds[fund].balance = sub(funds[fund].balance, amount_);
-            if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_); }
+            if (!custom(fund)) {tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_);}
         }
         if (!custom(fund)) {
             totalBorrow = add(totalBorrow, amount_);

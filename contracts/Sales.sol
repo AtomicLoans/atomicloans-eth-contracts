@@ -110,11 +110,11 @@ contract Sales is DSMath {
         require(address(med_) != address(0), "Medianizer address must be non-zero");
         require(address(token_) != address(0), "Token address must be non-zero");
     	deployer = address(loans_);
-    	loans    = loans_;
-        funds    = funds_;
-        med      = med_;
-        token    = token_;
-        require(token.approve(address(funds), MAX_UINT_256));
+        loans = loans_;
+        funds = funds_;
+        med = med_;
+        token = token_;
+        require(token.approve(address(funds), MAX_UINT_256), "Token approve failed");
     }
 
     function next(bytes32 loan) public view returns (uint256) {
@@ -147,18 +147,18 @@ contract Sales is DSMath {
         bytes32 secretHashD,
         bytes20 pubKeyHash
         ) external returns(bytes32 sale) {
-        require(msg.sender == address(loans));
+        require(msg.sender == address(loans), "Sales.create: Only the Loans contract can create a Sale");
         saleIndex = add(saleIndex, 1);
         sale = bytes32(saleIndex);
-        sales[sale].loanIndex   = loanIndex;
-        sales[sale].borrower    = borrower;
-        sales[sale].lender      = lender;
-        sales[sale].arbiter       = arbiter;
-        sales[sale].liquidator  = liquidator;
-        sales[sale].createdAt   = now;
-        sales[sale].pubKeyHash  = pubKeyHash;
+        sales[sale].loanIndex = loanIndex;
+        sales[sale].borrower = borrower;
+        sales[sale].lender = lender;
+        sales[sale].arbiter = arbiter;
+        sales[sale].liquidator = liquidator;
+        sales[sale].createdAt = now;
+        sales[sale].pubKeyHash = pubKeyHash;
         sales[sale].discountBuy = loans.ddiv(loans.discountCollateralValue(loanIndex));
-        sales[sale].set         = true;
+        sales[sale].set = true;
         secretHashes[sale].secretHashA = secretHashA;
         secretHashes[sale].secretHashB = secretHashB;
         secretHashes[sale].secretHashC = secretHashC;
@@ -180,19 +180,19 @@ contract Sales is DSMath {
         bytes calldata refundableSig,
         bytes calldata seizableSig
     ) external {
-        require(sales[sale].set);
-        require(now < settlementExpiration(sale));
+        require(sales[sale].set, "Sales.provideSig: Sale must be set");
+        require(now < settlementExpiration(sale), "Sales.provideSig: Cannot provide signature after settlement expiration");
         if (msg.sender == sales[sale].borrower) {
             borrowerSigs[sale].refundableSig = refundableSig;
-            borrowerSigs[sale].seizableSig   = seizableSig;
+            borrowerSigs[sale].seizableSig = seizableSig;
         } else if (msg.sender == sales[sale].lender) {
             lenderSigs[sale].refundableSig = refundableSig;
-            lenderSigs[sale].seizableSig   = seizableSig;
+            lenderSigs[sale].seizableSig = seizableSig;
         } else if (msg.sender == sales[sale].arbiter) {
             arbiterSigs[sale].refundableSig = refundableSig;
-            arbiterSigs[sale].seizableSig   = seizableSig;
+            arbiterSigs[sale].seizableSig = seizableSig;
         } else {
-            revert();
+            revert("Loans.provideSig: Must be called by Borrower, Lender or Arbiter");
         }
     }
 
@@ -201,13 +201,13 @@ contract Sales is DSMath {
      * @param secret_ The secret provided by the borrower, lender, arbiter, or liquidator
      */
     function provideSecret(bytes32 sale, bytes32 secret_) public {
-        require(sales[sale].set);
+        require(sales[sale].set, "Sales.provideSecret: Sale must be set");
         bytes32 secretHash = sha256(abi.encodePacked(secret_));
         revealed[secretHash] = true;
-        if (secretHash == secretHashes[sale].secretHashA) { secretHashes[sale].secretA = secret_; }
-        if (secretHash == secretHashes[sale].secretHashB) { secretHashes[sale].secretB = secret_; }
-        if (secretHash == secretHashes[sale].secretHashC) { secretHashes[sale].secretC = secret_; }
-        if (secretHash == secretHashes[sale].secretHashD) { secretHashes[sale].secretD = secret_; }
+        if (secretHash == secretHashes[sale].secretHashA) {secretHashes[sale].secretA = secret_;}
+        if (secretHash == secretHashes[sale].secretHashB) {secretHashes[sale].secretB = secret_;}
+        if (secretHash == secretHashes[sale].secretHashC) {secretHashes[sale].secretC = secret_;}
+        if (secretHash == secretHashes[sale].secretHashD) {secretHashes[sale].secretD = secret_;}
     }
 
     /**
@@ -216,9 +216,9 @@ contract Sales is DSMath {
      */
     function hasSecrets(bytes32 sale) public view returns (bool) {
         uint8 numCorrectSecrets = 0;
-        if (revealed[secretHashes[sale].secretHashA]) { numCorrectSecrets += 1; }
-        if (revealed[secretHashes[sale].secretHashB]) { numCorrectSecrets += 1; }
-        if (revealed[secretHashes[sale].secretHashC]) { numCorrectSecrets += 1; }
+        if (revealed[secretHashes[sale].secretHashA]) {numCorrectSecrets += 1;}
+        if (revealed[secretHashes[sale].secretHashB]) {numCorrectSecrets += 1;}
+        if (revealed[secretHashes[sale].secretHashC]) {numCorrectSecrets += 1;}
         return (numCorrectSecrets >= 2);
     }
 
@@ -227,23 +227,23 @@ contract Sales is DSMath {
      * @param sale The Id of the sale
      */
     function accept(bytes32 sale) public {
-        require(!accepted(sale));
-        require(!off(sale));
-        require(hasSecrets(sale));
-        require(revealed[secretHashes[sale].secretHashD]);
+        require(!accepted(sale), "Sales.accept: Sale must not already be accepted");
+        require(!off(sale), "Sales.accept: Sale must not already be off");
+        require(hasSecrets(sale), "Sales.accept: Secrets need to have already been revealed");
+        require(revealed[secretHashes[sale].secretHashD], "Sales.accept: Secret D must have already been revealed");
         sales[sale].accepted = true;
 
         uint256 available = add(sales[sale].discountBuy, loans.repaid(sales[sale].loanIndex));
 
         if (sales[sale].arbiter != address(0) && available >= loans.fee(sales[sale].loanIndex)) {
-            require(token.transfer(sales[sale].arbiter, loans.fee(sales[sale].loanIndex)));
+            require(token.transfer(sales[sale].arbiter, loans.fee(sales[sale].loanIndex)), "Sales.accept: Token transfer of fee to Arbiter failed");
             available = sub(available, loans.fee(sales[sale].loanIndex));
         }
 
         uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
 
         if (loans.fundIndex(sales[sale].loanIndex) == bytes32(0)) {
-            require(token.transfer(sales[sale].lender, amount));
+            require(token.transfer(sales[sale].lender, amount), "Sales.accept: Token tranfer of amount left to Lender failed");
         } else {
             funds.deposit(loans.fundIndex(sales[sale].loanIndex), amount);
         }
@@ -251,16 +251,18 @@ contract Sales is DSMath {
         available = sub(available, amount);
 
         if (available >= loans.penalty(sales[sale].loanIndex)) {
-            require(token.approve(address(med), loans.penalty(sales[sale].loanIndex)));
+            require(token.approve(address(med), loans.penalty(sales[sale].loanIndex)), "Sales.accept: Token transfer of penalty to Medianizer failed");
             med.fund(loans.penalty(sales[sale].loanIndex), token);
             available = sub(available, loans.penalty(sales[sale].loanIndex));
         } else if (available > 0) {
-            require(token.approve(address(med), available));
+            require(token.approve(address(med), available), "Sales.accept: Token transfer of tokens available to Medianizer failed");
             med.fund(available, token);
             available = 0;
         }
 
-        if (available > 0) { require(token.transfer(sales[sale].borrower, available)); }
+        if (available > 0) {
+            require(token.transfer(sales[sale].borrower, available), "Sales.accept: Token transfer of tokens available to Borrower failed");
+        }
     }
 
     function provideSecretsAndAccept(bytes32 sale, bytes32[3] calldata secrets_) external {
@@ -275,14 +277,14 @@ contract Sales is DSMath {
      * @param sale The Id of the sale
      */
     function refund(bytes32 sale) external {
-        require(!accepted(sale));
-        require(!off(sale));
-        require(now > settlementExpiration(sale));
-        require(sales[sale].discountBuy > 0);
+        require(!accepted(sale), "Sales.refund: Sale must not be accepted");
+        require(!off(sale), "Sales.refund: Sale must not be off");
+        require(now > settlementExpiration(sale), "Sales.refund: Can only refund after settlement expiration");
+        require(sales[sale].discountBuy > 0, "Sales.refund: Discount Buy amount must be non-zero");
         sales[sale].off = true;
-        require(token.transfer(sales[sale].liquidator, sales[sale].discountBuy));
+        require(token.transfer(sales[sale].liquidator, sales[sale].discountBuy), "Sales.refund: Token transfer to Liquidator failed");
         if (next(sales[sale].loanIndex) == MAX_NUM_LIQUIDATIONS) {
-            require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)));
+            require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)), "Sales.refund: Token transfer to Borrower failed");
         }
     }
 }

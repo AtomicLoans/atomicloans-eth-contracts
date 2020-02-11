@@ -16,6 +16,7 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
+const Collateral = artifacts.require("./Collateral.sol");
 const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 const P2WSH  = artifacts.require('./P2WSH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
@@ -55,10 +56,11 @@ async function getContracts(stablecoin) {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
+    const collateral = await Collateral.deployed()
     const token = await ExampleCoin.deployed();
     const med   = await Med.deployed();
 
-    return { funds, loans, sales, token, med }
+    return { funds, loans, sales, collateral, token, med }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
@@ -80,10 +82,14 @@ async function getContracts(stablecoin) {
     const p2wsh = await P2WSH.deployed()
     const onDemandSpv = await ISPVRequestManager.deployed()
 
-    await loans.setP2WSH(p2wsh.address)
-    await loans.setOnDemandSpv(onDemandSpv.address)
+    const collateral = await Collateral.new(loans.address)
 
-    return { funds, loans, sales, token, med }
+    await collateral.setP2WSH(p2wsh.address)
+    await collateral.setOnDemandSpv(onDemandSpv.address)
+
+    await loans.setCollateral(collateral.address)
+
+    return { funds, loans, sales, collateral, token, med }
   }
 }
 

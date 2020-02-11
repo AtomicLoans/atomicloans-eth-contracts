@@ -16,6 +16,7 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
+const Collateral = artifacts.require("./Collateral.sol")
 const P2WSH = artifacts.require('./P2WSH.sol');
 const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol')
 const Med = artifacts.require('./MedianizerExample.sol');
@@ -39,12 +40,13 @@ async function getContracts(stablecoin) {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
+    const collateral = await Collateral.deployed()
     const token = await ExampleCoin.deployed();
     const med   = await Med.deployed();
     const p2wsh  = await P2WSH.deployed();
     const onDemandSpv = await ISPVRequestManager.deployed()
 
-    return { funds, loans, sales, token, med, p2wsh, onDemandSpv }
+    return { funds, loans, sales, collateral, token, med, p2wsh, onDemandSpv }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
@@ -64,12 +66,17 @@ async function getContracts(stablecoin) {
     await loans.setSales(sales.address)
 
     const p2wsh = await P2WSH.new(loans.address)
+
     const onDemandSpv = await ISPVRequestManager.deployed()
 
-    await loans.setP2WSH(p2wsh.address)
-    await loans.setOnDemandSpv(onDemandSpv.address)
+    const collateral = await Collateral.new(loans.address)
 
-    return { funds, loans, sales, token, med, p2wsh, onDemandSpv }
+    await collateral.setP2WSH(p2wsh.address)
+    await collateral.setOnDemandSpv(onDemandSpv.address)
+
+    await loans.setCollateral(collateral.address)
+
+    return { funds, loans, sales, collateral, token, med, p2wsh, onDemandSpv }
   }
 }
 
@@ -384,11 +391,12 @@ stablecoins.forEach((stablecoin) => {
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-      const { funds, loans, sales, token, med, p2wsh, onDemandSpv } = await getContracts(name)
+      const { funds, loans, sales, collateral, token, med, p2wsh, onDemandSpv } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
+      this.collateral = collateral
       this.token = token
       this.med = med
       this.p2wsh = p2wsh
@@ -444,7 +452,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update collateral value after 1 confirmation', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -499,7 +507,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update collateral value after 1 confirmation if min seizable collateral value is satisfied', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -556,7 +564,7 @@ stablecoins.forEach((stablecoin) => {
       it('should not update collateral value after 1 confirmation if min seizable collateral value is not satisfied', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -615,7 +623,7 @@ stablecoins.forEach((stablecoin) => {
       it('should not update collateral value until seizable collateral has been confirmed when min seizable collateral isn\'t satisfied after 1 confirmation', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -697,7 +705,7 @@ stablecoins.forEach((stablecoin) => {
       it('should not update collateral value until seizable collateral has been confirmed when min seizable collateral isn\'t satisfied after 6 confirmations', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -781,7 +789,7 @@ stablecoins.forEach((stablecoin) => {
       it('should update collateral value as soon as seizable collateral is confirmed, and then increase it again once refundable collateral is added', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -860,7 +868,7 @@ stablecoins.forEach((stablecoin) => {
       it('should not add collateral value if minSeizableCollateral is not satisfied', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1045,7 +1053,7 @@ stablecoins.forEach((stablecoin) => {
       it('should account for delayed 6 conf proofs in collateral value', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1143,9 +1151,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDOneConf, refundableInputIndex_1, refundableOutputIndex_1)
         expect(fillRefundRequest_1_OneConfSuccess).to.equal(true)
 
-        const collateralValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterOneAddingRefundableCollateral_1 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_1 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_1 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(refundableValue + seizableValue + refundableValue)
         expect(CDIValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(1)
@@ -1158,9 +1166,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, refundRequestIDOneConf, refundableInputIndex_2, refundableOutputIndex_2)
         expect(fillRefundRequest_2_OneConfSuccess).to.equal(true)
 
-        const collateralValueAfterOneAddingRefundableCollateral_2 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterOneAddingRefundableCollateral_2 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterOneAddingRefundableCollateral_2 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterOneAddingRefundableCollateral_2 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_2 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_2 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterOneAddingRefundableCollateral_2.toNumber()).to.equal(collateralValueAfterOneAddingRefundableCollateral_1.toNumber() + refundableValue)
         expect(CDIValueAfterOneAddingRefundableCollateral_2.toNumber()).to.equal(2)
@@ -1173,9 +1181,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, refundRequestIDOneConf, refundableInputIndex_3, refundableOutputIndex_3)
         expect(fillRefundRequest_3_OneConfSuccess).to.equal(true)
 
-        const collateralValueAfterOneAddingRefundableCollateral_3 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterOneAddingRefundableCollateral_3 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterOneAddingRefundableCollateral_3 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterOneAddingRefundableCollateral_3 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_3 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_3 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterOneAddingRefundableCollateral_3.toNumber()).to.equal(collateralValueAfterOneAddingRefundableCollateral_2.toNumber() + refundableValue)
         expect(CDIValueAfterOneAddingRefundableCollateral_3.toNumber()).to.equal(3)
@@ -1188,9 +1196,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, seizeRequestIDOneConf, seizableInputIndex_1, seizableOutputIndex_1)
         expect(fillSeizeRequest_1_OneConfSuccess).to.equal(true)
 
-        const collateralValueAfterOneAddingSeizableCollateral_1 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterOneAddingSeizableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterOneAddingSeizableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterOneAddingSeizableCollateral_1 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterOneAddingSeizableCollateral_1 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingSeizableCollateral_1 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterOneAddingSeizableCollateral_1.toNumber()).to.equal(collateralValueAfterOneAddingRefundableCollateral_3.toNumber() + seizableValue)
         expect(CDIValueAfterOneAddingSeizableCollateral_1.toNumber()).to.equal(4)
@@ -1203,9 +1211,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, seizeRequestIDOneConf, seizableInputIndex_2, seizableOutputIndex_2)
         expect(fillSeizeRequest_2_OneConfSuccess).to.equal(true)
 
-        const collateralValueAfterOneAddingSeizableCollateral_2 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterOneAddingSeizableCollateral_2 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterOneAddingSeizableCollateral_2 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterOneAddingSeizableCollateral_2 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterOneAddingSeizableCollateral_2 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingSeizableCollateral_2 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterOneAddingSeizableCollateral_2.toNumber()).to.equal(refundableValue + seizableValue) // should go back to original collateral amount since more than 4 hours has passed
         expect(CDIValueAfterOneAddingSeizableCollateral_2.toNumber()).to.equal(5)
@@ -1218,9 +1226,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, seizeRequestIDOneConf, seizableInputIndex_3, seizableOutputIndex_3)
         expect(fillSeizeRequest_3_OneConfSuccess).to.equal(true)
 
-        const collateralValueAfterOneAddingSeizableCollateral_3 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterOneAddingSeizableCollateral_3 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterOneAddingSeizableCollateral_3 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterOneAddingSeizableCollateral_3 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterOneAddingSeizableCollateral_3 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingSeizableCollateral_3 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterOneAddingSeizableCollateral_3.toNumber()).to.equal(refundableValue + seizableValue)
         expect(CDIValueAfterOneAddingSeizableCollateral_3.toNumber()).to.equal(6)
@@ -1235,9 +1243,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, seizeRequestIDSixConf, seizableInputIndex_3, seizableOutputIndex_3)
         expect(fillSeizeRequest_3_SixConfSuccess).to.equal(true)
 
-        const collateralValueAfterSixAddingSeizableCollateral_3 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterSixAddingSeizableCollateral_3 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterSixAddingSeizableCollateral_3 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterSixAddingSeizableCollateral_3 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterSixAddingSeizableCollateral_3 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingSeizableCollateral_3 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterSixAddingSeizableCollateral_3.toNumber()).to.equal(collateralValueAfterOneAddingSeizableCollateral_3.toNumber() + seizableValue)
         expect(CDIValueAfterSixAddingSeizableCollateral_3.toNumber()).to.equal(6)
@@ -1248,9 +1256,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, seizeRequestIDSixConf, seizableInputIndex_2, seizableOutputIndex_2)
         expect(fillSeizeRequest_2_SixConfSuccess).to.equal(true)
 
-        const collateralValueAfterSixAddingSeizableCollateral_2 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterSixAddingSeizableCollateral_2 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterSixAddingSeizableCollateral_2 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterSixAddingSeizableCollateral_2 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterSixAddingSeizableCollateral_2 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingSeizableCollateral_2 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterSixAddingSeizableCollateral_2.toNumber()).to.equal(collateralValueAfterSixAddingSeizableCollateral_3.toNumber() + seizableValue)
         expect(CDIValueAfterSixAddingSeizableCollateral_2.toNumber()).to.equal(6)
@@ -1261,9 +1269,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, seizeRequestIDSixConf, seizableInputIndex_1, seizableOutputIndex_1)
         expect(fillSeizeRequest_1_SixConfSuccess).to.equal(true)
 
-        const collateralValueAfterSixAddingSeizableCollateral_1 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterSixAddingSeizableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterSixAddingSeizableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterSixAddingSeizableCollateral_1 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterSixAddingSeizableCollateral_1 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingSeizableCollateral_1 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterSixAddingSeizableCollateral_1.toNumber()).to.equal(collateralValueAfterSixAddingSeizableCollateral_2.toNumber() + seizableValue)
         expect(CDIValueAfterSixAddingSeizableCollateral_1.toNumber()).to.equal(6)
@@ -1274,9 +1282,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_3_TxHashForProof, lockMoreCollateral_3_Vin, lockMoreCollateral_3_Vout, refundRequestIDSixConf, refundableInputIndex_3, refundableOutputIndex_3)
         expect(fillRefundRequest_3_SixConfSuccess).to.equal(true)
 
-        const collateralValueAfterSixAddingRefundableCollateral_3 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterSixAddingRefundableCollateral_3 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterSixAddingRefundableCollateral_3 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterSixAddingRefundableCollateral_3 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterSixAddingRefundableCollateral_3 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingRefundableCollateral_3 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterSixAddingRefundableCollateral_3.toNumber()).to.equal(collateralValueAfterSixAddingSeizableCollateral_1.toNumber() + refundableValue)
         expect(CDIValueAfterSixAddingRefundableCollateral_3.toNumber()).to.equal(6)
@@ -1287,9 +1295,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_2_TxHashForProof, lockMoreCollateral_2_Vin, lockMoreCollateral_2_Vout, refundRequestIDSixConf, refundableInputIndex_2, refundableOutputIndex_2)
         expect(fillRefundRequest_2_SixConfSuccess).to.equal(true)
 
-        const collateralValueAfterSixAddingRefundableCollateral_2 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterSixAddingRefundableCollateral_2 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterSixAddingRefundableCollateral_2 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterSixAddingRefundableCollateral_2 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterSixAddingRefundableCollateral_2 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingRefundableCollateral_2 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterSixAddingRefundableCollateral_2.toNumber()).to.equal(collateralValueAfterSixAddingRefundableCollateral_3.toNumber() + refundableValue)
         expect(CDIValueAfterSixAddingRefundableCollateral_2.toNumber()).to.equal(6)
@@ -1300,9 +1308,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_1_TxHashForProof, lockMoreCollateral_1_Vin, lockMoreCollateral_1_Vout, refundRequestIDSixConf, refundableInputIndex_1, refundableOutputIndex_1)
         expect(fillRefundRequest_1_SixConfSuccess).to.equal(true)
 
-        const collateralValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterSixAddingRefundableCollateral_1 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterSixAddingRefundableCollateral_1 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingRefundableCollateral_1 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(collateralValueAfterSixAddingRefundableCollateral_2.toNumber() + refundableValue)
         expect(CDIValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(6)
@@ -1315,9 +1323,9 @@ stablecoins.forEach((stablecoin) => {
         await this.onDemandSpv.fillRequest(lockMoreCollateral_4_TxHashForProof, lockMoreCollateral_4_Vin, lockMoreCollateral_4_Vout, refundRequestIDOneConf, refundableInputIndex_4, refundableOutputIndex_4)
         expect(fillRefundRequest_4_OneConfSuccess).to.equal(true)
 
-        const collateralValueAfterOneAddingRefundableCollateral_4 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterOneAddingRefundableCollateral_4 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterOneAddingRefundableCollateral_4 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const collateralValueAfterOneAddingRefundableCollateral_4 = await this.collateral.collateral.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_4 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_4 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterOneAddingRefundableCollateral_4.toNumber()).to.equal(collateralValueAfterSixAddingRefundableCollateral_1.toNumber() + refundableValue)
         expect(CDIValueAfterOneAddingRefundableCollateral_4.toNumber()).to.equal(7)
@@ -1336,7 +1344,7 @@ stablecoins.forEach((stablecoin) => {
       it('should correctly update state if 6 conf proof comes before 1 conf proof', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1378,8 +1386,8 @@ stablecoins.forEach((stablecoin) => {
         expect(fillRefundRequest_1_SixConfSuccess).to.equal(true)
 
         const collateralValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterSixAddingRefundableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const CDIValueAfterSixAddingRefundableCollateral_1 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterSixAddingRefundableCollateral_1 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(collateralValueBeforeSixAddingRefundableCollateral_1.toNumber() + refundableValue)
         expect(CDIValueAfterSixAddingRefundableCollateral_1.toNumber()).to.equal(1)
@@ -1391,8 +1399,8 @@ stablecoins.forEach((stablecoin) => {
         expect(fillRefundRequest_1_OneConfSuccess).to.equal(true)
 
         const collateralValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateral.call(this.loan)
-        const CDIValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateralDepositIndex.call(this.loan)
-        const CDFIValueAfterOneAddingRefundableCollateral_1 = await this.loans.collateralDepositFinalizedIndex.call(this.loan)
+        const CDIValueAfterOneAddingRefundableCollateral_1 = await this.collateral.collateralDepositIndex.call(this.loan)
+        const CDFIValueAfterOneAddingRefundableCollateral_1 = await this.collateral.collateralDepositFinalizedIndex.call(this.loan)
 
         expect(collateralValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(collateralValueAfterSixAddingRefundableCollateral_1.toNumber())
         expect(CDIValueAfterOneAddingRefundableCollateral_1.toNumber()).to.equal(1)
@@ -1406,7 +1414,7 @@ stablecoins.forEach((stablecoin) => {
 
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1515,7 +1523,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail adding seizable collateral', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1568,7 +1576,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail adding refundable collateral', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1623,7 +1631,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail adding refundable collateral that is slightly above 1%, after seizable collateral has been added with 6 confirmations', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1716,7 +1724,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail adding refundable collateral that is slightly above 1%, after seizable collateral has been added with only 1 confirmation', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1801,7 +1809,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail adding collateral if vout does not correspond to correct p2wsh', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1846,7 +1854,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail adding collateral if onDemandSpv service address is incorrect', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1870,14 +1878,14 @@ stablecoins.forEach((stablecoin) => {
         const outputIndex = lockSeizableP2WSHVout.n
 
         // SPV FILL REQUEST SEIZABLE COLLATERAL ONE CONFIRMATION
-        await expectRevert(this.loans.spv(lockSeizableTxHashForProof, lockSeizableVin, lockSeizableVout, seizeRequestIDOneConf, inputIndex, outputIndex), 'VM Exception while processing transaction: revert') // Use refundRequestIDOneConf instead of seizeRequestIDOneConf
+        await expectRevert(this.collateral.spv(lockSeizableTxHashForProof, lockSeizableVin, lockSeizableVout, seizeRequestIDOneConf, inputIndex, outputIndex), 'VM Exception while processing transaction: revert') // Use refundRequestIDOneConf instead of seizeRequestIDOneConf
 
         const collateralValueAfterOneAddingCollateral = await this.loans.collateral.call(this.loan)
 
         await bitcoin.client.chain.generateBlock(5)
 
         // SPV FILL REQUEST SEIZABLE COLLATERAL SIX CONFIRMATIONS
-        await expectRevert(this.loans.spv(lockSeizableTxHashForProof, lockSeizableVin, lockSeizableVout, seizeRequestIDSixConf, inputIndex, outputIndex), 'VM Exception while processing transaction: revert') // Use refundRequestIDOneConf instead of seizeRequestIDOneConf
+        await expectRevert(this.collateral.spv(lockSeizableTxHashForProof, lockSeizableVin, lockSeizableVout, seizeRequestIDSixConf, inputIndex, outputIndex), 'VM Exception while processing transaction: revert') // Use refundRequestIDOneConf instead of seizeRequestIDOneConf
 
         const collateralValueAfterSixAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1891,7 +1899,7 @@ stablecoins.forEach((stablecoin) => {
       it('should be 1% of collateral value', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValue = Math.ceil(colParams.values.seizableValue + colParams.values.refundableValue)
         const refundRequestOneConfPaysValue = (await this.onDemandSpv.getRequest.call(refundRequestIDOneConf)).paysValue
@@ -1918,7 +1926,7 @@ stablecoins.forEach((stablecoin) => {
       it('should return the refundable + seizable when minSeizableCollateral is not satisfied', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -1963,7 +1971,7 @@ stablecoins.forEach((stablecoin) => {
       it('should return the refundable + seizable when temporaryCollateral expiration is past the 4 hour expiry date', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -2003,7 +2011,7 @@ stablecoins.forEach((stablecoin) => {
       it('should return the refundable + seizable + temporary refundable + temporary seizable when adding collateral in queue while satisfying both minSeizableCollateral and temporaryCollateral expiration', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -2067,7 +2075,7 @@ stablecoins.forEach((stablecoin) => {
       it('should succeed if below minimum collateralization ratio and refundable collateral added does not satisfy the minSeizableCollateral', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
@@ -2120,7 +2128,7 @@ stablecoins.forEach((stablecoin) => {
       it('should fail if now is less than added temporary collateral expiration, minimum collateralization ratio is satisfied as well as minSeizableCollateral', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
 
-        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.loans, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
+        const { refundRequestIDOneConf, refundRequestIDSixConf, seizeRequestIDOneConf, seizeRequestIDSixConf } = await getLoanSpvRequests(this.collateral, this.onDemandSpv, this.loan) // Get loan spv requests associated with loan
 
         const collateralValueBeforeAddingCollateral = await this.loans.collateral.call(this.loan)
 
