@@ -1121,8 +1121,6 @@ stablecoins.forEach((stablecoin) => {
         const taken = await this.sales.accepted.call(this.sale)
         assert.equal(taken, true)
       })
-
-      // TODO: liquidate when it\'s a non-custom loan fund
     })
 
     describe('default', function() {

@@ -16,7 +16,7 @@ contract Collateral is DSMath {
     uint256 public constant ADD_COLLATERAL_EXPIRY = 4 hours;
 
     mapping (bytes32 => CollateralDetails)   public collaterals;
-    mapping (bytes32 => LoanRequests)        public loanRequests;        // TODO rename to loan spv requests?
+    mapping (bytes32 => LoanRequests)        public loanRequests;
     mapping (uint256 => RequestDetails)      public requestsDetails;
     mapping (uint256 => uint256)             public finalRequestToInitialRequest;
 

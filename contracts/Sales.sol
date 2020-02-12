@@ -17,13 +17,13 @@ contract Sales is DSMath {
     uint256 public constant MAX_NUM_LIQUIDATIONS = 3; // Maximum number of liquidations that can occur
     uint256 public constant MAX_UINT_256 = 2**256-1;
 
-	address public deployer; // Only the Loans contract can edit data
+    address public deployer; // Only the Loans contract can edit data
 
-	mapping (bytes32 => Sale)       public sales;        // Auctions
-	mapping (bytes32 => Sig)        public borrowerSigs; // Borrower Signatures
-	mapping (bytes32 => Sig)        public lenderSigs;   // Lender Signatures
-	mapping (bytes32 => Sig)        public arbiterSigs;  // Lender Signatures
-	mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
+    mapping (bytes32 => Sale)       public sales;        // Auctions
+    mapping (bytes32 => Sig)        public borrowerSigs; // Borrower Signatures
+    mapping (bytes32 => Sig)        public lenderSigs;   // Lender Signatures
+    mapping (bytes32 => Sig)        public arbiterSigs;  // Lender Signatures
+    mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
     uint256                         public saleIndex;    // Auction Index
 
     mapping (bytes32 => bytes32[])  public saleIndexByLoan; // Loan Auctions (find by loanIndex)
@@ -44,7 +44,7 @@ contract Sales is DSMath {
      * @member pubKeyHash The Bitcoin Public Key Hash of the liquidator
      * @member set Indicates that the sale at this specific index has been opened
      * @member accepted Indicates that the discountBuy has been accepted
-     * @member off Indicates that the is failed
+     * @member off Indicates that the Sale is failed
      */
     struct Sale {
         bytes32    loanIndex;
