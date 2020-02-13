@@ -33,7 +33,7 @@ const { toWei, fromWei, hexToNumberString } = web3.utils;
 const BTC_TO_SAT = 10**8
 const YEAR_IN_SECONDS = BigNumber(31536000)
 
-const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
+const stablecoins = [ { name: 'SAI', unit: 'ether' } ]
 
 async function getContracts(stablecoin) {
   if (stablecoin == 'SAI') {
@@ -1409,7 +1409,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('Locking collateral multiple times', function() {
-      it('should allow adding of temporary refundable collateral 100 times without running out of gas', async function() {
+      it('should allow adding of temporary refundable collateral 20 times without running out of gas', async function() {
         this.timeout(9900000);
 
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])
@@ -1427,7 +1427,7 @@ stablecoins.forEach((stablecoin) => {
 
         const lockRefundableTxs = []
 
-        const timesToLockRefundable = 100
+        const timesToLockRefundable = 20
 
         for (let i = 0; i < timesToLockRefundable; i++) {
           const txHash = await bitcoin.client.loan.collateral.lockRefundable(...lockRefundableParams)
