@@ -571,7 +571,7 @@ contract Loans is DSMath {
         require(!off(loan), "Loans.liquidate: Loan must not be inactive");
         require(bools[loan].withdrawn == true, "Loans.liquidate: Loan principal must be withdrawn");
         require(msg.sender != loans[loan].borrower && msg.sender != loans[loan].lender, "Loans.liquidate: Liquidator must be a third-party");
-        require(secretHash != bytes32(0) && pubKeyHash != bytes32(0), "Loans.liquidate: secretHash and pubKeyHash must be non-zero");
+        require(secretHash != bytes32(0) && pubKeyHash != bytes20(0), "Loans.liquidate: secretHash and pubKeyHash must be non-zero");
         if (sales.next(loan) == 0) {
             if (now > loans[loan].loanExpiration) {
                 require(bools[loan].paid == false, "Loans.liquidate: loan must not have already been repaid");

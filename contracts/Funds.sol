@@ -127,6 +127,7 @@ contract Funds is DSMath, ALCompound {
     function setLoans(Loans loans_) public {
         require(msg.sender == deployer, "Funds.setLoans: Only the deployer can perform this");
         require(address(loans) == address(0), "Funds.setLoans: Loans address must be non-zero");
+        require(address(loans_) != address(0), "Funds.setLoans: Loans address must be non-zero");
         loans = loans_;
         require(token.approve(address(loans_), MAX_UINT_256), "Funds.setLoans: Tokens cannot be approved");
     }
@@ -139,6 +140,8 @@ contract Funds is DSMath, ALCompound {
     function setCompound(CTokenInterface cToken_, address comptroller_) public {
         require(msg.sender == deployer, "Funds.setCompound: Only the deployer can enable Compound lending");
         require(!compoundSet, "Funds.setCompound: Compound address has already been set");
+        require(address(cToken_) != address(0), "Funds.setCompound: cToken address must be non-zero");
+        require(comptroller_ != address(0), "Funds.setCompound: comptroller address must be non-zero");
         cToken = cToken_;
         comptroller = comptroller_;
         compoundSet = true;
@@ -773,10 +776,9 @@ contract Funds is DSMath, ALCompound {
         loanIndex = loans.create(
             now + loanDur_,
             [borrower_, lender(fund), funds[fund].arbiter],
-            [amount_,
-                calcInterest(amount_,
-                    interest(fund),
-                    loanDur_),
+            [
+                amount_,
+                calcInterest(amount_, interest(fund), loanDur_),
                 calcInterest(amount_, penalty(fund), loanDur_),
                 calcInterest(amount_, fee(fund), loanDur_),
                 collateral_,
@@ -840,13 +842,13 @@ contract Funds is DSMath, ALCompound {
      * @dev Get the next 4 secret hashes required for loan
      * @param addr Address of Lender or Arbiter
      */
-    function getSecretHashesForLoan(address addr) private returns (bytes32[4] memory) {
-        secretHashIndex[addr] = add(secretHashIndex[addr], 4);
+    function getSecretHashesForLoan(address addr_) private returns (bytes32[4] memory) {
+        secretHashIndex[addr_] = add(secretHashIndex[addr_], 4);
         return [
-            secretHashes[addr][sub(secretHashIndex[addr], 4)],
-            secretHashes[addr][sub(secretHashIndex[addr], 3)],
-            secretHashes[addr][sub(secretHashIndex[addr], 2)],
-            secretHashes[addr][sub(secretHashIndex[addr], 1)]
+            secretHashes[addr_][sub(secretHashIndex[addr_], 4)],
+            secretHashes[addr_][sub(secretHashIndex[addr_], 3)],
+            secretHashes[addr_][sub(secretHashIndex[addr_], 2)],
+            secretHashes[addr_][sub(secretHashIndex[addr_], 1)]
         ];
     }
 }
