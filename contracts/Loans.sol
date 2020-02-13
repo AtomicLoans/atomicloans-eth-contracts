@@ -144,7 +144,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Borrower address of Loan
      */
-    function borrower(bytes32 loan) public view returns (address) {
+    function borrower(bytes32 loan) external view returns (address) {
         return loans[loan].borrower;
     }
 
@@ -153,7 +153,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Lender address of Loan
      */
-    function lender(bytes32 loan) public view returns (address) {
+    function lender(bytes32 loan) external view returns (address) {
         return loans[loan].lender;
     }
 
@@ -162,7 +162,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Arbiter address of Loan
      */
-    function arbiter(bytes32 loan) public view returns (address) {
+    function arbiter(bytes32 loan) external view returns (address) {
         return loans[loan].arbiter;
     }
 
@@ -253,7 +253,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Amount of refundable collateral backing the loan (in sats)
      */
-    function refundableCollateral(bytes32 loan) public view returns (uint256) {
+    function refundableCollateral(bytes32 loan) external view returns (uint256) {
         return col.refundableCollateral(loan);
     }
 
@@ -262,7 +262,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Amount of seizable collateral backing the loan (in sats)
      */
-    function seizableCollateral(bytes32 loan) public view returns (uint256) {
+    function seizableCollateral(bytes32 loan) external view returns (uint256) {
         return col.seizableCollateral(loan);
     }
 
@@ -272,7 +272,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Amount of temporary refundable collateral backing the loan (in sats)
      */
-    function temporaryRefundableCollateral(bytes32 loan) public view returns (uint256) {
+    function temporaryRefundableCollateral(bytes32 loan) external view returns (uint256) {
         return col.temporaryRefundableCollateral(loan);
     }
 
@@ -282,7 +282,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Amount of temporary seizable collateral backing the loan (in sats)
      */
-    function temporarySeizableCollateral(bytes32 loan) public view returns (uint256) {
+    function temporarySeizableCollateral(bytes32 loan) external view returns (uint256) {
         return col.temporarySeizableCollateral(loan);
     }
 
@@ -328,7 +328,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Amount needed to cover a liquidation
      */
-    function owedForLiquidation(bytes32 loan) public view returns (uint256) { // Deductible amount from collateral
+    function owedForLiquidation(bytes32 loan) external view returns (uint256) { // Deductible amount from collateral
         return add(owedForLoan(loan), penalty(loan));
     }
 
@@ -337,7 +337,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Amount owing for a Loan
      */
-    function owing(bytes32 loan) public view returns (uint256) {
+    function owing(bytes32 loan) external view returns (uint256) {
         return sub(owedForLoan(loan), repaid(loan));
     }
 
@@ -346,7 +346,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Bool that indicates whether loan has been funded
      */
-    function funded(bytes32 loan) public view returns (bool) {
+    function funded(bytes32 loan) external view returns (bool) {
         return bools[loan].funded;
     }
 
@@ -355,7 +355,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Bool that indicates whether loan has been approved
      */
-    function approved(bytes32 loan) public view returns (bool) {
+    function approved(bytes32 loan) external view returns (bool) {
         return bools[loan].approved;
     }
 
@@ -364,7 +364,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Bool that indicates whether loan has been withdrawn
      */
-    function withdrawn(bytes32 loan) public view returns (bool) {
+    function withdrawn(bytes32 loan) external view returns (bool) {
         return bools[loan].withdrawn;
     }
 
@@ -382,7 +382,7 @@ contract Loans is DSMath {
      * @param loan The Id of a Loan
      * @return Bool that indicates whether loan has been repaid
      */
-    function paid(bytes32 loan) public view returns (bool) {
+    function paid(bytes32 loan) external view returns (bool) {
         return bools[loan].paid;
     }
 
@@ -418,7 +418,7 @@ contract Loans is DSMath {
      * @param borrower_ Address of the Borrower
      * @return Number of loans originated by Borrower
      */
-    function borrowerLoanCount(address borrower_) public view returns (uint256) {
+    function borrowerLoanCount(address borrower_) external view returns (uint256) {
         return borrowerLoans[borrower_].length;
     }
 
@@ -427,7 +427,7 @@ contract Loans is DSMath {
      * @param lender_ Address of the Lender
      * @return Number of loans originated by Lender
      */
-    function lenderLoanCount(address lender_) public view returns (uint256) {
+    function lenderLoanCount(address lender_) external view returns (uint256) {
         return lenderLoans[lender_].length;
     }
 

@@ -134,7 +134,7 @@ contract Collateral is DSMath {
      * @param loan The Id of a Loan
      * @return Amount of temporary refundable collateral backing the loan (in sats)
      */
-    function temporaryRefundableCollateral(bytes32 loan) public view returns (uint256) {
+    function temporaryRefundableCollateral(bytes32 loan) external view returns (uint256) {
         return temporaryCollaterals[loan].refundableCollateral;
     }
 
@@ -144,7 +144,7 @@ contract Collateral is DSMath {
      * @param loan The Id of a Loan
      * @return Amount of temporary seizable collateral backing the loan (in sats)
      */
-    function temporarySeizableCollateral(bytes32 loan) public view returns (uint256) {
+    function temporarySeizableCollateral(bytes32 loan) external view returns (uint256) {
         return temporaryCollaterals[loan].seizableCollateral;
     }
 

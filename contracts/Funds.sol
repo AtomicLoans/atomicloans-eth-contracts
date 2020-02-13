@@ -136,7 +136,7 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets Loans contract
      * @param loans_ Address of Loans contract
      */
-    function setLoans(Loans loans_) public {
+    function setLoans(Loans loans_) external {
         require(msg.sender == deployer, "Funds.setLoans: Only the deployer can perform this");
         require(address(loans) == address(0), "Funds.setLoans: Loans address has already been set");
         require(address(loans_) != address(0), "Funds.setLoans: Loans address must be non-zero");
@@ -149,7 +149,7 @@ contract Funds is DSMath, ALCompound {
      * @param cToken_ The address of the Compound Token
      * @param comptroller_ The address of the Compound Comptroller
      */
-    function setCompound(CTokenInterface cToken_, address comptroller_) public {
+    function setCompound(CTokenInterface cToken_, address comptroller_) external {
         require(msg.sender == deployer, "Funds.setCompound: Only the deployer can enable Compound lending");
         require(!compoundSet, "Funds.setCompound: Compound address has already been set");
         require(address(cToken_) != address(0), "Funds.setCompound: cToken address must be non-zero");

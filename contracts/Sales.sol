@@ -95,7 +95,7 @@ contract Sales is DSMath {
      * @param sale The Id of a Sale
      * @return Value of the Discount Buy price
      */
-    function discountBuy(bytes32 sale) public view returns (uint256) {
+    function discountBuy(bytes32 sale) external view returns (uint256) {
         return sales[sale].discountBuy;
     }
 
@@ -104,7 +104,7 @@ contract Sales is DSMath {
      * @param sale The Id of a Sale
      * @return Swap Expiration Timestamp
      */
-    function swapExpiration(bytes32 sale) public view returns (uint256) {
+    function swapExpiration(bytes32 sale) external view returns (uint256) {
         return sales[sale].createdAt + SWAP_EXP;
     }
 
