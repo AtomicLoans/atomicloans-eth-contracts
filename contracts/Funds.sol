@@ -126,7 +126,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setLoans(Loans loans_) public {
         require(msg.sender == deployer, "Funds.setLoans: Only the deployer can perform this");
-        require(address(loans) == address(0), "Funds.setLoans: Loans address must be non-zero");
+        require(address(loans) == address(0), "Funds.setLoans: Loans address has already been set");
         require(address(loans_) != address(0), "Funds.setLoans: Loans address must be non-zero");
         loans = loans_;
         require(token.approve(address(loans_), MAX_UINT_256), "Funds.setLoans: Tokens cannot be approved");
