@@ -292,7 +292,7 @@ stablecoins.forEach((stablecoin) => {
 
         const fundParams3 = [
           toSecs({days: 366}),
-          YEAR_IN_SECONDS.times(11).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
+          YEAR_IN_SECONDS.times(20).plus(Math.floor(Date.now() / 1000)).plus(1).toFixed(),
           arbiter
         ]
 

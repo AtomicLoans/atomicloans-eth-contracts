@@ -140,6 +140,9 @@ contract Collateral is DSMath {
 
         require(msg.sender == address(onDemandSpv), "Collateral.spv: Only the onDemandSpv can perform this");
 
+        require(_txid != bytes32(0), "Collateral.spv: txid should be non-zero");
+        require(BytesLib.toBytes32(_vout) != bytes32(0), "Collateral.spv: vout should be non-zero");
+
         bytes memory outputAtIndex = BTCUtils.extractOutputAtIndex(_vout, _outputIndex);
         uint256 amount = uint(BTCUtils.extractValue(outputAtIndex));
 

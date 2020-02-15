@@ -3,6 +3,8 @@ pragma solidity 0.5.10;
 import 'openzeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 
+import {BytesLib} from "@summa-tx/bitcoin-spv-sol/contracts/BytesLib.sol";
+
 import './Loans.sol';
 import './Medianizer.sol';
 import './DSMath.sol';
@@ -182,6 +184,8 @@ contract Sales is DSMath {
     ) external {
         require(sales[sale].set, "Sales.provideSig: Sale must be set");
         require(now < settlementExpiration(sale), "Sales.provideSig: Cannot provide signature after settlement expiration");
+        require(BytesLib.toBytes32(refundableSig) != bytes32(0), "Sales.provideSig: refundableSig must be non-zero");
+        require(BytesLib.toBytes32(seizableSig) != bytes32(0), "Sales.provideSig: seizableSig must be non-zero");
         if (msg.sender == sales[sale].borrower) {
             borrowerSigs[sale].refundableSig = refundableSig;
             borrowerSigs[sale].seizableSig = seizableSig;

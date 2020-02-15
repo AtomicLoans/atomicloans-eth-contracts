@@ -448,6 +448,12 @@ stablecoins.forEach((stablecoin) => {
       await this.funds.request(...loanParams)
     })
 
+    describe('Non-zero spv values', function() {
+      it('should fail if zero values are provided to spv', async function() {
+        await expectRevert(this.collateral.spv(ensure0x(''), ensure0x(''), ensure0x(''), 0, 0, 0), 'VM Exception while processing transaction: revert')
+      })
+    })
+
     describe('Add seizable collateral', function () {
       it('should update collateral value after 1 confirmation', async function() {
         const { colParams, owedForLoan, lockTxHash } = await lockApproveWithdraw(this.loans, this.loan, btcPrice, unit, col, borrower, borSecs[0])

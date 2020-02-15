@@ -161,6 +161,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setUtilizationInterestDivisor(uint256 utilizationInterestDivisor_) external {
         require(msg.sender == deployer, "Funds.setUtilizationInterestDivisor: Only the deployer can perform this");
+        require(utilizationInterestDivisor_ != 0, "Funds.setUtilizationInterestDivisor: utilizationInterestDivisor is zero");
         utilizationInterestDivisor = utilizationInterestDivisor_;
     }
 
@@ -169,6 +170,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setMaxUtilizationDelta(uint256 maxUtilizationDelta_) external {
         require(msg.sender == deployer, "Funds.setMaxUtilizationDelta: Only the deployer can perform this");
+        require(maxUtilizationDelta_ != 0, "Funds.setMaxUtilizationDelta: maxUtilizationDelta is zero");
         maxUtilizationDelta = maxUtilizationDelta_;
     }
 
@@ -177,6 +179,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setGlobalInterestRateNumerator(uint256 globalInterestRateNumerator_) external {
         require(msg.sender == deployer, "Funds.setGlobalInterestRateNumerator: Only the deployer can perform this");
+        require(globalInterestRateNumerator_ != 0, "Funds.setGlobalInterestRateNumerator: globalInterestRateNumerator is zero");
         globalInterestRateNumerator = globalInterestRateNumerator_;
     }
 
@@ -185,6 +188,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setGlobalInterestRate(uint256 globalInterestRate_) external {
         require(msg.sender == deployer, "Funds.setGlobalInterestRate: Only the deployer can perform this");
+        require(globalInterestRate_ != 0, "Funds.setGlobalInterestRate: globalInterestRate is zero");
         globalInterestRate = globalInterestRate_;
     }
 
@@ -193,6 +197,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setMaxInterestRateNumerator(uint256 maxInterestRateNumerator_) external {
         require(msg.sender == deployer, "Funds.setMaxInterestRateNumerator: Only the deployer can perform this");
+        require(maxInterestRateNumerator_ != 0, "Funds.setMaxInterestRateNumerator: maxInterestRateNumerator is zero");
         maxInterestRateNumerator = maxInterestRateNumerator_;
     }
 
@@ -201,6 +206,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setMinInterestRateNumerator(uint256 minInterestRateNumerator_) external {
         require(msg.sender == deployer, "Funds.setMinInterestRateNumerator: Only the deployer can perform this");
+        require(minInterestRateNumerator_ != 0, "Funds.setMinInterestRateNumerator: minInterestRateNumerator is zero");
         minInterestRateNumerator = minInterestRateNumerator_;
     }
 
@@ -209,6 +215,7 @@ contract Funds is DSMath, ALCompound {
      */
     function setInterestUpdateDelay(uint256 interestUpdateDelay_) external {
         require(msg.sender == deployer, "Funds.setInterestUpdateDelay: Only the deployer can perform this");
+        require(interestUpdateDelay_ != 0, "Funds.setInterestUpdateDelay: interestUpdateDelay is zero");
         interestUpdateDelay = interestUpdateDelay_;
     }
 
