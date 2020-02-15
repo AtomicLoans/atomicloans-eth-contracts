@@ -13,6 +13,7 @@ var Funds = artifacts.require('./Funds.sol');
 var Loans = artifacts.require('./Loans.sol');
 var Sales = artifacts.require('./Sales.sol');
 var P2WSH = artifacts.require('./P2WSH.sol');
+var Collateral = artifacts.require('./Collateral.sol');
 var Bytes = artifacts.require('./Bytes.sol');
 
 var SAIInterestRateModel = artifacts.require('./SAIInterestRateModel.sol')
@@ -162,10 +163,13 @@ module.exports = function(deployer, network, accounts) {
     var sales = await Sales.deployed();
     await funds.setLoans(loans.address);
     await loans.setSales(sales.address);
-    await loans.setOnDemandSpv(onDemandSpv.address);
     await deployer.deploy(P2WSH, loans.address);
     var p2wsh = await P2WSH.deployed();
-    await loans.setP2WSH(p2wsh.address);
+    await deployer.deploy(Collateral, loans.address);
+    var collateral = await Collateral.deployed();
+    await collateral.setOnDemandSpv(onDemandSpv.address);
+    await collateral.setP2WSH(p2wsh.address);
+    await loans.setCollateral(collateral.address);
 
     const usdcFunds = await Funds.new(usdc.address, '6')
     await usdcFunds.setCompound(cusdc.address, comptroller.address)
@@ -173,9 +177,11 @@ module.exports = function(deployer, network, accounts) {
     const usdcSales = await Sales.new(usdcLoans.address, usdcFunds.address, medianizer.address, usdc.address)
     await usdcFunds.setLoans(usdcLoans.address)
     await usdcLoans.setSales(usdcSales.address)
-    await usdcLoans.setOnDemandSpv(onDemandSpv.address);
     const usdcP2WSH = await P2WSH.new(usdcLoans.address)
-    await usdcLoans.setP2WSH(usdcP2WSH.address)
+    const usdcCollateral = await Collateral.new(usdcLoans.address)
+    await usdcCollateral.setOnDemandSpv(onDemandSpv.address);
+    await usdcCollateral.setP2WSH(usdcP2WSH.address)
+    await usdcLoans.setCollateral(usdcCollateral.address)
 
     const daiFunds = await Funds.new(dai.address, '18')
     await daiFunds.setCompound(cdai.address, comptroller.address)
@@ -183,9 +189,11 @@ module.exports = function(deployer, network, accounts) {
     const daiSales = await Sales.new(daiLoans.address, daiFunds.address, medianizer.address, dai.address)
     await daiFunds.setLoans(daiLoans.address)
     await daiLoans.setSales(daiSales.address)
-    await daiLoans.setOnDemandSpv(onDemandSpv.address);
     const daiP2WSH = await P2WSH.new(daiLoans.address)
-    await daiLoans.setP2WSH(daiP2WSH.address)
+    const daiCollateral = await Collateral.new(daiLoans.address)
+    await daiCollateral.setOnDemandSpv(onDemandSpv.address);
+    await daiCollateral.setP2WSH(daiP2WSH.address)
+    await daiLoans.setCollateral(daiCollateral.address)
 
     await deployer.deploy(ALCompound, comptroller.address) // LOCAL
 

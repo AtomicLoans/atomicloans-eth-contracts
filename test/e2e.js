@@ -16,6 +16,7 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
+const Collateral = artifacts.require("./Collateral.sol")
 const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 const P2WSH  = artifacts.require('./P2WSH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
@@ -61,11 +62,16 @@ async function getContracts(stablecoin) {
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
 
-    const p2wsh = await P2WSH.deployed()
+    const p2wsh = await P2WSH.new(loans.address)
+
     const onDemandSpv = await ISPVRequestManager.deployed()
 
-    await loans.setP2WSH(p2wsh.address)
-    await loans.setOnDemandSpv(onDemandSpv.address)
+    const collateral = await Collateral.new(loans.address)
+
+    await collateral.setP2WSH(p2wsh.address)
+    await collateral.setOnDemandSpv(onDemandSpv.address)
+
+    await loans.setCollateral(collateral.address)
 
     return { funds, loans, sales, token, med }
   }

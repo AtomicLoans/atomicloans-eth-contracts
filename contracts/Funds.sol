@@ -22,7 +22,7 @@ contract Funds is DSMath, ALCompound {
     mapping (address => uint256)   public secretHashIndex; // User secret hash index
 
     mapping (address => bytes)     public pubKeys;  // User A Coin PubKeys
-    
+
     mapping (bytes32 => Fund)      public funds;
     mapping (address => bytes32)   public fundOwner;
     mapping (bytes32 => Bools)     public bools;
@@ -64,8 +64,6 @@ contract Funds is DSMath, ALCompound {
      * @member arbiter Optional address of Automator Arbiter
      * @member balance Amount of non-borrowed tokens in Loan Fund
      * @member cBalance Amount of non-borrowed cTokens in Loan Fund
-     * @member custom Indicator that this Loan Fund is custom and does not use global settings
-     * @member compoundEnabled Indicator that this Loan Fund lends non-borrowed tokens on Compound
      */
     struct Fund {
         address  lender;
@@ -83,6 +81,11 @@ contract Funds is DSMath, ALCompound {
         uint256  cBalance;
     }
 
+    /**
+     * @notice Container for Loan Fund boolean configurations
+     * @member custom Indicator that this Loan Fund is custom and does not use global settings
+     * @member compoundEnabled Indicator that this Loan Fund lends non-borrowed tokens on Compound
+     */
     struct Bools {
         bool     custom;
         bool     compoundEnabled;
@@ -94,22 +97,20 @@ contract Funds is DSMath, ALCompound {
         ERC20   token_,
         uint256 decimals_
     ) public {
+        require(address(token_) != address(0), "Funds.constructor: Token address must be non-zero");
+        require(decimals_ != 0, "Funds.constructor: Decimals must be non-zero");
+
         deployer = msg.sender;
         token = token_;
         decimals = decimals_;
         utilizationInterestDivisor = 10531702972595856680093239305; // 10.53 in RAY (~10:1 ratio for % change in utilization ratio to % change in interest rate)
         maxUtilizationDelta = 95310179948351216961192521; // Global Interest Rate Numerator can change up to 9.53% in RAY (~10% change in utilization ratio = ~1% change in interest rate)
-        globalInterestRateNumerator =  95310179948351216961192521; // ~10%  ( (e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) )
-        maxInterestRateNumerator    = 182321557320989604265864303; // ~20%  ( (e^(ln(1.200)/(60*60*24*365)) - 1) * (60*60*24*365) )
-        minInterestRateNumerator    =  24692612600038629323181834; // ~2.5% ( (e^(ln(1.025)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        globalInterestRateNumerator = 95310179948351216961192521; // ~10%  ( (e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        maxInterestRateNumerator = 182321557320989604265864303; // ~20%  ( (e^(ln(1.200)/(60*60*24*365)) - 1) * (60*60*24*365) )
+        minInterestRateNumerator = 24692612600038629323181834; // ~2.5% ( (e^(ln(1.025)/(60*60*24*365)) - 1) * (60*60*24*365) )
         interestUpdateDelay = 86400; // 1 DAY
         defaultArbiterFee = 1000000000236936036262880196; // 0.75% (0.75 in RAY) optional arbiter fee ((1.000000000236936036262880196) ^ (60 *  60 * 24 * 365)) - 1 = ~0.0075
         globalInterestRate = add(RAY, div(globalInterestRateNumerator, NUM_SECONDS_IN_YEAR)); // Interest rate per second
-
-        // utilizationInterestDivisor calculation (this is aiming for utilizationInterestDivisor to allow max change from 10% APR to be 11% APR despite using compound interest)
-        // 1 + (globalInterestRateNumerator + (maxUtilizationDelta * RAY) / utilizationInterestDivisor) / NUM_SECONDS_IN_YEAR = 11% interest per second
-        // utilizationInterestDivisor = (maxUtilizationDelta * RAY) / ( (11% interest per second - 1)(NUM_SECONDS_IN_YEAR) - globalInterestRateNumerator )
-        // utilizationInterestDivisor = ((e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365) * (10^27)) / ( (( e^(ln(1.110)/(60*60*24*365)) -1 ) * ( 60*60*24*365 )) - ((e^(ln(1.100)/(60*60*24*365)) - 1) * (60*60*24*365)))
     }
 
     // NOTE: THE FOLLOWING FUNCTIONS CAN ONLY BE CALLED BY THE DEPLOYER OF THE
@@ -124,10 +125,11 @@ contract Funds is DSMath, ALCompound {
      * @param loans_ Address of Loans contract
      */
     function setLoans(Loans loans_) public {
-        require(msg.sender == deployer);
-        require(address(loans) == address(0));
+        require(msg.sender == deployer, "Funds.setLoans: Only the deployer can perform this");
+        require(address(loans) == address(0), "Funds.setLoans: Loans address has already been set");
+        require(address(loans_) != address(0), "Funds.setLoans: Loans address must be non-zero");
         loans = loans_;
-        require(token.approve(address(loans_), MAX_UINT_256));
+        require(token.approve(address(loans_), MAX_UINT_256), "Funds.setLoans: Tokens cannot be approved");
     }
 
     /**
@@ -136,19 +138,21 @@ contract Funds is DSMath, ALCompound {
      * @param comptroller_ The address of the Compound Comptroller
      */
     function setCompound(CTokenInterface cToken_, address comptroller_) public {
-        require(msg.sender == deployer);
-        require(!compoundSet);
+        require(msg.sender == deployer, "Funds.setCompound: Only the deployer can enable Compound lending");
+        require(!compoundSet, "Funds.setCompound: Compound address has already been set");
+        require(address(cToken_) != address(0), "Funds.setCompound: cToken address must be non-zero");
+        require(comptroller_ != address(0), "Funds.setCompound: comptroller address must be non-zero");
         cToken = cToken_;
         comptroller = comptroller_;
         compoundSet = true;
     }
     // ======================================================================
 
-    // NOTE: THE FOLLOWING FUNCTIONS ALLOW VARIABLES TO BE MODIFIED BY THE 
-    //       DEPLOYER, SINCE THE ALGORITHM FOR CALCULATING GLOBAL INTEREST 
+    // NOTE: THE FOLLOWING FUNCTIONS ALLOW VARIABLES TO BE MODIFIED BY THE
+    //       DEPLOYER, SINCE THE ALGORITHM FOR CALCULATING GLOBAL INTEREST
     //       RATE IS UNTESTED WITH A DECENTRALIZED PROTOCOL, AND MAY NEED TO
-    //       BE UPDATED IN THE CASE THAT RATES DO NOT UPDATE AS INTENDED. A 
-    //       FUTURE ITERATION OF THE PROTOCOL WILL REMOVE THESE FUNCTIONS. IF 
+    //       BE UPDATED IN THE CASE THAT RATES DO NOT UPDATE AS INTENDED. A
+    //       FUTURE ITERATION OF THE PROTOCOL WILL REMOVE THESE FUNCTIONS. IF
     //       YOU WISH TO OPT OUT OF GLOBAL APR YOU CAN CREATE A CUSTOM LOAN FUND
     // ======================================================================
 
@@ -156,7 +160,8 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets the Utilization Interest Divisor
      */
     function setUtilizationInterestDivisor(uint256 utilizationInterestDivisor_) external {
-        require(msg.sender == deployer);
+        require(msg.sender == deployer, "Funds.setUtilizationInterestDivisor: Only the deployer can perform this");
+        require(utilizationInterestDivisor_ != 0, "Funds.setUtilizationInterestDivisor: utilizationInterestDivisor is zero");
         utilizationInterestDivisor = utilizationInterestDivisor_;
     }
 
@@ -164,7 +169,8 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets the Max Utilization Delta
      */
     function setMaxUtilizationDelta(uint256 maxUtilizationDelta_) external {
-        require(msg.sender == deployer);
+        require(msg.sender == deployer, "Funds.setMaxUtilizationDelta: Only the deployer can perform this");
+        require(maxUtilizationDelta_ != 0, "Funds.setMaxUtilizationDelta: maxUtilizationDelta is zero");
         maxUtilizationDelta = maxUtilizationDelta_;
     }
 
@@ -172,7 +178,8 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets the Global Interest Rate Numerator
      */
     function setGlobalInterestRateNumerator(uint256 globalInterestRateNumerator_) external {
-        require(msg.sender == deployer);
+        require(msg.sender == deployer, "Funds.setGlobalInterestRateNumerator: Only the deployer can perform this");
+        require(globalInterestRateNumerator_ != 0, "Funds.setGlobalInterestRateNumerator: globalInterestRateNumerator is zero");
         globalInterestRateNumerator = globalInterestRateNumerator_;
     }
 
@@ -180,7 +187,8 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets the Global Interest Rate
      */
     function setGlobalInterestRate(uint256 globalInterestRate_) external {
-        require(msg.sender == deployer);
+        require(msg.sender == deployer, "Funds.setGlobalInterestRate: Only the deployer can perform this");
+        require(globalInterestRate_ != 0, "Funds.setGlobalInterestRate: globalInterestRate is zero");
         globalInterestRate = globalInterestRate_;
     }
 
@@ -188,7 +196,8 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets the Maximum Interest Rate Numerator
      */
     function setMaxInterestRateNumerator(uint256 maxInterestRateNumerator_) external {
-        require(msg.sender == deployer);
+        require(msg.sender == deployer, "Funds.setMaxInterestRateNumerator: Only the deployer can perform this");
+        require(maxInterestRateNumerator_ != 0, "Funds.setMaxInterestRateNumerator: maxInterestRateNumerator is zero");
         maxInterestRateNumerator = maxInterestRateNumerator_;
     }
 
@@ -196,7 +205,8 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets the Minimum Interest Rate Numerator
      */
     function setMinInterestRateNumerator(uint256 minInterestRateNumerator_) external {
-        require(msg.sender == deployer);
+        require(msg.sender == deployer, "Funds.setMinInterestRateNumerator: Only the deployer can perform this");
+        require(minInterestRateNumerator_ != 0, "Funds.setMinInterestRateNumerator: minInterestRateNumerator is zero");
         minInterestRateNumerator = minInterestRateNumerator_;
     }
 
@@ -204,7 +214,8 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets the Interest Update Delay
      */
     function setInterestUpdateDelay(uint256 interestUpdateDelay_) external {
-        require(msg.sender == deployer);
+        require(msg.sender == deployer, "Funds.setInterestUpdateDelay: Only the deployer can perform this");
+        require(interestUpdateDelay_ != 0, "Funds.setInterestUpdateDelay: interestUpdateDelay is zero");
         interestUpdateDelay = interestUpdateDelay_;
     }
 
@@ -212,8 +223,8 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets the Default Arbiter Fee
      */
     function setDefaultArbiterFee(uint256 defaultArbiterFee_) external {
-        require(msg.sender == deployer);
-        require(defaultArbiterFee_ <= 1000000000315522921573372069); // ~1% ((1.000000000315522921573372069) ^ (60 *  60 * 24 * 365)) - 1 = ~0.01
+        require(msg.sender == deployer, "Funds.setDefaultArbiterFee: Only the deployer can perform this");
+        require(defaultArbiterFee_ <= 1000000000315522921573372069, "Funds.setDefaultArbiterFee: defaultArbiterFee cannot be less than -1%"); // ~1% ((1.000000000315522921573372069) ^ (60 *  60 * 24 * 365)) - 1 = ~0.01
         defaultArbiterFee = defaultArbiterFee_;
     }
     // ======================================================================
@@ -233,8 +244,8 @@ contract Funds is DSMath, ALCompound {
      * @return The minimum amount of tokens that can be requested from a Loan Fund
      */
     function minLoanAmt(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].minLoanAmt; }
-        else                    { return div(DEFAULT_MIN_LOAN_AMT, (10 ** sub(18, decimals))); }
+        if (bools[fund].custom) {return funds[fund].minLoanAmt;}
+        else                    {return div(DEFAULT_MIN_LOAN_AMT, (10 ** sub(18, decimals)));}
     }
 
     /**
@@ -243,8 +254,8 @@ contract Funds is DSMath, ALCompound {
      * @return The maximum amount of tokens that can be requested from a Loan Fund
      */
     function maxLoanAmt(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].maxLoanAmt; }
-        else                    { return DEFAULT_MAX_LOAN_AMT; }
+        if (bools[fund].custom) {return funds[fund].maxLoanAmt;}
+        else                    {return DEFAULT_MAX_LOAN_AMT;}
     }
 
     /**
@@ -253,8 +264,8 @@ contract Funds is DSMath, ALCompound {
      * @return The minimum duration loan that can be requested from a Loan Fund
      */
     function minLoanDur(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].minLoanDur; }
-        else                    { return DEFAULT_MIN_LOAN_DUR; }
+        if (bools[fund].custom) {return funds[fund].minLoanDur;}
+        else                    {return DEFAULT_MIN_LOAN_DUR;}
     }
 
     /**
@@ -281,8 +292,8 @@ contract Funds is DSMath, ALCompound {
      * @return The interest rate per second for a Loan Fund in RAY per second
      */
     function interest(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].interest; }
-        else                    { return globalInterestRate; }
+        if (bools[fund].custom) {return funds[fund].interest;}
+        else                    {return globalInterestRate;}
     }
 
     /**
@@ -291,8 +302,8 @@ contract Funds is DSMath, ALCompound {
      * @return The liquidation penalty rate per second for a Loan Fund in RAY per second
      */
     function penalty(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].penalty; }
-        else                    { return DEFAULT_LIQUIDATION_PENALTY; }
+        if (bools[fund].custom) {return funds[fund].penalty;}
+        else                    {return DEFAULT_LIQUIDATION_PENALTY;}
     }
 
     /**
@@ -301,8 +312,8 @@ contract Funds is DSMath, ALCompound {
      * @return The optional automation fee rate of Loan Fund in RAY per second
      */
     function fee(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].fee; }
-        else                    { return defaultArbiterFee; }
+        if (bools[fund].custom) {return funds[fund].fee;}
+        else                    {return defaultArbiterFee;}
     }
 
     /**
@@ -311,8 +322,8 @@ contract Funds is DSMath, ALCompound {
      * @return The liquidation ratio of Loan Fund in RAY
      */
     function liquidationRatio(bytes32 fund) public view returns (uint256) {
-        if (bools[fund].custom) { return funds[fund].liquidationRatio; }
-        else                    { return DEFAULT_LIQUIDATION_RATIO; }
+        if (bools[fund].custom) {return funds[fund].liquidationRatio;}
+        else                    {return DEFAULT_LIQUIDATION_RATIO;}
     }
 
     /**
@@ -380,24 +391,27 @@ contract Funds is DSMath, ALCompound {
         address  arbiter_,
         bool     compoundEnabled_,
         uint256  amount_
-    ) external returns (bytes32 fund) { 
+    ) external returns (bytes32 fund) {
         // #IF TESTING
-        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Exception for deployer during testing
+        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer, "Funds.create: Only one loan fund allowed per address");
         // #ELSE:
-        // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
+        // require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
-        if (!compoundSet) { require(compoundEnabled_ == false); }
+        require(
+            ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH,
+            "Funds.create: fundExpiry and maxLoanDur cannot exceed 10 years"
+        ); // Make sure someone can't request a loan for longer than 10 years
+        if (!compoundSet) {require(compoundEnabled_ == false, "Funds.create: Cannot enable Compound as it has not been configured");}
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
-        funds[fund].lender           = msg.sender;
-        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_, false);
-        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_, true);
-        funds[fund].arbiter          = arbiter_;
-        bools[fund].custom           = false;
-        bools[fund].compoundEnabled  = compoundEnabled_;
-        fundOwner[msg.sender]        = bytes32(fundIndex);
-        if (amount_ > 0) { deposit(fund, amount_); }
+        funds[fund].lender = msg.sender;
+        funds[fund].maxLoanDur = ensureNotZero(maxLoanDur_, false);
+        funds[fund].fundExpiry = ensureNotZero(fundExpiry_, true);
+        funds[fund].arbiter = arbiter_;
+        bools[fund].custom = false;
+        bools[fund].compoundEnabled = compoundEnabled_;
+        fundOwner[msg.sender] = bytes32(fundIndex);
+        if (amount_ > 0) {deposit(fund, amount_);}
 
         emit Create(fund);
     }
@@ -431,29 +445,35 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) {
         // #IF TESTING
-        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer); // Exception for deployer during testing
+        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer, "Funds.create: Only one loan fund allowed per address"); // Exception for deployer during testing
         // #ELSE:
-        // require(funds[fundOwner[msg.sender]].lender != msg.sender); // Only allow one loan fund per address
+        // require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
         // #ENDIF
-        require(ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
-        if (!compoundSet) { require(compoundEnabled_ == false); }
+        require(
+            ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH,
+            "Funds.createCustom: fundExpiry and maxLoanDur cannot exceed 10 years"
+        ); // Make sure someone can't request a loan for longer than 10 years
+        require(maxLoanAmt_ >= minLoanAmt_, "Funds.createCustom: maxLoanAmt must be greater than or equal to minLoanAmt");
+        require(ensureNotZero(maxLoanDur_, false) >= minLoanDur_, "Funds.createCustom: maxLoanDur must be greater than or equal to minLoanDur");
+
+        if (!compoundSet) {require(compoundEnabled_ == false, "Funds.createCustom: Cannot enable Compound as it has not been configured");}
         fundIndex = add(fundIndex, 1);
         fund = bytes32(fundIndex);
-        funds[fund].lender           = msg.sender;
-        funds[fund].minLoanAmt       = minLoanAmt_;
-        funds[fund].maxLoanAmt       = maxLoanAmt_;
-        funds[fund].minLoanDur       = minLoanDur_;
-        funds[fund].maxLoanDur       = ensureNotZero(maxLoanDur_, false);
-        funds[fund].fundExpiry       = ensureNotZero(fundExpiry_, true);
-        funds[fund].interest         = interest_;
-        funds[fund].penalty          = penalty_;
-        funds[fund].fee              = fee_;
+        funds[fund].lender = msg.sender;
+        funds[fund].minLoanAmt = minLoanAmt_;
+        funds[fund].maxLoanAmt = maxLoanAmt_;
+        funds[fund].minLoanDur = minLoanDur_;
+        funds[fund].maxLoanDur = ensureNotZero(maxLoanDur_, false);
+        funds[fund].fundExpiry = ensureNotZero(fundExpiry_, true);
+        funds[fund].interest = interest_;
+        funds[fund].penalty = penalty_;
+        funds[fund].fee = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
-        funds[fund].arbiter          = arbiter_;
-        bools[fund].custom           = true;
-        bools[fund].compoundEnabled  = compoundEnabled_;
-        fundOwner[msg.sender]         = bytes32(fundIndex);
-        if (amount_ > 0) { deposit(fund, amount_); }
+        funds[fund].arbiter = arbiter_;
+        bools[fund].custom = true;
+        bools[fund].compoundEnabled = compoundEnabled_;
+        fundOwner[msg.sender] = bytes32(fundIndex);
+        if (amount_ > 0) {deposit(fund, amount_);}
 
         emit Create(fund);
     }
@@ -461,22 +481,22 @@ contract Funds is DSMath, ALCompound {
     /**
      * @notice Lenders deposit tokens in Loan Fund
      * @param fund The Id of a Loan Fund
-     * @param amount Amount of tokens to deposit
+     * @param amount_ Amount of tokens to deposit
      *
      *        Note: Anyone can deposit tokens into a Loan Fund
      */
-    function deposit(bytes32 fund, uint256 amount) public {
-        require(token.transferFrom(msg.sender, address(this), amount));
+    function deposit(bytes32 fund, uint256 amount_) public {
+        require(token.transferFrom(msg.sender, address(this), amount_), "Funds.deposit: Failed to transfer tokens");
         if (bools[fund].compoundEnabled) {
-            mintCToken(address(token), address(cToken), amount);
-            uint256 cTokenToAdd = div(mul(amount, WAD), cToken.exchangeRateCurrent());
+            mintCToken(address(token), address(cToken), amount_);
+            uint256 cTokenToAdd = div(mul(amount_, WAD), cToken.exchangeRateCurrent());
             funds[fund].cBalance = add(funds[fund].cBalance, cTokenToAdd);
-            if (!custom(fund)) { cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToAdd); }
+            if (!custom(fund)) {cTokenMarketLiquidity = add(cTokenMarketLiquidity, cTokenToAdd);}
         } else {
-            funds[fund].balance = add(funds[fund].balance, amount);
-            if (!custom(fund)) { tokenMarketLiquidity = add(tokenMarketLiquidity, amount); }
+            funds[fund].balance = add(funds[fund].balance, amount_);
+            if (!custom(fund)) {tokenMarketLiquidity = add(tokenMarketLiquidity, amount_);}
         }
-        if (!custom(fund)) { calcGlobalInterest(); }
+        if (!custom(fund)) {calcGlobalInterest();}
     }
 
     /**
@@ -484,7 +504,7 @@ contract Funds is DSMath, ALCompound {
      * @param fund The Id of a Loan Fund
      * @param maxLoanDur_ Maximum length of loan that can be requested from Loan Fund in seconds
      * @param fundExpiry_ Timestamp when all funds should be removable from Loan Fund
-     * @param arbiter_ The address of the arbiter for a Loan fund
+     * @param arbiter_ Optional address of the arbiter for a Loan fund
      *
      *        Note: msg.sender must be the lender of the Loan Fund
      */
@@ -494,11 +514,14 @@ contract Funds is DSMath, ALCompound {
         uint256  fundExpiry_,
         address  arbiter_
     ) public {
-        require(msg.sender == lender(fund));
-        require(ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH); // Make sure someone can't request a loan for eternity
-        funds[fund].maxLoanDur       = maxLoanDur_;
-        funds[fund].fundExpiry       = fundExpiry_;
-        funds[fund].arbiter          = arbiter_;
+        require(msg.sender == lender(fund), "Funds.update: Only the lender can update the fund");
+        require(
+            ensureNotZero(maxLoanDur_, false) <= MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) <= now + MAX_LOAN_LENGTH,
+            "Funds.update: fundExpiry and maxLoanDur cannot exceed 10 years"
+        );  // Make sure someone can't request a loan for eternity
+        funds[fund].maxLoanDur = maxLoanDur_;
+        funds[fund].fundExpiry = fundExpiry_;
+        funds[fund].arbiter = arbiter_;
     }
 
     /**
@@ -513,7 +536,7 @@ contract Funds is DSMath, ALCompound {
      * @param penalty_ The liquidation penalty rate per second for a Loan Fund in RAY per second
      * @param fee_ The optional automation fee rate of Loan Fund in RAY per second
      * @param liquidationRatio_ The liquidation ratio of Loan Fund in RAY
-     * @param arbiter_ The address of the arbiter for a Loan fund
+     * @param arbiter_ Optional address of the arbiter for a Loan fund
      *
      *        Note: msg.sender must be the lender of the Loan Fund
      */
@@ -530,14 +553,16 @@ contract Funds is DSMath, ALCompound {
         uint256  liquidationRatio_,
         address  arbiter_
     ) external {
-        require(bools[fund].custom);
+        require(bools[fund].custom, "Funds.updateCustom: Fund must be a custom fund");
+        require(maxLoanAmt_ >= minLoanAmt_, "Funds.updateCustom: maxLoanAmt must be greater than or equal to minLoanAmt");
+        require(ensureNotZero(maxLoanDur_, false) >= minLoanDur_, "Funds.updateCustom: maxLoanDur must be greater than or equal to minLoanDur");
         update(fund, maxLoanDur_, fundExpiry_, arbiter_);
-        funds[fund].minLoanAmt       = minLoanAmt_;
-        funds[fund].maxLoanAmt       = maxLoanAmt_;
-        funds[fund].minLoanDur       = minLoanDur_;
-        funds[fund].interest         = interest_;
-        funds[fund].penalty          = penalty_;
-        funds[fund].fee              = fee_;
+        funds[fund].minLoanAmt = minLoanAmt_;
+        funds[fund].maxLoanAmt = maxLoanAmt_;
+        funds[fund].minLoanDur = minLoanDur_;
+        funds[fund].interest = interest_;
+        funds[fund].penalty = penalty_;
+        funds[fund].fee = fee_;
         funds[fund].liquidationRatio = liquidationRatio_;
     }
 
@@ -566,12 +591,17 @@ contract Funds is DSMath, ALCompound {
         bytes      calldata pubKeyA_,
         bytes      calldata pubKeyB_
     ) external returns (bytes32 loanIndex) {
-        require(msg.sender == lender(fund));
-        require(amount_    <= balance(fund));
-        require(amount_    >= minLoanAmt(fund));
-        require(amount_    <= maxLoanAmt(fund));
-        require(loanDur_   >= minLoanDur(fund));
-        require(loanDur_   <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund));
+        require(msg.sender == lender(fund), "Funds.request: Only the lender can fulfill a loan request");
+        require(amount_ <= balance(fund), "Funds.request: Insufficient balance");
+        require(amount_ >= minLoanAmt(fund), "Funds.request: Amount requested must be greater than minLoanAmt");
+        require(amount_ <= maxLoanAmt(fund), "Funds.request: Amount requested must be less than maxLoanAmt");
+        require(loanDur_ >= minLoanDur(fund), "Funds.request: Loan duration must be greater than minLoanDur");
+        require(loanDur_ <= sub(fundExpiry(fund), now) && loanDur_ <= maxLoanDur(fund), "Funds.request: Loan duration must be less than maxLoanDur and expiry");
+        require(borrower_ != address(0), "Funds.request: Borrower address must be non-zero");
+        require(secretHashes_[0] != bytes32(0) && secretHashes_[1] != bytes32(0), "Funds.request: SecretHash1 & SecretHash2 should be non-zero");
+        require(secretHashes_[2] != bytes32(0) && secretHashes_[3] != bytes32(0), "Funds.request: SecretHash3 & SecretHash4 should be non-zero");
+        require(secretHashes_[4] != bytes32(0) && secretHashes_[5] != bytes32(0), "Funds.request: SecretHash5 & SecretHash6 should be non-zero");
+        require(secretHashes_[6] != bytes32(0) && secretHashes_[7] != bytes32(0), "Funds.request: SecretHash7 & SecretHash8 should be non-zero");
 
         loanIndex = createLoan(fund, borrower_, amount_, collateral_, loanDur_, requestTimestamp_);
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);
@@ -582,35 +612,35 @@ contract Funds is DSMath, ALCompound {
     /**
      * @notice Lenders withdraw tokens in Loan Fund
      * @param fund The Id of a Loan Fund
-     * @param amount Amount of tokens to withdraw
+     * @param amount_ Amount of tokens to withdraw
      */
-    function withdraw(bytes32 fund, uint256 amount) external {
-        withdrawTo(fund, amount, msg.sender);
+    function withdraw(bytes32 fund, uint256 amount_) external {
+        withdrawTo(fund, amount_, msg.sender);
     }
 
     /**
      * @notice Lenders withdraw tokens in Loan Fund
      * @param fund The Id of a Loan Fund
-     * @param amount Amount of tokens to withdraw
-     * @param recipient Address that should receive the funds
+     * @param amount_ Amount of tokens to withdraw
+     * @param recipient_ Address that should receive the funds
      */
-    function withdrawTo(bytes32 fund, uint256 amount, address recipient) public {
-        require(msg.sender     == lender(fund));
-        require(balance(fund)  >= amount);
+    function withdrawTo(bytes32 fund, uint256 amount_, address recipient_) public {
+        require(msg.sender == lender(fund), "Funds.withdrawTo: Only the lender can withdraw tokens");
+        require(balance(fund) >= amount_, "Funds.withdrawTo: Insufficient balance");
         if (bools[fund].compoundEnabled) {
             uint256 cBalanceBefore = cToken.balanceOf(address(this));
-            redeemUnderlying(address(cToken), amount);
+            redeemUnderlying(address(cToken), amount_);
             uint256 cBalanceAfter = cToken.balanceOf(address(this));
             uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
             funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
-            require(token.transfer(recipient, amount));
-            if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
+            require(token.transfer(recipient_, amount_), "Funds.withdrawTo: Token transfer failed");
+            if (!custom(fund)) {cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove);}
         } else {
-            funds[fund].balance = sub(funds[fund].balance, amount);
-            require(token.transfer(recipient, amount));
-            if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount); }
+            funds[fund].balance = sub(funds[fund].balance, amount_);
+            require(token.transfer(recipient_, amount_), "Funds.withdrawTo: Token transfer failed");
+            if (!custom(fund)) {tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_);}
         }
-        if (!custom(fund)) { calcGlobalInterest(); }
+        if (!custom(fund)) {calcGlobalInterest();}
     }
 
     /**
@@ -625,10 +655,10 @@ contract Funds is DSMath, ALCompound {
 
     /**
      * @notice Set Lender or Arbiter Bitcoin Public Key
-     * @param pubKey Bitcoin Public Key
+     * @param pubKey_ Bitcoin Public Key
      */
-    function setPubKey(bytes calldata pubKey) external { // Set PubKey for Fund
-        pubKeys[msg.sender] = pubKey;
+    function setPubKey(bytes calldata pubKey_) external { // Set PubKey for Fund
+        pubKeys[msg.sender] = pubKey_;
     }
 
     /**
@@ -636,9 +666,9 @@ contract Funds is DSMath, ALCompound {
      * @param fund The Id of a Loan Fund
      */
     function enableCompound(bytes32 fund) external {
-        require(compoundSet);
-        require(bools[fund].compoundEnabled == false);
-        require(msg.sender == lender(fund));
+        require(compoundSet, "Funds.enableCompound: Cannot enable Compound as it has not been configured");
+        require(bools[fund].compoundEnabled == false, "Funds.enableCompound: Compound is already enabled");
+        require(msg.sender == lender(fund), "Funds.enableCompound: Only the lender can enable Compound");
         uint256 cBalanceBefore = cToken.balanceOf(address(this));
         mintCToken(address(token), address(cToken), funds[fund].balance);
         uint256 cBalanceAfter = cToken.balanceOf(address(this));
@@ -655,8 +685,8 @@ contract Funds is DSMath, ALCompound {
      * @param fund The Id of a Loan Fund
      */
     function disableCompound(bytes32 fund) external {
-        require(bools[fund].compoundEnabled);
-        require(msg.sender == lender(fund));
+        require(bools[fund].compoundEnabled, "Funds.disableCompound: Compound is already disabled");
+        require(msg.sender == lender(fund), "Funds.disableCompound: Only the lender can disable Compound");
         uint256 balanceBefore = token.balanceOf(address(this));
         redeemCToken(address(cToken), funds[fund].cBalance);
         uint256 balanceAfter = token.balanceOf(address(this));
@@ -670,17 +700,17 @@ contract Funds is DSMath, ALCompound {
 
     /**
      * @notice Decrease Total Borrow by Loans contract
-     * @param amount The amount of tokens to decrease totalBorrow by
+     * @param amount_ The amount of tokens to decrease totalBorrow by
      */
-    function decreaseTotalBorrow(uint256 amount) external {
-        require(msg.sender == address(loans));
-        totalBorrow = sub(totalBorrow, amount);
+    function decreaseTotalBorrow(uint256 amount_) external {
+        require(msg.sender == address(loans), "Funds.decreaseTotalBorrow: Only the Loans contract can perform this");
+        totalBorrow = sub(totalBorrow, amount_);
     }
 
     /**
      * @notice Calculate and update Global Interest Rate
      * @dev Implementation returns Global Interest Rate per second in RAY
-     *      
+     *
      *      Note: Only updates interest rate if interestUpdateDelay has passed since last update
      *            if utilizationRatio increases newAPR = oldAPR + (min(10%, utilizationRatio) / 10)
      *            if utilizationRatio decreases newAPR = oldAPR - (max(10%, utilizationRatio) / 10)
@@ -694,7 +724,7 @@ contract Funds is DSMath, ALCompound {
 
         if (now > (add(lastGlobalInterestUpdated, interestUpdateDelay))) {
             uint256 utilizationRatio;
-            if (totalBorrow != 0) { utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow)); }
+            if (totalBorrow != 0) {utilizationRatio = rdiv(totalBorrow, add(marketLiquidity, totalBorrow));}
 
             if (utilizationRatio > lastUtilizationRatio) {
                 uint256 changeUtilizationRatio = sub(utilizationRatio, lastUtilizationRatio);
@@ -717,8 +747,8 @@ contract Funds is DSMath, ALCompound {
      * @param rate The interest rate in seconds
      * @param loanDur The loan duration in seconds
      */
-    function calcInterest(uint256 amount, uint256 rate, uint256 loanDur) public pure returns (uint256) {
-        return sub(rmul(amount, rpow(rate, loanDur)), amount);
+    function calcInterest(uint256 amount_, uint256 rate_, uint256 loanDur_) public pure returns (uint256) {
+        return sub(rmul(amount_, rpow(rate_, loanDur_)), amount_);
     }
 
     /*
@@ -740,7 +770,7 @@ contract Funds is DSMath, ALCompound {
      * @param fund The Id of a Loan Fund
      * @param amount_ Amount of tokens to request
      * @param collateral_ Amount of collateral to deposit in satoshis
-     * @param loanDur_ Length of loan request in seconds     
+     * @param loanDur_ Length of loan request in seconds
      */
     function createLoan(
         bytes32  fund,
@@ -752,8 +782,16 @@ contract Funds is DSMath, ALCompound {
     ) private returns (bytes32 loanIndex) {
         loanIndex = loans.create(
             now + loanDur_,
-            [ borrower_, lender(fund), funds[fund].arbiter],
-            [ amount_, calcInterest(amount_, interest(fund), loanDur_), calcInterest(amount_, penalty(fund), loanDur_), calcInterest(amount_, fee(fund), loanDur_), collateral_, liquidationRatio(fund), requestTimestamp_],
+            [borrower_, lender(fund), funds[fund].arbiter],
+            [
+                amount_,
+                calcInterest(amount_, interest(fund), loanDur_),
+                calcInterest(amount_, penalty(fund), loanDur_),
+                calcInterest(amount_, fee(fund), loanDur_),
+                collateral_,
+                liquidationRatio(fund),
+                requestTimestamp_
+            ],
             fund
         );
     }
@@ -787,22 +825,22 @@ contract Funds is DSMath, ALCompound {
     /*
      * @dev Updates market liquidity based on amount of tokens being requested to borrow
      * @param fund Loan Id of the Loan Fund
-     * @param amount The amount of tokens that are being requested
+     * @param amount_ The amount of tokens that are being requested
      */
-    function loanUpdateMarketLiquidity(bytes32 fund, uint256 amount) private {
+    function loanUpdateMarketLiquidity(bytes32 fund, uint256 amount_) private {
         if (bools[fund].compoundEnabled) {
             uint256 cBalanceBefore = cToken.balanceOf(address(this));
-            redeemUnderlying(address(cToken), amount);
+            redeemUnderlying(address(cToken), amount_);
             uint256 cBalanceAfter = cToken.balanceOf(address(this));
             uint256 cTokenToRemove = sub(cBalanceBefore, cBalanceAfter);
             funds[fund].cBalance = sub(funds[fund].cBalance, cTokenToRemove);
-            if (!custom(fund)) { cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove); }
+            if (!custom(fund)) {cTokenMarketLiquidity = sub(cTokenMarketLiquidity, cTokenToRemove);}
         } else {
-            funds[fund].balance = sub(funds[fund].balance, amount);
-            if (!custom(fund)) { tokenMarketLiquidity = sub(tokenMarketLiquidity, amount); }
+            funds[fund].balance = sub(funds[fund].balance, amount_);
+            if (!custom(fund)) {tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_);}
         }
         if (!custom(fund)) {
-            totalBorrow = add(totalBorrow, amount);
+            totalBorrow = add(totalBorrow, amount_);
             calcGlobalInterest();
         }
     }
@@ -811,13 +849,13 @@ contract Funds is DSMath, ALCompound {
      * @dev Get the next 4 secret hashes required for loan
      * @param addr Address of Lender or Arbiter
      */
-    function getSecretHashesForLoan(address addr) private returns (bytes32[4] memory) {
-        secretHashIndex[addr] = add(secretHashIndex[addr], 4);
+    function getSecretHashesForLoan(address addr_) private returns (bytes32[4] memory) {
+        secretHashIndex[addr_] = add(secretHashIndex[addr_], 4);
         return [
-            secretHashes[addr][sub(secretHashIndex[addr], 4)],
-            secretHashes[addr][sub(secretHashIndex[addr], 3)],
-            secretHashes[addr][sub(secretHashIndex[addr], 2)],
-            secretHashes[addr][sub(secretHashIndex[addr], 1)]
+            secretHashes[addr_][sub(secretHashIndex[addr_], 4)],
+            secretHashes[addr_][sub(secretHashIndex[addr_], 3)],
+            secretHashes[addr_][sub(secretHashIndex[addr_], 2)],
+            secretHashes[addr_][sub(secretHashIndex[addr_], 1)]
         ];
     }
 }

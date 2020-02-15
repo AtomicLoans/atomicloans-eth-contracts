@@ -18,6 +18,7 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
+const Collateral = artifacts.require("./Collateral.sol")
 const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 const P2WSH  = artifacts.require('./P2WSH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
@@ -76,11 +77,16 @@ async function getContracts(stablecoin, accounts) {
     await funds.setLoans(loans.address)
     await loans.setSales(sales.address)
 
-    const p2wsh = await P2WSH.deployed()
+    const p2wsh = await P2WSH.new(loans.address)
+
     const onDemandSpv = await ISPVRequestManager.deployed()
 
-    await loans.setP2WSH(p2wsh.address)
-    await loans.setOnDemandSpv(onDemandSpv.address)
+    const collateral = await Collateral.new(loans.address)
+
+    await collateral.setP2WSH(p2wsh.address)
+    await collateral.setOnDemandSpv(onDemandSpv.address)
+
+    await loans.setCollateral(collateral.address)
 
     return { funds, loans, sales, token, med, cErc20, cEther, comptroller }
   }
@@ -378,10 +384,10 @@ stablecoins.forEach((stablecoin) => {
         const cErc20Balance = BN(cErc20BalAfterDeposit1).plus(cErc20BalAfterDeposit2).minus(cErc20BalBeforeDeposit1).minus(cErc20BalBeforeDeposit2)
         const balance = await this.funds.balance.call(this.fund)
 
-        const expectedBalance = BN(cBalance).times(actualExchangeRate).dividedBy(WAD ** 2).toFixed(16)
-        const actualBalance = BN(balance).dividedBy(WAD).toFixed(16)
+        const expectedBalance = BN(cBalance).times(actualExchangeRate).dividedBy(WAD).toNumber()
+        const actualBalance = BN(balance).toNumber()
 
-        assert.equal(expectedBalance, actualBalance)
+        expect(expectedBalance).to.be.closeTo(actualBalance, 1)
         assert.equal(cErc20Balance.toString(), cBalance.toString())
       })
 
@@ -493,10 +499,10 @@ stablecoins.forEach((stablecoin) => {
         const cErc20Balance = BN(cErc20BalAfterDeposit1).plus(cErc20BalAfterDeposit2).minus(cErc20BalBeforeDeposit1).minus(cErc20BalBeforeDeposit2)
         const balance = await this.funds.balance.call(this.fund)
 
-        const expectedBalance = BN(cBalance).times(actualExchangeRate).dividedBy(WAD ** 2).toFixed(16)
-        const actualBalance = BN(balance).dividedBy(WAD).toFixed(16)
+        const expectedBalance = BN(cBalance).times(actualExchangeRate).dividedBy(WAD).toNumber()
+        const actualBalance = BN(balance).toNumber()
 
-        assert.equal(expectedBalance, actualBalance)
+        expect(expectedBalance).to.be.closeTo(actualBalance, 1)
         assert.equal(cErc20Balance.toString(), cBalance.toString())
       })
 

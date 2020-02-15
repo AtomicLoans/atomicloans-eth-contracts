@@ -17,6 +17,7 @@ const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
+const Collateral = artifacts.require("./Collateral.sol");
 const ISPVRequestManager = artifacts.require('./ISPVRequestManager.sol');
 const P2WSH  = artifacts.require('./P2WSH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
@@ -51,11 +52,12 @@ async function getContracts(stablecoin) {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
+    const collateral = await Collateral.deployed();
     const token = await ExampleCoin.deployed();
     const pToken = await ExamplePausableSaiCoin.deployed();
     const med   = await Med.deployed();
 
-    return { funds, loans, sales, token, pToken, med }
+    return { funds, loans, sales, collateral, token, pToken, med }
   } else if (stablecoin == 'USDC') {
     const med = await Med.deployed()
     const token = await ExampleUsdcCoin.deployed()
@@ -78,10 +80,14 @@ async function getContracts(stablecoin) {
     const p2wsh = await P2WSH.deployed()
     const onDemandSpv = await ISPVRequestManager.deployed()
 
-    await loans.setP2WSH(p2wsh.address)
-    await loans.setOnDemandSpv(onDemandSpv.address)
+    const collateral = await Collateral.new(loans.address)
 
-    return { funds, loans, sales, token, pToken, med }
+    await collateral.setP2WSH(p2wsh.address)
+    await collateral.setOnDemandSpv(onDemandSpv.address)
+
+    await loans.setCollateral(collateral.address)
+
+    return { funds, loans, sales, collateral, token, pToken, med }
   }
 }
 
@@ -188,11 +194,12 @@ stablecoins.forEach((stablecoin) => {
 
       col = Math.round(((loanReq * loanRat) / btcPrice) * BTC_TO_SAT)
 
-      const { funds, loans, sales, token, pToken, med } = await getContracts(name)
+      const { funds, loans, sales, collateral, token, pToken, med } = await getContracts(name)
 
       this.funds = funds
       this.loans = loans
       this.sales = sales
+      this.collateral = collateral
       this.token = token
       this.pToken = pToken
       this.med = med
@@ -290,7 +297,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('setP2WSH', function() {
-      it('should fail if msg.sender is not deployed', async function() {
+      it('should fail if msg.sender is not deployer', async function() {
         const decimal = stablecoin.unit === 'ether' ? '18' : '6'
 
         const funds = await Funds.new(this.token.address, decimal)
@@ -302,7 +309,9 @@ stablecoins.forEach((stablecoin) => {
 
         const p2wsh = await P2WSH.deployed()
 
-        await expectRevert(loans.setP2WSH(p2wsh.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
+        const collateral = await Collateral.new(loans.address)
+
+        await expectRevert(collateral.setP2WSH(p2wsh.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
       })
 
       it('should fail if p2wsh already set', async function() {
@@ -317,9 +326,11 @@ stablecoins.forEach((stablecoin) => {
 
         const p2wsh = await P2WSH.deployed()
 
-        await loans.setP2WSH(p2wsh.address)
+        const collateral = await Collateral.new(loans.address)
 
-        await expectRevert(loans.setP2WSH(p2wsh.address), 'VM Exception while processing transaction: revert')
+        await collateral.setP2WSH(p2wsh.address)
+
+        await expectRevert(collateral.setP2WSH(p2wsh.address), 'VM Exception while processing transaction: revert')
       })
     })
 
@@ -334,9 +345,11 @@ stablecoins.forEach((stablecoin) => {
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
 
+        const collateral = await Collateral.new(loans.address)
+
         const onDemandSpv = await ISPVRequestManager.deployed()
 
-        await expectRevert(loans.setOnDemandSpv(onDemandSpv.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
+        await expectRevert(collateral.setOnDemandSpv(onDemandSpv.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
       })
 
       it('should fail if onDemandSpv already set', async function() {
@@ -351,16 +364,82 @@ stablecoins.forEach((stablecoin) => {
 
         const onDemandSpv = await ISPVRequestManager.deployed()
 
-        await loans.setOnDemandSpv(onDemandSpv.address)
+        const collateral = await Collateral.new(loans.address)
 
-        await expectRevert(loans.setOnDemandSpv(onDemandSpv.address), 'VM Exception while processing transaction: revert')
+        await collateral.setOnDemandSpv(onDemandSpv.address)
+
+        await expectRevert(collateral.setOnDemandSpv(onDemandSpv.address), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if onDemandSpv is null', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const collateral = await Collateral.new(loans.address)
+
+        await expectRevert(collateral.setOnDemandSpv('0x0000000000000000000000000000000000000000'), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('setCollateral', function() {
+      it('should fail if msg.sender is not deployer', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const collateral = await Collateral.new(loans.address)
+
+        await expectRevert(loans.setCollateral(collateral.address, { from: accounts[1] }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if Collateral has already been set', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const collateral = await Collateral.new(loans.address)
+
+        await loans.setCollateral(collateral.address)
+
+        await expectRevert(loans.setCollateral(collateral.address), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if Collateral address to be set is null', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const collateral = await Collateral.new(loans.address)
+
+        await expectRevert(loans.setCollateral('0x0000000000000000000000000000000000000000'), 'VM Exception while processing transaction: revert')
       })
     })
 
     describe('create', function() {
       it('should fail if fund lender address does not match provided lender address', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender2, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(1)
@@ -370,7 +449,7 @@ stablecoins.forEach((stablecoin) => {
 
       it('should fail if requestTimestamp is duplicated', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp ]
         const fundId = numToBytes32(1)
@@ -382,7 +461,7 @@ stablecoins.forEach((stablecoin) => {
     describe('setSecretHashes', function() {
       it('should fail calling twice', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -397,7 +476,7 @@ stablecoins.forEach((stablecoin) => {
 
       it('should fail if called by address which is not the borrower, lender, or funds contract address', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -412,7 +491,7 @@ stablecoins.forEach((stablecoin) => {
     describe('fund', function() {
       it('should fail if secret hashes not set', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -428,7 +507,7 @@ stablecoins.forEach((stablecoin) => {
 
       it('should fail if called twice', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -454,8 +533,12 @@ stablecoins.forEach((stablecoin) => {
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
 
+        const collateral = await Collateral.new(loans.address)
+
+        await loans.setCollateral(collateral.address)
+
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -478,7 +561,7 @@ stablecoins.forEach((stablecoin) => {
     describe('approve', function() {
       it('should fail if not funded', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -496,7 +579,7 @@ stablecoins.forEach((stablecoin) => {
 
       it('should fail if msg.sender is not lender', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -514,7 +597,7 @@ stablecoins.forEach((stablecoin) => {
 
       it('should fail if after current time is after approveExpiration', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -662,7 +745,7 @@ stablecoins.forEach((stablecoin) => {
 
       it('should accept successfully and send funds directly to lender if fundId is 0', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -1102,8 +1185,6 @@ stablecoins.forEach((stablecoin) => {
         const taken = await this.sales.accepted.call(this.sale)
         assert.equal(taken, true)
       })
-
-      // TODO: liquidate when it\'s a non-custom loan fund
     })
 
     describe('default', function() {
@@ -1167,7 +1248,7 @@ stablecoins.forEach((stablecoin) => {
 
       it('should fail if not funded', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -1202,8 +1283,12 @@ stablecoins.forEach((stablecoin) => {
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
 
+        const collateral = await Collateral.new(loans.address)
+
+        await loans.setCollateral(collateral.address)
+
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -1295,7 +1380,7 @@ stablecoins.forEach((stablecoin) => {
     describe('funded', function() {
       it('should return boolean determining whether funds have been depositd into loan', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
@@ -1319,7 +1404,7 @@ stablecoins.forEach((stablecoin) => {
 
       it('should return boolean determining whether funds have been depositd into loan', async function() {
         const { loanExpiration, principal, interest, penalty, fee, liquidationRatio, requestTimestamp } = await this.loans.loans.call(this.loan)
-        const { refundableCollateral, seizableCollateral } = await this.loans.collaterals.call(this.loan)
+        const { refundableCollateral, seizableCollateral } = await this.collateral.collaterals.call(this.loan)
         const usrs = [ borrower, lender, arbiter ]
         const vals = [ principal, interest, penalty, fee, BigNumber(refundableCollateral).plus(seizableCollateral).toFixed(), liquidationRatio, requestTimestamp + 1 ]
         const fundId = numToBytes32(0)
