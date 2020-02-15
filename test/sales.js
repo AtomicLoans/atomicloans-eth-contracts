@@ -799,14 +799,20 @@ stablecoins.forEach((stablecoin) => {
         await expectRevert(this.sales.provideSig(this.sale, sig1, sig2, { from: borrower }), 'VM Exception while processing transaction: revert')
       })
 
-      it('should fail if signatures are null', async function() {
+      it('should fail if refundableSig is null', async function() {
         await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
 
         this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
 
-        await increaseTime(toSecs({ days: 30 }))
+        await expectRevert(this.sales.provideSig(this.sale, ensure0x(''), sig2, { from: borrower }), 'VM Exception while processing transaction: revert')
+      })
 
-        await expectRevert(this.sales.provideSig(this.sale, ensure0x(''), ensure0x(''), { from: borrower }), 'VM Exception while processing transaction: revert')
+      it('should fail if seizableSig is null', async function() {
+        await approveAndTransfer(this.token, liquidator, this.loans, toWei('50', unit))
+
+        this.sale = await liquidate(this.loans, this.loan, liquidatorSechs[0], liquidatorpbkh, liquidator)
+
+        await expectRevert(this.sales.provideSig(this.sale, sig1, ensure0x(''), { from: borrower }), 'VM Exception while processing transaction: revert')
       })
     })
 
