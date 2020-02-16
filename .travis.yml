@@ -7,6 +7,7 @@ cache: npm
 before_install:
   - sudo apt-get install -y libusb-1.0-0 libusb-1.0-0-dev libudev-dev
   - sudo apt-add-repository ppa:bitcoin/bitcoin -y
+  - sudo apt-get update
   - sudo apt-get install bitcoind -y
 apt_packages:
   - bitcoind
