@@ -388,6 +388,42 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('unsetOnDemandSpv', function() {
+      it('should fail if msg.sender not deployer', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const collateral = await Collateral.new(loans.address)
+
+        const onDemandSpv = await ISPVRequestManager.deployed()
+
+        collateral.setOnDemandSpv(onDemandSpv.address)
+
+        await expectRevert(collateral.unsetOnDemandSpv({ from: accounts[1] }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if onDemandSpv has not been set already', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const collateral = await Collateral.new(loans.address)
+
+        const onDemandSpv = await ISPVRequestManager.deployed()
+
+        await expectRevert(collateral.unsetOnDemandSpv(), 'VM Exception while processing transaction: revert')
+      })
+
       it('should set onDemandSpv address to null', async function() {
         const decimal = stablecoin.unit === 'ether' ? '18' : '6'
 
@@ -532,9 +568,24 @@ stablecoins.forEach((stablecoin) => {
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
 
+        await expectRevert(loans.setCollateral('0x0000000000000000000000000000000000000000'), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('Collateral.setCollateral', function() {
+      it('should fail if not called by loans contract', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
         const collateral = await Collateral.new(loans.address)
 
-        await expectRevert(loans.setCollateral('0x0000000000000000000000000000000000000000'), 'VM Exception while processing transaction: revert')
+        await expectRevert(collateral.setCollateral(numToBytes32(1), 0, 0), 'VM Exception while processing transaction: revert')
       })
     })
 
