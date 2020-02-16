@@ -1624,5 +1624,26 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(paidAfter, true)
       })
     })
+
+    describe('minCollateralValue', function() {
+      it('should return 0 if repaid', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        const minCollateralValue = await this.loans.minCollateralValue.call(this.loan)
+
+        console.log('minCollateralValue', minCollateralValue)
+      })
+    })
   })
 })
