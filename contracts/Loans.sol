@@ -451,7 +451,7 @@ contract Loans is DSMath {
         require(token.transfer(loans[loan].borrower, principal(loan)), "Loans.withdraw: Failed to transfer tokens");
 
         secretHashes[loan].withdrawSecret = secretA1;
-        col.requestSpv(loan);
+        if (address(col.onDemandSpv()) != address(0)) {col.requestSpv(loan);}
     }
 
     /**
@@ -471,7 +471,7 @@ contract Loans is DSMath {
         repayments[loan] = add(amount, repayments[loan]);
         if (repaid(loan) == owedForLoan(loan)) {
             bools[loan].paid = true;
-            col.cancelSpv(loan);
+            if (address(col.onDemandSpv()) != address(0)) {col.cancelSpv(loan);}
         }
     }
 
@@ -602,6 +602,6 @@ contract Loans is DSMath {
             bools[loan].sale = true;
             require(token.transfer(address(sales), repaid(loan)), "Loans.liquidate: Token transfer to Sales contract failed");
         }
-        col.cancelSpv(loan);
+        if (address(col.onDemandSpv()) != address(0)) {col.cancelSpv(loan);}
     }
 }

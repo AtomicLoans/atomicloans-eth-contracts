@@ -10,8 +10,8 @@ import './DSMath.sol';
 
 contract Collateral is DSMath {
     P2WSHInterface p2wsh;
-    ISPVRequestManager onDemandSpv;
     Loans loans;
+    ISPVRequestManager public onDemandSpv;
 
     uint256 public constant ADD_COLLATERAL_EXPIRY = 4 hours;
 
@@ -113,6 +113,12 @@ contract Collateral is DSMath {
         require(address(onDemandSpv) == address(0), "Loans.setOnDemandSpv: The OnDemandSpv address has already been set");
         require(address(onDemandSpv_) != address(0), "Loans.setOnDemandSpv: OnDemandSpv address must be non-zero");
         onDemandSpv = onDemandSpv_;
+    }
+
+    function unsetOnDemandSpv() external {
+        require(msg.sender == deployer, "Loans.setOnDemandSpv: Only the deployer can perform this");
+        require(address(onDemandSpv) != address(0), "Loans.setOnDemandSpv: The OnDemandSpv address has not been set");
+        onDemandSpv = ISPVRequestManager(address(0));
     }
 
     function setCollateral(bytes32 loan, uint256 refundableCollateral_, uint256 seizableCollateral_) external {

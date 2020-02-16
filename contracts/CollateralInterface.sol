@@ -1,6 +1,7 @@
 pragma solidity 0.5.10;
 
 interface CollateralInterface {
+    function onDemandSpv() external view returns(address);
     function collateral(bytes32 loan) external view returns (uint256);
     function refundableCollateral(bytes32 loan) external view returns (uint256);
     function seizableCollateral(bytes32 loan) external view returns (uint256);
