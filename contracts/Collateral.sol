@@ -8,6 +8,10 @@ import './P2WSHInterface.sol';
 import './ISPVRequestManager.sol';
 import './DSMath.sol';
 
+/**
+ * @title Atomic Loans Collateral Contract
+ * @author Atomic Loans
+ */
 contract Collateral is DSMath {
     P2WSHInterface p2wsh;
     Loans loans;
@@ -30,12 +34,25 @@ contract Collateral is DSMath {
 
     address deployer;
 
+    /**
+     * @notice Container for the current collateral info
+     * @member refundableCollateral Amount of refundable collateral in sats
+     * @member seizableCollateral Amount of seizable collateral in sats
+     * @member unaccountedRefundableCollateral Amount of unnacounted refundable collateral in sats (used when minSeizableCollateral is not met)
+     */
     struct CollateralDetails {
         uint256 refundableCollateral;
         uint256 seizableCollateral;
         uint256 unaccountedRefundableCollateral; // RefundableCollateral that's not accounted for since minSeizableCollateral is not satisfied
     }
 
+    /**
+     * @notice Container for a collateral deposit from spv relay
+     * @member amount Amount of collateral to deposited in sats
+     * @member finalized Indicates whether the collateral deposit proof has 6 confirmations
+     * @member seizable Indicates whether the collateral deposit is seizable
+     * @member expiry Timestamp when collateral deposit is no longer valid (4 hours since 6 confirmations should be received by then)
+     */
     struct CollateralDeposit {
         uint256 amount;
         bool    finalized; // 6 confirmations
@@ -43,13 +60,27 @@ contract Collateral is DSMath {
         uint256 expiry;
     }
 
+    /**
+     * @notice Container for a spv relay request
+     * @member loan The Id of a Loan
+     * @member finalized Indicates whether the collateral request is for a proof with 6 confirmations
+     * @member seizable Indicates whether the collateral request is for a proof with seizable collateral
+     * @member p2wshAddress P2WSH Address of the collateral request
+     */
     struct RequestDetails {
         bytes32 loan;
-        bool    finalized; // 6 confirmations?
+        bool    finalized;
         bool    seizable;
         bytes32 p2wshAddress;
     }
 
+    /**
+     * @notice Container for a spv relay requests
+     * @member refundRequestIDOneConf Request ID for Refundable Collateral Proof with One Confirmation
+     * @member refundRequestIDSixConf Request ID for Refundable Collateral Proof with Six Confirmations
+     * @member seizeRequestIDOneConf Request ID for Seizable Collateral Proof with One Confirmation
+     * @member seizeRequestIDSixConf Request ID for Seizable Collateral Proof with Six Confirmations
+     */
     struct LoanRequests {
         uint256 refundRequestIDOneConf;
         uint256 refundRequestIDSixConf;
@@ -59,10 +90,19 @@ contract Collateral is DSMath {
 
     event Spv(bytes32 _txid, bytes _vout, uint256 _requestID, uint8 _outputIndex);
 
+    /**
+     * @notice Get the Collateral of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of collateral backing the loan (in sats)
+     */
     function collateral(bytes32 loan) public view returns (uint256) {
-        // check if collateralDepositIndex == collateralDepositFinalizedIndex
+        // if the number of 6 conf txs spv proofs != the number of 1 conf txs spv proofs (this means temporary collateral is relevant) and
+        // all seizable collateral is >= minSeizableCollateral (make sure seizableCollateral is satisfied before refundableCollateral) and
+        // current time < 4 hour expiry on latest 1 conf tx spv proof (make sure reorg isn't occuring)
+        // then return all collateral including refundableCollateral, seizableCollateral, temporaryRefundableCollateral, temporarySeizableCollateral
+        // otherwise, only return refundable and seizable collateral
         if (collateralDepositIndex[loan] != collateralDepositFinalizedIndex[loan] &&
-            add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= loans.minSeizableCollateralValue(loan) &&
+            add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= loans.minSeizableCollateral(loan) &&
             now < collateralDeposits[loan][collateralDepositFinalizedIndex[loan]].expiry) {
             return add(add(refundableCollateral(loan), seizableCollateral(loan)), add(temporaryCollaterals[loan].refundableCollateral, temporaryCollaterals[loan].seizableCollateral));
         } else {
@@ -70,22 +110,48 @@ contract Collateral is DSMath {
         }
     }
 
+    /**
+     * @notice Get the Refundable Collateral of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of refundable collateral backing the loan (in sats)
+     */
     function refundableCollateral(bytes32 loan) public view returns (uint256) {
         return collaterals[loan].refundableCollateral;
     }
 
+    /**
+     * @notice Get the Seizable Collateral of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of seizable collateral backing the loan (in sats)
+     */
     function seizableCollateral(bytes32 loan) public view returns (uint256) {
         return collaterals[loan].seizableCollateral;
     }
 
+    /**
+     * @notice Get the Temporary Refundable Collateral of a Loan
+     * @dev Represents the amount of refundable collateral that has been locked and only has 1 confirmation, where 6 confirmations hasn't been received yet
+     * @param loan The Id of a Loan
+     * @return Amount of temporary refundable collateral backing the loan (in sats)
+     */
     function temporaryRefundableCollateral(bytes32 loan) public view returns (uint256) {
         return temporaryCollaterals[loan].refundableCollateral;
     }
 
+    /**
+     * @notice Get the Temporary Seizable Collateral of a Loan
+     * @dev Represents the amount of seizable collateral that has been locked and only has 1 confirmation, where 6 confirmations hasn't been received yet
+     * @param loan The Id of a Loan
+     * @return Amount of temporary seizable collateral backing the loan (in sats)
+     */
     function temporarySeizableCollateral(bytes32 loan) public view returns (uint256) {
         return temporaryCollaterals[loan].seizableCollateral;
     }
 
+    /**
+     * @notice Construct a new Collateral contract
+     * @param loans_ The address of the Loans contract
+     */
     constructor (Loans loans_) public {
         require(address(loans_) != address(0), "Loans address must be non-zero");
 
@@ -94,7 +160,7 @@ contract Collateral is DSMath {
     }
 
     /**
-     * @dev Sets P2WSH contract
+     * @notice Sets P2WSH contract
      * @param p2wsh_ Address of P2WSH contract
      */
     function setP2WSH(P2WSHInterface p2wsh_) external {
@@ -105,7 +171,7 @@ contract Collateral is DSMath {
     }
 
     /**
-     * @dev Sets OnDemandSpv contract address
+     * @notice Sets OnDemandSpv contract address
      * @param onDemandSpv_ Address of OnDemandSpv contract
      */
     function setOnDemandSpv(ISPVRequestManager onDemandSpv_) external {
@@ -115,12 +181,21 @@ contract Collateral is DSMath {
         onDemandSpv = onDemandSpv_;
     }
 
+    /**
+     * @notice Unset OnDemandSpv contract address
+     */
     function unsetOnDemandSpv() external {
         require(msg.sender == deployer, "Loans.setOnDemandSpv: Only the deployer can perform this");
         require(address(onDemandSpv) != address(0), "Loans.setOnDemandSpv: The OnDemandSpv address has not been set");
         onDemandSpv = ISPVRequestManager(address(0));
     }
 
+    /**
+     * @notice Sets current Collateral Amount for a Loan
+     * @param loan ID for a Loan
+     * @param refundableCollateral_ Amount of refundable collateral to update in sats
+     * @param seizableCollateral_ Amount of seizable collateral to update in sats
+     */
     function setCollateral(bytes32 loan, uint256 refundableCollateral_, uint256 seizableCollateral_) external {
         require(msg.sender == address(loans), "Loans.setCollateral: Only the loans contract can perform this");
 
@@ -131,10 +206,8 @@ contract Collateral is DSMath {
     /**
      * @notice Consumer for Bitcoin transaction information
      * @dev Handles Bitcoin events that have been validated by the Relay contract (onDemandSpv by Summa)
-     * @param _vout        The length-prefixed output vector of the bitcoin tx
-     *                     that triggered the notification.
-     * @param _requestID   The ID of the event request that this notification
-     *                     satisfies. The ID is returned by
+     * @param _vout        The length-prefixed output vector of the bitcoin tx that triggered the notification.
+     * @param _requestID   The ID of the event request that this notification satisfies. The ID is returned by
      *                     OnDemandSPV.request and should be locally stored by
      *                     any contract that makes more than one request.
      * @param _outputIndex The index of the output in the _vout that triggered
@@ -159,37 +232,52 @@ contract Collateral is DSMath {
             "Collateral.spv: Incorrect P2WSH address"
         );
 
-        if (requestsDetails[_requestID].finalized) { // 6 confirmations
-            if (txidToOutputToRequestValid[_txid][_outputIndex]) { // Check that request is valid
+        // Check if spv proof is for 6 confirmations (refundRequestIDSixConf or seizeRequestIDSixConf)
+        if (requestsDetails[_requestID].finalized) {
+            // Check that proof for 1 confirmation (refundRequestIDOneConf or seizeRequestIDOneConf) for this specific utxo has already been processed
+            if (txidToOutputToRequestValid[_txid][_outputIndex]) {
+                // Check if spv proof is seizable collateral (seizeRequestIDSixConf)
                 if (requestsDetails[_requestID].seizable) {
+                    // Add amount to Seizable Collateral
                     collaterals[loan].seizableCollateral = add(collaterals[loan].seizableCollateral, amount);
 
+                    // Subtract amount from Temporary Seizable Collateral
                     temporaryCollaterals[loan].seizableCollateral = sub(temporaryCollaterals[loan].seizableCollateral, amount);
                 } else {
-
-                    if (collaterals[loan].seizableCollateral >= loans.minSeizableCollateralValue(loan)) {
+                    // Add amount to Refundable Collateral if minSeizableCollateral is satisfied, else add to unaccountedRefundableCollateral
+                    if (collaterals[loan].seizableCollateral >= loans.minSeizableCollateral(loan)) {
                         collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, amount);
                     } else {
                         collaterals[loan].unaccountedRefundableCollateral = add(collaterals[loan].unaccountedRefundableCollateral, amount);
                     }
 
+                    // Subtract amount from Temporary Refundable Collateral
                     temporaryCollaterals[loan].refundableCollateral = sub(temporaryCollaterals[loan].refundableCollateral, amount);
                 }
 
+                // Indicate that spv proof has received 6 confirmations
                 collateralDeposits[loan][txidToOutputIndexToCollateralDepositIndex[_txid][_outputIndex]].finalized = true;
 
                 _updateCollateralDepositFinalizedIndex(loan);
-            } else { // In the case that 6 conf comes before 1 conf
-                if (amount >= div(collateral(loan), 100)) { // Ensure amount is greater than 1% of collateral value
+            }
+            // In the case that proof for 6 confirmations comes before proof for 1 confirmation
+            else {
+                // Ensure amount is greater than 1% of collateral value
+                if (amount >= div(collateral(loan), 100)) {
+                    // Indicate that spv proof for 1 confirmation is no longer needed for this specific request
                     txidToOutputToRequestValid[_txid][_outputIndex] = true;
+
                     _setCollateralDeposit(loan, collateralDepositIndex[loan], amount, requestsDetails[_requestID].seizable);
                     collateralDeposits[loan][collateralDepositIndex[loan]].finalized = true;
                     txidToOutputIndexToCollateralDepositIndex[_txid][_outputIndex] = collateralDepositIndex[loan];
                     collateralDepositIndex[loan] = add(collateralDepositIndex[loan], 1);
 
+                    // Check if spv proof is seizable collateral (seizeRequestIDSixConf)
                     if (requestsDetails[_requestID].seizable) {
+                        // Add amount to Seizable Collateral
                         collaterals[loan].seizableCollateral = add(collaterals[loan].seizableCollateral, amount);
                     } else {
+                        // Add amount to Refundable Collateral
                         collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, amount);
                     }
 
@@ -197,16 +285,24 @@ contract Collateral is DSMath {
                     _updateCollateralDepositFinalizedIndex(loan);
                 }
             }
-        } else { // 1 confirmation
-            if (amount >= div(collateral(loan), 100) && !txidToOutputToRequestValid[_txid][_outputIndex]) { // Ensure amount is greater than 1% of collateral value
+        }
+        // Check if spv proof is for 1 confirmation (refundRequestIDOneConf or seizeRequestIDOneConf)
+        else {
+            // Ensure amount is greater than 1% of collateral value
+            if (amount >= div(collateral(loan), 100) && !txidToOutputToRequestValid[_txid][_outputIndex]) {
+                // Indicate that spv proof for 1 confirmation has been received for this specific request
                 txidToOutputToRequestValid[_txid][_outputIndex] = true;
+
                 _setCollateralDeposit(loan, collateralDepositIndex[loan], amount, requestsDetails[_requestID].seizable);
                 txidToOutputIndexToCollateralDepositIndex[_txid][_outputIndex] = collateralDepositIndex[loan];
                 collateralDepositIndex[loan] = add(collateralDepositIndex[loan], 1);
 
+                // Check if spv proof is seizable collateral (seizeRequestIDSixConf)
                 if (requestsDetails[_requestID].seizable) {
+                    // Add amount to Temporary Seizable Collateral
                     temporaryCollaterals[loan].seizableCollateral = add(temporaryCollaterals[loan].seizableCollateral, amount);
                 } else {
+                    // Add amount to Temporary Refundable Collateral
                     temporaryCollaterals[loan].refundableCollateral = add(temporaryCollaterals[loan].refundableCollateral, amount);
                 }
 
@@ -222,7 +318,7 @@ contract Collateral is DSMath {
     }
 
     function _updateExistingRefundableCollateral (bytes32 loan) private {
-        if (add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= loans.minSeizableCollateralValue(loan) &&
+        if (add(collaterals[loan].seizableCollateral, temporaryCollaterals[loan].seizableCollateral) >= loans.minSeizableCollateral(loan) &&
             collaterals[loan].unaccountedRefundableCollateral != 0) {
             collaterals[loan].refundableCollateral = add(collaterals[loan].refundableCollateral, collaterals[loan].unaccountedRefundableCollateral);
             collaterals[loan].unaccountedRefundableCollateral = 0;
@@ -240,6 +336,10 @@ contract Collateral is DSMath {
         }
     }
 
+    /**
+     * @notice Creates request for Spv Relay
+     * @param loan ID for a Loan
+     */
     function requestSpv(bytes32 loan) external {
         require(msg.sender == address(loans), "Collateral.requestSpv: Only the loans contract can perform this");
 
@@ -284,6 +384,10 @@ contract Collateral is DSMath {
         finalRequestToInitialRequest[seizeRequestIDSixConf] = seizeRequestIDOneConf;
     }
 
+    /**
+     * @notice Cancels request for Spv Relay
+     * @param loan ID for a Loan
+     */
     function cancelSpv(bytes32 loan) external {
         require(msg.sender == address(loans), "Collateral.cancelSpv: Only the loans contract can perform this");
 

@@ -2186,10 +2186,10 @@ stablecoins.forEach((stablecoin) => {
         const seizableCollateral = await this.loans.seizableCollateral.call(this.loan)
         const temporarySeizableCollateral = await this.loans.temporarySeizableCollateral.call(this.loan)
         const temporaryRefundableCollateral = await this.loans.temporaryRefundableCollateral.call(this.loan)
-        const minSeizableCollateralValue = await this.loans.minSeizableCollateralValue.call(this.loan)
+        const minSeizableCollateral = await this.loans.minSeizableCollateral.call(this.loan)
 
         assert.isAbove(parseInt(BigNumber(collateralValue).toFixed()), parseInt(BigNumber(minCollateralValue).toFixed())) // Proving that the minimum collateralization ratio is above 140%
-        assert.isAbove(parseInt(BigNumber(seizableCollateral).plus(temporarySeizableCollateral).toFixed()), parseInt(BigNumber(minSeizableCollateralValue).toFixed())) // Proving that the minSeizableValue is satisfied
+        assert.isAbove(parseInt(BigNumber(seizableCollateral).plus(temporarySeizableCollateral).toFixed()), parseInt(BigNumber(minSeizableCollateral).toFixed())) // Proving that the minSeizableValue is satisfied
         assert.equal(parseInt(BigNumber(temporaryRefundableCollateral).toFixed()), 0)
       })
     })
