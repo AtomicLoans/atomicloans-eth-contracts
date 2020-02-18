@@ -267,7 +267,7 @@ contract Loans is DSMath {
         (bytes32 val, bool set) = med.peek();
         require(set, "Loans.minSeizableCollateralValue: Medianizer must be set");
         uint256 price = uint(val);
-        return div(wdiv(dmul(add(principal(loan), interest(loan))), price), div(WAD, COL));
+        return div(wdiv(dmul(sub(owedForLoan(loan), repaid(loan))), price), div(WAD, COL));
     }
 
     function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
@@ -278,7 +278,7 @@ contract Loans is DSMath {
     }
 
     function minCollateralValue(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
-        return rmul(dmul(sub(principal(loan), repaid(loan))), liquidationRatio(loan));
+        return rmul(dmul(sub(owedForLoan(loan), repaid(loan))), liquidationRatio(loan));
     }
 
     function discountCollateralValue(bytes32 loan) public view returns (uint256) {

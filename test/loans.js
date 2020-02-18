@@ -1,14 +1,11 @@
-const bitcoinjs = require('bitcoinjs-lib')
 const { bitcoin } = require('./helpers/collateral/common.js')
-const config = require('./helpers/collateral/config.js')
 
-const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
+const { time, expectRevert } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
 const { sha256 }    = require('@liquality/crypto')
-const { ensure0x, remove0x   }  = require('@liquality/ethereum-utils');
+const { ensure0x   }  = require('@liquality/ethereum-utils');
 const { BigNumber } = require('bignumber.js');
-const axios         = require('axios');
 
 const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
@@ -23,7 +20,6 @@ const P2WSH  = artifacts.require('./P2WSH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
 
 const CErc20 = artifacts.require('./CErc20.sol');
-const CEther = artifacts.require('./CEther.sol');
 const Comptroller = artifacts.require('./Comptroller.sol')
 
 const utils = require('./helpers/Utils.js');
@@ -1622,6 +1618,50 @@ stablecoins.forEach((stablecoin) => {
 
         assert.equal(paidBefore, false)
         assert.equal(paidAfter, true)
+      })
+    })
+
+    describe('minCollateralValue', function() {
+      it('should return 0 if repaid', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        await this.loans.repay(this.loan, owedForLoan, { from: borrower })
+
+        const minCollateralValue = await this.loans.minCollateralValue.call(this.loan)
+
+        expect(minCollateralValue.toNumber()).to.equal(0)
+      })
+    })
+
+    describe('minSeizableCollateralValue', function() {
+      it('should should change upon partial repayment', async function() {
+        await this.loans.approve(this.loan)
+
+        await this.loans.withdraw(this.loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(this.loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await this.loans.owedForLoan.call(this.loan)
+
+        const minSeizableCollateralValueBefore = await this.loans.minSeizableCollateralValue.call(this.loan)
+
+        await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
+
+        const minSeizableCollateralValueAfter = await this.loans.minSeizableCollateralValue.call(this.loan)
+
+        assert.isAbove(parseInt(BigNumber(minSeizableCollateralValueBefore).toFixed()), parseInt(BigNumber(minSeizableCollateralValueAfter).toFixed()))
       })
     })
   })
