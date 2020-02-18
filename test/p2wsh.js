@@ -1,16 +1,14 @@
 const bitcoinjs = require('bitcoinjs-lib')
 const { bitcoin } = require('./helpers/collateral/common.js')
-const config = require('./helpers/collateral/config.js')
 
-const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
+const { time } = require('openzeppelin-test-helpers');
 
-const toSecs        = require('@mblackmblack/to-seconds');
-const { sha256, hash160 }    = require('@liquality/crypto')
-const { ensure0x, remove0x }  = require('@liquality/ethereum-utils');
+const toSecs = require('@mblackmblack/to-seconds');
+const { sha256, hash160 } = require('@liquality/crypto')
+const { ensure0x, remove0x } = require('@liquality/ethereum-utils');
 const { BigNumber } = require('bignumber.js');
-const axios         = require('axios');
 
-const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
+const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
@@ -20,13 +18,12 @@ const P2WSH = artifacts.require('./P2WSH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
 
 const CErc20 = artifacts.require('./CErc20.sol');
-const CEther = artifacts.require('./CEther.sol');
 const Comptroller = artifacts.require('./Comptroller.sol')
 
 const utils = require('./helpers/Utils.js');
 
 const { rateToSec, numToBytes32 } = utils;
-const { toWei, fromWei, hexToNumberString } = web3.utils;
+const { toWei, fromWei } = web3.utils;
 
 const BTC_TO_SAT = 10**8
 const YEAR_IN_SECONDS = BigNumber(31536000)

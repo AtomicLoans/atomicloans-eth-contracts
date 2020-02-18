@@ -1,18 +1,15 @@
-const bitcoinjs = require('bitcoinjs-lib')
 const { bitcoin } = require('./helpers/collateral/common.js')
-const config = require('./helpers/collateral/config.js')
 
-const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
+const { time } = require('openzeppelin-test-helpers');
 
 const toSecs        = require('@mblackmblack/to-seconds');
 const { sha256 }    = require('@liquality/crypto')
-const { ensure0x, remove0x   }  = require('@liquality/ethereum-utils');
+const { ensure0x }  = require('@liquality/ethereum-utils');
 const { BigNumber } = require('bignumber.js');
-const axios         = require('axios');
 
-const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
+const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
-const SAIInterestRateModel = artifacts.require('./SAIInterestRateModel')
+const DAIInterestRateModel = artifacts.require('./DAIInterestRateModel')
 const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
@@ -23,7 +20,6 @@ const P2WSH  = artifacts.require('./P2WSH.sol');
 const Med = artifacts.require('./MedianizerExample.sol');
 
 const CErc20 = artifacts.require('./CErc20.sol');
-const CEther = artifacts.require('./CEther.sol');
 const Comptroller = artifacts.require('./Comptroller.sol')
 
 const utils = require('./helpers/Utils.js');
@@ -47,20 +43,20 @@ const mockDateNow = () => {
 
 global.Date.now = mockDateNow();
 
-const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
+const stablecoins = [ { name: 'DAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
 async function getContracts(stablecoin) {
-  if (stablecoin == 'SAI') {
+  if (stablecoin == 'DAI') {
     const med = await Med.deployed()
     const token = await ExampleCoin.deployed()
     const comptroller = await Comptroller.deployed()
-    const saiInterestRateModel = await SAIInterestRateModel.deployed()
-    const cSai  = await CErc20.new(token.address, comptroller.address, saiInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Sai', 'cSAI', '8')
+    const daiInterestRateModel = await DAIInterestRateModel.deployed()
+    const cDai  = await CErc20.new(token.address, comptroller.address, daiInterestRateModel.address, toWei('0.2', 'gether'), 'Compound Dai', 'cDAI', '8')
 
-    await comptroller._supportMarket(cSai.address)
+    await comptroller._supportMarket(cDai.address)
 
     const funds = await Funds.new(token.address, '18')
-    await funds.setCompound(cSai.address, comptroller.address)
+    await funds.setCompound(cDai.address, comptroller.address)
 
     const loans = await Loans.new(funds.address, med.address, token.address, '18')
     const sales = await Sales.new(loans.address, funds.address, med.address, token.address)
@@ -142,10 +138,10 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 50; // 50 SAI
-    const loanReq2 = 300; // 300 SAI
-    const loanReq3 = 400; // 400 SAI
-    const loanReq4 = 3000; // 3000 SAI
+    const loanReq = 50; // 50 DAI
+    const loanReq2 = 300; // 300 DAI
+    const loanReq3 = 400; // 400 DAI
+    const loanReq4 = 3000; // 3000 DAI
     const loanRat = 2;   // Collateralization ratio of 200%
     let col;
 

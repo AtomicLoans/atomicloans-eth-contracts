@@ -1,8 +1,6 @@
-const bitcoinjs = require('bitcoinjs-lib')
 const { bitcoin } = require('./helpers/collateral/common.js')
-const config = require('./helpers/collateral/config.js')
 
-const { time, expectRevert, balance } = require('openzeppelin-test-helpers');
+const { time, expectRevert } = require('openzeppelin-test-helpers');
 
 const _ = require('lodash')
 
@@ -10,11 +8,9 @@ const toSecs        = require('@mblackmblack/to-seconds');
 const { sha256 }    = require('@liquality/crypto')
 const { ensure0x }  = require('@liquality/ethereum-utils');
 const { BigNumber: BN } = require('bignumber.js');
-const axios         = require('axios');
 
-const ExampleCoin = artifacts.require("./ExampleSaiCoin.sol");
+const ExampleCoin = artifacts.require("./ExampleDaiCoin.sol");
 const ExampleUsdcCoin = artifacts.require("./ExampleUsdcCoin.sol");
-const USDCInterestRateModel = artifacts.require('./USDCInterestRateModel.sol')
 const Funds = artifacts.require("./Funds.sol");
 const Loans = artifacts.require("./Loans.sol");
 const Sales = artifacts.require("./Sales.sol");
@@ -26,30 +22,25 @@ const Med = artifacts.require('./MedianizerExample.sol');
 const CErc20 = artifacts.require('./CErc20.sol');
 const CEther = artifacts.require('./CEther.sol');
 const Comptroller = artifacts.require('./Comptroller.sol')
-const PriceOracleProxy = artifacts.require('./PriceOracleProxy.sol')
-const PriceOracle = artifacts.require('./_PriceOracle.sol')
 
 const utils = require('./helpers/Utils.js');
 
-const { rateToSec, numToBytes32, toBaseUnit } = utils;
-const { toWei, fromWei } = web3.utils;
+const { numToBytes32 } = utils;
+const { toWei } = web3.utils;
 
 const BTC_TO_SAT = 10**8
 
 const COM = 10 ** 8
-const SAT = 10 ** 8
-const COL = 10 ** 8
 const WAD = 10 ** 18
-const RAY = 10 ** 27
 
 const YEAR_IN_SECONDS = BN(31536000)
 
 BN.config({ ROUNDING_MODE: BN.ROUND_DOWN })
 
-const stablecoins = [ { name: 'SAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
+const stablecoins = [ { name: 'DAI', unit: 'ether' }, { name: 'USDC', unit: 'mwei' } ]
 
 async function getContracts(stablecoin, accounts) {
-  if (stablecoin == 'SAI') {
+  if (stablecoin == 'DAI') {
     const funds = await Funds.deployed();
     const loans = await Loans.deployed();
     const sales = await Sales.deployed();
@@ -148,7 +139,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 20; // 20 SAI
+    const loanReq = 20; // 20 DAI
     const loanRat = 2; // Collateralization ratio of 200%
     let col;
 
@@ -568,7 +559,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('enableCompound', function() {
-      it('should properly convert SAI to cSAI at the current exchangeRate and update token and cToken balances', async function() {
+      it('should properly convert DAI to cDAI at the current exchangeRate and update token and cToken balances', async function() {
         this.fund  = await createCompoundDisabledFund(this, arbiter, lender, toWei('100', unit))
         this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
@@ -622,7 +613,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(expectedBalanceChange, actualBalanceBefore)
       })
 
-      it('should transfer tokenMarketLiquidity to cTokenMarketLiquidity at SAI to cSAI exchangeRate', async function() {
+      it('should transfer tokenMarketLiquidity to cTokenMarketLiquidity at DAI to cDAI exchangeRate', async function() {
         this.fund  = await createCompoundDisabledFund(this, arbiter, lender, toWei('100', unit))
         this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
@@ -685,7 +676,7 @@ stablecoins.forEach((stablecoin) => {
     })
 
     describe('disableCompound', function() {
-      it('should properly convert cSAI to SAI at the current exchangeRate and update token and cToken balances', async function() {
+      it('should properly convert cDAI to DAI at the current exchangeRate and update token and cToken balances', async function() {
         this.fund  = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
         this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
@@ -739,7 +730,7 @@ stablecoins.forEach((stablecoin) => {
         assert.equal(expectedCBalanceChange, actualCBalanceBefore)
       })
 
-      it('should transfer cTokenMarketLiquidity to tokenMarketLiquidity at cSAI to SAI exchangeRate', async function() {
+      it('should transfer cTokenMarketLiquidity to tokenMarketLiquidity at cDAI to DAI exchangeRate', async function() {
         this.fund  = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
         this.fund2 = await createCompoundEnabledFund(this, arbiter, lender, toWei('100', unit))
 
