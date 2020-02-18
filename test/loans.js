@@ -387,6 +387,144 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
+    describe('unsetOnDemandSpv', function() {
+      it('should fail if msg.sender not deployer', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const collateral = await Collateral.new(loans.address)
+
+        const onDemandSpv = await ISPVRequestManager.deployed()
+
+        collateral.setOnDemandSpv(onDemandSpv.address)
+
+        await expectRevert(collateral.unsetOnDemandSpv({ from: accounts[1] }), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should fail if onDemandSpv has not been set already', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const collateral = await Collateral.new(loans.address)
+
+        const onDemandSpv = await ISPVRequestManager.deployed()
+
+        await expectRevert(collateral.unsetOnDemandSpv(), 'VM Exception while processing transaction: revert')
+      })
+
+      it('should set onDemandSpv address to null', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const onDemandSpv = await ISPVRequestManager.deployed()
+
+        const collateral = await Collateral.new(loans.address)
+
+        await collateral.setOnDemandSpv(onDemandSpv.address)
+
+        await collateral.unsetOnDemandSpv()
+
+        const onDemandSpvAddressAfter = await collateral.onDemandSpv.call()
+
+        expect(onDemandSpvAddressAfter).to.equal('0x0000000000000000000000000000000000000000')
+      })
+
+      it('should allow loan to be created and repaid without onDemandSpv set', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
+        const p2wsh = await P2WSH.deployed()
+
+        const collateral = await Collateral.new(loans.address)
+
+        await collateral.setP2WSH(p2wsh.address)
+
+        await loans.setCollateral(collateral.address)
+
+        const onDemandSpvAddress = await collateral.onDemandSpv.call()
+        expect(onDemandSpvAddress).to.equal('0x0000000000000000000000000000000000000000')
+
+        const fundParams = [
+          toWei('1', unit),
+          toWei('100', unit),
+          toSecs({days: 1}),
+          toSecs({days: 366}),
+          YEAR_IN_SECONDS.times(2).plus(Math.floor(Date.now() / 1000)).toFixed(),
+          toWei('1.5', 'gether'), // 150% collateralization ratio
+          toWei(rateToSec('16.5'), 'gether'), // 16.50%
+          toWei(rateToSec('3'), 'gether'), //  3.00%
+          toWei(rateToSec('0.75'), 'gether'), //  0.75%
+          arbiter,
+          false,
+          0
+        ]
+
+        const fund = await funds.createCustom.call(...fundParams)
+        await funds.createCustom(...fundParams)
+
+        // Generate arbiter secret hashes
+        await funds.generate(arbiterSechs, { from: arbiter })
+
+        // Push funds to loan fund
+        await this.token.approve(funds.address, toWei('100', unit))
+        await funds.deposit(fund, toWei('100', unit))
+
+        // Pull from loan
+        const loanParams = [
+          fund,
+          borrower,
+          toWei(loanReq.toString(), unit),
+          col,
+          toSecs({days: 2}),
+          Math.floor(Date.now() / 1000),
+          [ ...borSechs, ...lendSechs ],
+          ensure0x(borpubk),
+          ensure0x(lendpubk)
+        ]
+
+        const loan = await funds.request.call(...loanParams)
+        await funds.request(...loanParams)
+
+        await loans.approve(loan)
+
+        await loans.withdraw(loan, borSecs[0], { from: borrower })
+
+        // Send funds to borrower so they can repay full
+        await this.token.transfer(borrower, toWei('1', unit))
+
+        await this.token.approve(loans.address, toWei('100', unit), { from: borrower })
+
+        const owedForLoan = await loans.owedForLoan.call(loan)
+        await loans.repay(loan, owedForLoan, { from: borrower })
+
+        await loans.accept(loan, lendSecs[0]) // accept loan repayment
+      })
+    })
+
     describe('setCollateral', function() {
       it('should fail if msg.sender is not deployer', async function() {
         const decimal = stablecoin.unit === 'ether' ? '18' : '6'
@@ -430,9 +568,24 @@ stablecoins.forEach((stablecoin) => {
         await funds.setLoans(loans.address)
         await loans.setSales(sales.address)
 
+        await expectRevert(loans.setCollateral('0x0000000000000000000000000000000000000000'), 'VM Exception while processing transaction: revert')
+      })
+    })
+
+    describe('Collateral.setCollateral', function() {
+      it('should fail if not called by loans contract', async function() {
+        const decimal = stablecoin.unit === 'ether' ? '18' : '6'
+
+        const funds = await Funds.new(this.token.address, decimal)
+        const loans = await Loans.new(funds.address, this.med.address, this.token.address, decimal)
+        const sales = await Sales.new(loans.address, funds.address, this.med.address, this.token.address)
+
+        await funds.setLoans(loans.address)
+        await loans.setSales(sales.address)
+
         const collateral = await Collateral.new(loans.address)
 
-        await expectRevert(loans.setCollateral('0x0000000000000000000000000000000000000000'), 'VM Exception while processing transaction: revert')
+        await expectRevert(collateral.setCollateral(numToBytes32(1), 0, 0), 'VM Exception while processing transaction: revert')
       })
     })
 

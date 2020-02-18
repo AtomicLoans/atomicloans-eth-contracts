@@ -370,7 +370,7 @@ contract Funds is DSMath, ALCompound {
      * @param addr_ The address of the user
      * @return The length of the secretHashes array for user address
      */
-    function secretHashesCount(address addr_) external view returns (uint256) {
+    function secretHashesCount(address addr_) public view returns (uint256) {
         return secretHashes[addr_].length;
     }
 
@@ -851,6 +851,7 @@ contract Funds is DSMath, ALCompound {
      */
     function getSecretHashesForLoan(address addr_) private returns (bytes32[4] memory) {
         secretHashIndex[addr_] = add(secretHashIndex[addr_], 4);
+        require(secretHashesCount(addr_) >= secretHashIndex[addr_], "Funds.getSecretHashesForLoan: Not enough secrets generated");
         return [
             secretHashes[addr_][sub(secretHashIndex[addr_], 4)],
             secretHashes[addr_][sub(secretHashIndex[addr_], 3)],
