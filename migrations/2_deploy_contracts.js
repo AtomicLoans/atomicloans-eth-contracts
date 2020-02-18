@@ -59,11 +59,9 @@ module.exports = function(deployer, network, accounts) {
     // Deploy cDAI
     await deployer.deploy(DAIInterestRateModel, toWei('0.05', 'ether'), toWei('0.12', 'ether'))
     await deployer.deploy(USDCInterestRateModel, toWei('0', 'ether'), toWei('0.2', 'ether'))
-    await deployer.deploy(DAIInterestRateModel, toWei('0.05', 'ether'), toWei('0.12', 'ether'))
     await deployer.deploy(ETHInterestRateModel, toWei('0', 'ether'), toWei('0.2', 'ether'))
     var daiInterestRateModel = await DAIInterestRateModel.deployed()
     var usdcInterestRateModel = await USDCInterestRateModel.deployed()
-    var daiInterestRateModel = await DAIInterestRateModel.deployed()
     var ethInterestRateModel = await ETHInterestRateModel.deployed()
 
     await deployer.deploy(Unitroller)
@@ -87,7 +85,6 @@ module.exports = function(deployer, network, accounts) {
 
     await comptroller._supportMarket(cdai.address)
     await comptroller._supportMarket(cusdc.address)
-    await comptroller._supportMarket(cdai.address)
     await comptroller._supportMarket(ceth.address)
 
     await deployer.deploy(PriceOracle, accounts[0], dai.address, makerMedianizer.address, usdc.address, makerMedianizer.address)
