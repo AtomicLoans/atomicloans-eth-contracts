@@ -1642,7 +1642,7 @@ stablecoins.forEach((stablecoin) => {
       })
     })
 
-    describe('minSeizableCollateralValue', function() {
+    describe('minSeizableCollateral', function() {
       it('should should change upon partial repayment', async function() {
         await this.loans.approve(this.loan)
 
@@ -1655,13 +1655,13 @@ stablecoins.forEach((stablecoin) => {
 
         const owedForLoan = await this.loans.owedForLoan.call(this.loan)
 
-        const minSeizableCollateralValueBefore = await this.loans.minSeizableCollateralValue.call(this.loan)
+        const minSeizableCollateralBefore = await this.loans.minSeizableCollateral.call(this.loan)
 
         await this.loans.repay(this.loan, BigNumber(owedForLoan).dividedBy(2).toFixed(0), { from: borrower })
 
-        const minSeizableCollateralValueAfter = await this.loans.minSeizableCollateralValue.call(this.loan)
+        const minSeizableCollateralAfter = await this.loans.minSeizableCollateral.call(this.loan)
 
-        assert.isAbove(parseInt(BigNumber(minSeizableCollateralValueBefore).toFixed()), parseInt(BigNumber(minSeizableCollateralValueAfter).toFixed()))
+        assert.isAbove(parseInt(BigNumber(minSeizableCollateralBefore).toFixed()), parseInt(BigNumber(minSeizableCollateralAfter).toFixed()))
       })
     })
   })

@@ -6,6 +6,10 @@ import 'openzeppelin-solidity/contracts/math/SafeMath.sol';
 import './Loans.sol';
 import './ALCompound.sol';
 
+/**
+ * @title Atomic Loans Funds Contract
+ * @author Atomic Loans
+ */
 contract Funds is DSMath, ALCompound {
     Loans loans;
 
@@ -93,6 +97,14 @@ contract Funds is DSMath, ALCompound {
 
     event Create(bytes32 fund);
 
+    /**
+     * @notice Construct a new Medianizer
+     */
+    /**
+     * @notice Construct a new Funds contract
+     * @param token_ The address of the stablecoin token
+     * @param decimals_ The number of decimals in the stablecoin token
+     */
     constructor(
         ERC20   token_,
         uint256 decimals_
@@ -124,7 +136,7 @@ contract Funds is DSMath, ALCompound {
      * @dev Sets Loans contract
      * @param loans_ Address of Loans contract
      */
-    function setLoans(Loans loans_) public {
+    function setLoans(Loans loans_) external {
         require(msg.sender == deployer, "Funds.setLoans: Only the deployer can perform this");
         require(address(loans) == address(0), "Funds.setLoans: Loans address has already been set");
         require(address(loans_) != address(0), "Funds.setLoans: Loans address must be non-zero");
@@ -137,7 +149,7 @@ contract Funds is DSMath, ALCompound {
      * @param cToken_ The address of the Compound Token
      * @param comptroller_ The address of the Compound Comptroller
      */
-    function setCompound(CTokenInterface cToken_, address comptroller_) public {
+    function setCompound(CTokenInterface cToken_, address comptroller_) external {
         require(msg.sender == deployer, "Funds.setCompound: Only the deployer can enable Compound lending");
         require(!compoundSet, "Funds.setCompound: Compound address has already been set");
         require(address(cToken_) != address(0), "Funds.setCompound: cToken address must be non-zero");
@@ -741,17 +753,17 @@ contract Funds is DSMath, ALCompound {
         }
     }
 
-    /*
+    /**
      * @notice Calculate compound interest for a length of time
-     * @param amount The amount of tokens
-     * @param rate The interest rate in seconds
-     * @param loanDur The loan duration in seconds
+     * @param amount_ The amount of tokens
+     * @param rate_ 1 + nominal per second interest rate in percentage terms
+     * @param loanDur_ The loan duration in seconds
      */
     function calcInterest(uint256 amount_, uint256 rate_, uint256 loanDur_) public pure returns (uint256) {
         return sub(rmul(amount_, rpow(rate_, loanDur_)), amount_);
     }
 
-    /*
+    /**
      * @dev Ensure null values for fundExpiry and maxLoanDur are set to MAX_LOAN_LENGTH
      * @param value The value to be sanity checked
      */
@@ -765,7 +777,7 @@ contract Funds is DSMath, ALCompound {
         return value;
     }
 
-    /*
+    /**
      * @dev Takes loan request parameters, creates loan, and returns loanIndex
      * @param fund The Id of a Loan Fund
      * @param amount_ Amount of tokens to request
@@ -796,7 +808,7 @@ contract Funds is DSMath, ALCompound {
         );
     }
 
-    /*
+    /**
      * @dev Takes loan request Bitcoin parameters, sets loan Public Keys and Secret Hashes
      * @param fund The Id of the Loan Fund
      * @param loan The Id of the Loan
@@ -822,7 +834,7 @@ contract Funds is DSMath, ALCompound {
         );
     }
 
-    /*
+    /**
      * @dev Updates market liquidity based on amount of tokens being requested to borrow
      * @param fund Loan Id of the Loan Fund
      * @param amount_ The amount of tokens that are being requested
@@ -845,9 +857,9 @@ contract Funds is DSMath, ALCompound {
         }
     }
 
-    /*
+    /**
      * @dev Get the next 4 secret hashes required for loan
-     * @param addr Address of Lender or Arbiter
+     * @param addr_ Address of Lender or Arbiter
      */
     function getSecretHashesForLoan(address addr_) private returns (bytes32[4] memory) {
         secretHashIndex[addr_] = add(secretHashIndex[addr_], 4);

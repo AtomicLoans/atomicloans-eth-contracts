@@ -9,6 +9,10 @@ import './Loans.sol';
 import './Medianizer.sol';
 import './DSMath.sol';
 
+/**
+ * @title Atomic Loans Sales Contract
+ * @author Atomic Loans
+ */
 contract Sales is DSMath {
     FundsInterface funds;
     Loans loans;
@@ -24,7 +28,7 @@ contract Sales is DSMath {
     mapping (bytes32 => Sale)       public sales;        // Auctions
     mapping (bytes32 => Sig)        public borrowerSigs; // Borrower Signatures
     mapping (bytes32 => Sig)        public lenderSigs;   // Lender Signatures
-    mapping (bytes32 => Sig)        public arbiterSigs;  // Lender Signatures
+    mapping (bytes32 => Sig)        public arbiterSigs;  // Arbiter Signatures
     mapping (bytes32 => SecretHash) public secretHashes; // Auction Secret Hashes
     uint256                         public saleIndex;    // Auction Index
 
@@ -86,26 +90,58 @@ contract Sales is DSMath {
         bytes32 secretD;     // Secret D
     }
 
-    function discountBuy(bytes32 sale) public view returns (uint256) {
+    /**
+     * @notice Get Discount Buy price for a Sale
+     * @param sale The Id of a Sale
+     * @return Value of the Discount Buy price
+     */
+    function discountBuy(bytes32 sale) external view returns (uint256) {
         return sales[sale].discountBuy;
     }
 
-    function swapExpiration(bytes32 sale) public view returns (uint256) {
+    /**
+     * @notice Get the Swap Expiration of a Sale
+     * @param sale The Id of a Sale
+     * @return Swap Expiration Timestamp
+     */
+    function swapExpiration(bytes32 sale) external view returns (uint256) {
         return sales[sale].createdAt + SWAP_EXP;
     }
 
+    /**
+     * @notice Get the Settlement Expiration of a Sale
+     * @param sale The Id of a Sale
+     * @return Settlement Expiration Timestamp
+     */
     function settlementExpiration(bytes32 sale) public view returns (uint256) {
         return sales[sale].createdAt + SETTLEMENT_EXP;
     }
 
+    /**
+     * @notice Get the accepted status of a Sale
+     * @param sale The Id of a Sale
+     * @return Bool that indicates whether Sale has been accepted
+     */
     function accepted(bytes32 sale) public view returns (bool) {
         return sales[sale].accepted;
     }
 
+    /**
+     * @notice Get the off status of a Sale
+     * @param sale The Id of a Sale
+     * @return Bool that indicates whether Sale has been terminated
+     */
     function off(bytes32 sale) public view returns (bool) {
         return sales[sale].off;
     }
 
+    /**
+     * @notice Construct a new Sales contract
+     * @param loans_ The address of the Loans contract
+     * @param funds_ The address of the Funds contract
+     * @param med_ The address of the Medianizer contract
+     * @param token_ The stablecoin token address
+     */
     constructor (Loans loans_, FundsInterface funds_, Medianizer med_, ERC20 token_) public {
         require(address(loans_) != address(0), "Loans address must be non-zero");
         require(address(funds_) != address(0), "Funds address must be non-zero");
@@ -119,12 +155,17 @@ contract Sales is DSMath {
         require(token.approve(address(funds), MAX_UINT_256), "Token approve failed");
     }
 
+    /**
+     * @notice Get the next Sale for a Loan
+     * @param loan The Id of a Loan
+     * @return Bool that indicates whether Sale has been terminated
+     */
     function next(bytes32 loan) public view returns (uint256) {
     	return saleIndexByLoan[loan].length;
     }
 
     /**
-     * @dev Creates a new sale (called by the Loans contract)
+     * @notice Creates a new sale (called by the Loans contract)
      * @param loanIndex The Id of the Loan
      * @param borrower The address of the borrower
      * @param lender The address of the lender
@@ -215,7 +256,7 @@ contract Sales is DSMath {
     }
 
     /**
-     * @dev Indicates that two of Secret A, Secret B, Secret C have been submitted
+     * @notice Indicates that two of Secret A, Secret B, Secret C have been submitted
      * @param sale The Id of the sale
      */
     function hasSecrets(bytes32 sale) public view returns (bool) {
@@ -237,23 +278,29 @@ contract Sales is DSMath {
         require(revealed[secretHashes[sale].secretHashD], "Sales.accept: Secret D must have already been revealed");
         sales[sale].accepted = true;
 
+        // First calculate available funds that can be dispursed
         uint256 available = add(sales[sale].discountBuy, loans.repaid(sales[sale].loanIndex));
 
+        // Use available funds to pay Arbiter fee
         if (sales[sale].arbiter != address(0) && available >= loans.fee(sales[sale].loanIndex)) {
             require(token.transfer(sales[sale].arbiter, loans.fee(sales[sale].loanIndex)), "Sales.accept: Token transfer of fee to Arbiter failed");
             available = sub(available, loans.fee(sales[sale].loanIndex));
         }
 
+        // Determine amount remaining after removing owedToLender from available
         uint256 amount = min(available, loans.owedToLender(sales[sale].loanIndex));
 
+        // Transfer amount owedToLender to Lender or Deposit into their Fund if they have one
         if (loans.fundIndex(sales[sale].loanIndex) == bytes32(0)) {
             require(token.transfer(sales[sale].lender, amount), "Sales.accept: Token tranfer of amount left to Lender failed");
         } else {
             funds.deposit(loans.fundIndex(sales[sale].loanIndex), amount);
         }
 
+        // Calculate available Funds after subtracting amount owed to Lender
         available = sub(available, amount);
 
+        // Send penalty amount to oracles if there is enough available, else transfer remaining funds to oracles
         if (available >= loans.penalty(sales[sale].loanIndex)) {
             require(token.approve(address(med), loans.penalty(sales[sale].loanIndex)), "Sales.accept: Token transfer of penalty to Medianizer failed");
             med.fund(loans.penalty(sales[sale].loanIndex), token);
@@ -264,11 +311,17 @@ contract Sales is DSMath {
             available = 0;
         }
 
+        // If there are still funds available after repaying all other parties, send the remaining funds to the Borrower
         if (available > 0) {
             require(token.transfer(sales[sale].borrower, available), "Sales.accept: Token transfer of tokens available to Borrower failed");
         }
     }
 
+     /**
+     * @notice Provide secrets to enable liquidator to claim collateral then accept discount buy to disperse funds to rightful parties
+     * @param sale The Id of the sale
+     * @param secrets_ The secrets provided by the borrower, lender, arbiter, or liquidator
+     */
     function provideSecretsAndAccept(bytes32 sale, bytes32[3] calldata secrets_) external {
         provideSecret(sale, secrets_[0]);
         provideSecret(sale, secrets_[1]);

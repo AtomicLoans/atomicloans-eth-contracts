@@ -113,7 +113,7 @@ contract P2WSH is Bytes {
     return result;
   }
 
-  function getP2WSH(bytes32 loan, bool sez) public view returns (bytes memory, bytes32) {
+  function getP2WSH(bytes32 loan, bool sez) external view returns (bytes memory, bytes32) {
     bytes memory script = loanPeriodP2WSH(loan, biddingPeriodP2WSH(loan, seizurePeriodP2WSH(loan, refundablePeriodP2WSH(loan), sez)));
     bytes32 pubkh = sha256(script);
 

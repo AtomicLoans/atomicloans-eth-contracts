@@ -12,6 +12,10 @@ import './CollateralInterface.sol';
 import './DSMath.sol';
 import './Medianizer.sol';
 
+/**
+ * @title Atomic Loans Loans Contract
+ * @author Atomic Loans
+ */
 contract Loans is DSMath {
     FundsInterface funds;
     Medianizer med;
@@ -31,7 +35,6 @@ contract Loans is DSMath {
     mapping (bytes32 => SecretHashes)             public secretHashes;        // Secret Hashes
     mapping (bytes32 => Bools)                    public bools;               // Boolean state of Loan
     mapping (bytes32 => bytes32)                  public fundIndex;           // Mapping of Loan Index to Fund Index
-    mapping (bytes32 => ERC20)                    public tokes;               // Mapping of Loan index to Token contract
     mapping (bytes32 => uint256)                  public repayments;          // Amount paid back in a Loan
     mapping (address => bytes32[])                public borrowerLoans;
     mapping (address => bytes32[])                public lenderLoans;
@@ -135,160 +138,358 @@ contract Loans is DSMath {
 
     event Create(bytes32 loan);
 
-    function borrower(bytes32 loan) public view returns (address) {
+    /**
+     * @notice Get the Borrower of a Loan
+     * @param loan The Id of a Loan
+     * @return Borrower address of Loan
+     */
+    function borrower(bytes32 loan) external view returns (address) {
         return loans[loan].borrower;
     }
 
-    function lender(bytes32 loan) public view returns (address) {
+    /**
+     * @notice Get the Lender of a Loan
+     * @param loan The Id of a Loan
+     * @return Lender address of Loan
+     */
+    function lender(bytes32 loan) external view returns (address) {
         return loans[loan].lender;
     }
 
-    function arbiter(bytes32 loan) public view returns (address) {
+    /**
+     * @notice Get the Arbiter of a Loan
+     * @param loan The Id of a Loan
+     * @return Arbiter address of Loan
+     */
+    function arbiter(bytes32 loan) external view returns (address) {
         return loans[loan].arbiter;
     }
 
+    /**
+     * @notice Get the Approve Expiration of a Loan
+     * @param loan The Id of a Loan
+     * @return Approve Expiration Timestamp
+     */
     function approveExpiration(bytes32 loan) public view returns (uint256) { // Approval Expiration
         return add(loans[loan].createdAt, APPROVE_EXP_THRESHOLD);
     }
 
+    /**
+     * @notice Get the Accept Expiration of a Loan
+     * @param loan The Id of a Loan
+     * @return Accept Expiration Timestamp
+     */
     function acceptExpiration(bytes32 loan) public view returns (uint256) { // Acceptance Expiration
         return add(loans[loan].loanExpiration, ACCEPT_EXP_THRESHOLD);
     }
 
+    /**
+     * @notice Get the Liquidation Expiration of a Loan
+     * @param loan The Id of a Loan
+     * @return Liquidation Expiration Timestamp
+     */
     function liquidationExpiration(bytes32 loan) public view returns (uint256) { // Liquidation Expiration
         return add(loans[loan].loanExpiration, LIQUIDATION_EXP_THRESHOLD);
     }
 
+    /**
+     * @notice Get the Seizure Expiration of a Loan
+     * @param loan The Id of a Loan
+     * @return Seizure Expiration Timestamp
+     */
     function seizureExpiration(bytes32 loan) public view returns (uint256) {
         return add(liquidationExpiration(loan), SEIZURE_EXP_THRESHOLD);
     }
 
+    /**
+     * @notice Get the Principal of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of Principal in stablecoin tokens
+     */
     function principal(bytes32 loan) public view returns (uint256) {
         return loans[loan].principal;
     }
 
+    /**
+     * @notice Get the Interest of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of Interest in stablecoin tokens
+     */
     function interest(bytes32 loan) public view returns (uint256) {
         return loans[loan].interest;
     }
 
+    /**
+     * @notice Get the Fee of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of Fee in stablecoin tokens
+     */
     function fee(bytes32 loan) public view returns (uint256) {
         return loans[loan].fee;
     }
 
+    /**
+     * @notice Get the Penalty of a Loan (if not repaid)
+     * @dev Upon liquidation penalty is paid out to oracles to give incentive for users to continue updating them
+     * @param loan The Id of a Loan
+     * @return Amount of Penalty in stablecoin tokens
+     */
     function penalty(bytes32 loan) public view returns (uint256) {
         return loans[loan].penalty;
     }
 
+    /**
+     * @notice Get the Collateral of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of collateral backing the loan (in sats)
+     */
     function collateral(bytes32 loan) public view returns (uint256) {
         return col.collateral(loan);
     }
 
-    function refundableCollateral(bytes32 loan) public view returns (uint256) {
+    /**
+     * @notice Get the Refundable Collateral of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of refundable collateral backing the loan (in sats)
+     */
+    function refundableCollateral(bytes32 loan) external view returns (uint256) {
         return col.refundableCollateral(loan);
     }
 
-    function seizableCollateral(bytes32 loan) public view returns (uint256) {
+    /**
+     * @notice Get the Seizable Collateral of a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of seizable collateral backing the loan (in sats)
+     */
+    function seizableCollateral(bytes32 loan) external view returns (uint256) {
         return col.seizableCollateral(loan);
     }
 
-    function temporaryRefundableCollateral(bytes32 loan) public view returns (uint256) {
+    /**
+     * @notice Get the Temporary Refundable Collateral of a Loan
+     * @dev Represents the amount of refundable collateral that has been locked and only has 1 conf, where 6 confs hasn't been received yet
+     * @param loan The Id of a Loan
+     * @return Amount of temporary refundable collateral backing the loan (in sats)
+     */
+    function temporaryRefundableCollateral(bytes32 loan) external view returns (uint256) {
         return col.temporaryRefundableCollateral(loan);
     }
 
-    function temporarySeizableCollateral(bytes32 loan) public view returns (uint256) {
+    /**
+     * @notice Get the Temporary Seizable Collateral of a Loan
+     * @dev Represents the amount of seizable collateral that has been locked and only has 1 conf, where 6 confs hasn't been received yet
+     * @param loan The Id of a Loan
+     * @return Amount of temporary seizable collateral backing the loan (in sats)
+     */
+    function temporarySeizableCollateral(bytes32 loan) external view returns (uint256) {
         return col.temporarySeizableCollateral(loan);
     }
 
+    /**
+     * @notice Get the amount repaid towards a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of the loan that has been repaid
+     */
     function repaid(bytes32 loan) public view returns (uint256) { // Amount paid back for loan
         return repayments[loan];
     }
 
+    /**
+     * @notice Get Liquidation Ratio of a Loan (Minimum Collateralization Ratio)
+     * @param loan The Id of a Loan
+     * @return Liquidation Ratio in RAY (i.e. 140% would be 1.4 * (10 ** 27))
+     */
     function liquidationRatio(bytes32 loan) public view returns (uint256) {
         return loans[loan].liquidationRatio;
     }
 
+    /**
+     * @notice Get the amount owed to the Lender for a Loan
+     * @param loan The Id of a Loan
+     * @return Amount owed to the Lender
+     */
     function owedToLender(bytes32 loan) public view returns (uint256) { // Amount lent by Lender
         return add(principal(loan), interest(loan));
     }
 
+    /**
+     * @notice Get the amount needed to repay a Loan
+     * @param loan The Id of a Loan
+     * @return Amount needed to repay the Loan
+     */
     function owedForLoan(bytes32 loan) public view returns (uint256) { // Amount owed
         return add(owedToLender(loan), fee(loan));
     }
 
-    function owedForLiquidation(bytes32 loan) public view returns (uint256) { // Deductible amount from collateral
+    /**
+     * @notice Get the amount that needs to be covered in the case of a liquidation for a Loan
+     * @dev owedForLiquidation includes penalty which is paid out to oracles to give incentive for users to continue updating them
+     * @param loan The Id of a Loan
+     * @return Amount needed to cover a liquidation
+     */
+    function owedForLiquidation(bytes32 loan) external view returns (uint256) { // Deductible amount from collateral
         return add(owedForLoan(loan), penalty(loan));
     }
 
-    function owing(bytes32 loan) public view returns (uint256) {
+    /**
+     * @notice Get the amount still owing for a Loan
+     * @param loan The Id of a Loan
+     * @return Amount owing for a Loan
+     */
+    function owing(bytes32 loan) external view returns (uint256) {
         return sub(owedForLoan(loan), repaid(loan));
     }
 
-    function funded(bytes32 loan) public view returns (bool) {
+    /**
+     * @notice Get the funded status of a Loan
+     * @param loan The Id of a Loan
+     * @return Bool that indicates whether loan has been funded
+     */
+    function funded(bytes32 loan) external view returns (bool) {
         return bools[loan].funded;
     }
 
-    function approved(bytes32 loan) public view returns (bool) {
+    /**
+     * @notice Get the approved status of a Loan
+     * @param loan The Id of a Loan
+     * @return Bool that indicates whether loan has been approved
+     */
+    function approved(bytes32 loan) external view returns (bool) {
         return bools[loan].approved;
     }
 
-    function withdrawn(bytes32 loan) public view returns (bool) {
+    /**
+     * @notice Get the withdrawn status of a Loan
+     * @param loan The Id of a Loan
+     * @return Bool that indicates whether loan has been withdrawn
+     */
+    function withdrawn(bytes32 loan) external view returns (bool) {
         return bools[loan].withdrawn;
     }
 
+    /**
+     * @notice Get the sale status of a Loan
+     * @param loan The Id of a Loan
+     * @return Bool that indicates whether loan has been liquidated
+     */
     function sale(bytes32 loan) public view returns (bool) {
         return bools[loan].sale;
     }
 
-    function paid(bytes32 loan) public view returns (bool) {
+    /**
+     * @notice Get the paid status of a Loan
+     * @param loan The Id of a Loan
+     * @return Bool that indicates whether loan has been repaid
+     */
+    function paid(bytes32 loan) external view returns (bool) {
         return bools[loan].paid;
     }
 
+    /**
+     * @notice Get the off status of a Loan
+     * @param loan The Id of a Loan
+     * @return Bool that indicates whether loan has been terminated
+     */
     function off(bytes32 loan) public view returns (bool) {
         return bools[loan].off;
     }
 
+    /**
+     * @notice Decimal multiplication that multiplies the number to 10 ** 18 if stablecoin token decimals are less than 18
+     * @param x The number to decimal multiply
+     * @return x converted to WAD (10 ** 18) if decimals are less than 18, else x
+     */
     function dmul(uint x) public view returns (uint256) {
         return mul(x, (10 ** sub(18, decimals)));
     }
 
+    /**
+     * @notice Decimal division that divides the number to 10 ** decimals from 10 ** 18 if stablecoin token decimals are less than 18
+     * @param x The number to decimal divide
+     * @return x converted to 10 ** decimals if decimals are less than 18, else x
+     */
     function ddiv(uint x) public view returns (uint256) {
         return div(x, (10 ** sub(18, decimals)));
     }
 
-    function borrowerLoanCount(address borrower_) public view returns (uint256) {
+    /**
+     * @notice Get the number of loans originated by a Borrower
+     * @param borrower_ Address of the Borrower
+     * @return Number of loans originated by Borrower
+     */
+    function borrowerLoanCount(address borrower_) external view returns (uint256) {
         return borrowerLoans[borrower_].length;
     }
 
-    function lenderLoanCount(address lender_) public view returns (uint256) {
+    /**
+     * @notice Get the number of loans originated by a Lender
+     * @param lender_ Address of the Lender
+     * @return Number of loans originated by Lender
+     */
+    function lenderLoanCount(address lender_) external view returns (uint256) {
         return lenderLoans[lender_].length;
     }
 
-    function minSeizableCollateralValue(bytes32 loan) public view returns (uint256) {
+    /**
+     * @notice The minimum seizable collateral required to cover a Loan
+     * @param loan The Id of a Loan
+     * @return Amount of seizable collateral value (in sats) required to cover a Loan
+     */
+    function minSeizableCollateral(bytes32 loan) public view returns (uint256) {
         (bytes32 val, bool set) = med.peek();
-        require(set, "Loans.minSeizableCollateralValue: Medianizer must be set");
+        require(set, "Loans.minSeizableCollateral: Medianizer must be set");
         uint256 price = uint(val);
         return div(wdiv(dmul(sub(owedForLoan(loan), repaid(loan))), price), div(WAD, COL));
     }
 
-    function collateralValue(bytes32 loan) public view returns (uint256) { // Current Collateral Value
+    /**
+     * @notice The current collateral value of a Loan
+     * @dev Gets the price in USD from the Medianizer and multiplies it by the collateral in sats to get the USD value of collateral
+     * @param loan The Id of a Loan
+     * @return Value of collateral (USD in WAD)
+     */
+    function collateralValue(bytes32 loan) public view returns (uint256) {
         (bytes32 val, bool set) = med.peek();
         require(set, "Loans.collateralValue: Medianizer must be set");
         uint256 price = uint(val);
-        return cmul(price, collateral(loan)); // Multiply value dependent on number of decimals with currency
+        return cmul(price, collateral(loan));
     }
 
-    function minCollateralValue(bytes32 loan) public view returns (uint256) {  // Minimum Collateral Value
+    /**
+     * @notice The minimum collateral value to cover the amount owed for a Loan
+     * @dev Gets the amount in the Loan that still needs to be repaid, converts to WAD, and multiplies it by the minimum liquidation ratio
+     * @param loan The Id of a Loan
+     * @return Value of the minimum collateral required (USD in WAD)
+     */
+    function minCollateralValue(bytes32 loan) public view returns (uint256) {
         return rmul(dmul(sub(owedForLoan(loan), repaid(loan))), liquidationRatio(loan));
     }
 
+    /**
+     * @notice The discount collateral value in which a Liquidator can purchase the collateral for
+     * @param loan The Id of a Loan
+     * @return Value of the discounted collateral required to Liquidate a Loan (USD in WAD)
+     */
     function discountCollateralValue(bytes32 loan) public view returns (uint256) {
         return wmul(collateralValue(loan), LIQUIDATION_DISCOUNT);
     }
 
-    function safe(bytes32 loan) public view returns (bool) { // Loan is safe from Liquidation
+    /**
+     * @notice Get the safe status of a Loan
+     * @param loan The Id of a Loan
+     * @return Bool that indicates whether loan is safe from liquidation
+     */
+    function safe(bytes32 loan) public view returns (bool) {
         return collateralValue(loan) >= minCollateralValue(loan);
     }
 
+    /**
+     * @notice Construct a new Loans contract
+     * @param funds_ The address of the Funds contract
+     * @param med_ The address of the Medianizer contract
+     * @param token_ The stablecoin token address
+     * @param decimals_ The number of decimals in the stablecoin token
+     */
     constructor (FundsInterface funds_, Medianizer med_, ERC20 token_, uint256 decimals_) public {
         require(address(funds_) != address(0), "Funds address must be non-zero");
         require(address(med_) != address(0), "Medianizer address must be non-zero");
@@ -337,16 +538,16 @@ contract Loans is DSMath {
      * @param loanExpiration_ The timestamp for the end of the loan
      * @param usrs_ Array of three addresses containing the borrower, lender, and optional arbiter address
      * @param vals_ Array of seven uints containing loan principal, interest, liquidation penalty, optional arbiter fee, collateral amount, liquidation ratio, and request timestamp
-     * @param fundIndex_ The optional Fund Index
+     * @param fund The optional Fund ID
      */
     function create(
         uint256             loanExpiration_,
         address[3] calldata usrs_,
         uint256[7] calldata vals_,
-        bytes32             fundIndex_
+        bytes32             fund
     ) external returns (bytes32 loan) {
-        if (fundIndex_ != bytes32(0)) {
-            require(funds.lender(fundIndex_) == usrs_[1], "Loans.create: Lender of Fund not in args");
+        if (fund != bytes32(0)) {
+            require(funds.lender(fund) == usrs_[1], "Loans.create: Lender of Fund not in args");
         }
         require(!addressToTimestamp[usrs_[0]][vals_[6]], "Loans.create: Duplicate request timestamps are not allowed");
         require(loanExpiration_ > now, "Loans.create: loanExpiration must be greater than `now`");
@@ -365,11 +566,11 @@ contract Loans is DSMath {
         loans[loan].interest = vals_[1];
         loans[loan].penalty = vals_[2];
         loans[loan].fee = vals_[3];
-        uint256 minSeizableCollateralVal = minSeizableCollateralValue(loan);
-        col.setCollateral(loan, sub(vals_[4], minSeizableCollateralVal), minSeizableCollateralVal);
+        uint256 minSeizableCol = minSeizableCollateral(loan);
+        col.setCollateral(loan, sub(vals_[4], minSeizableCol), minSeizableCol);
         loans[loan].liquidationRatio = vals_[5];
         loans[loan].requestTimestamp = vals_[6];
-        fundIndex[loan] = fundIndex_;
+        fundIndex[loan] = fund;
         secretHashes[loan].set = false;
         borrowerLoans[usrs_[0]].push(bytes32(loanIndex));
         lenderLoans[usrs_[1]].push(bytes32(loanIndex));
@@ -507,6 +708,11 @@ contract Loans is DSMath {
         accept(loan, secret);
     }
 
+    /**
+     * @notice Lender cancels loan after Seizure Expiration in case Lender loses secret
+     * @dev Lender cancels loan and principal is sent back to the Lender / Loan Fund
+     * @param loan The Id of the Loan
+     */
     function cancel(bytes32 loan) external {
         require(!off(loan), "Loans.cancel: Loan must not be inactive");
         require(bools[loan].withdrawn == false, "Loans.cancel: Loan principal must not be withdrawn");
@@ -535,9 +741,14 @@ contract Loans is DSMath {
         close(loan);
     }
 
+    /**
+     * @notice Terminate Loan and transfer funds back to Lender and Arbiter (if there are any fees acrued)
+     * @param loan The Id of the Loan
+     */
     function close(bytes32 loan) private {
         bools[loan].off = true;
         loans[loan].closedTimestamp = now;
+        // If Loan has not been withdraw, simply transfer Principal back to the Lender
         if (bools[loan].withdrawn == false) {
             if (fundIndex[loan] == bytes32(0)) {
                 require(token.transfer(loans[loan].lender, loans[loan].principal), "Loans.close: Failed to transfer principal to Lender");
@@ -547,7 +758,9 @@ contract Loans is DSMath {
                 }
                 funds.deposit(fundIndex[loan], loans[loan].principal);
             }
-        } else {
+        }
+        // If Loan has been withdrawn, transfer Principal + Interest to Lender and Fee to Arbiter
+        else {
             if (fundIndex[loan] == bytes32(0)) {
                 require(token.transfer(loans[loan].lender, owedToLender(loan)), "Loans.close: Failed to transfer owedToLender to Lender");
             } else {
@@ -572,17 +785,21 @@ contract Loans is DSMath {
         require(bools[loan].withdrawn == true, "Loans.liquidate: Loan principal must be withdrawn");
         require(msg.sender != loans[loan].borrower && msg.sender != loans[loan].lender, "Loans.liquidate: Liquidator must be a third-party");
         require(secretHash != bytes32(0) && pubKeyHash != bytes20(0), "Loans.liquidate: secretHash and pubKeyHash must be non-zero");
+        // Check if this is the first liquidation (if a liquidation fails because the liquidator didn't claim, up to MAX_NUM_LIQUIDATIONS can occur)
         if (sales.next(loan) == 0) {
+            // Check if current time is greater than loan expiration timestamp
             if (now > loans[loan].loanExpiration) {
                 require(bools[loan].paid == false, "Loans.liquidate: loan must not have already been repaid");
             } else {
                 require(!safe(loan), "Loans.liquidate: collateralization must be below min-collateralization ratio");
             }
+            // If Loan is not custom, update global borrow and interest variables in Funds contract
             if (funds.custom(fundIndex[loan]) == false) {
                 funds.decreaseTotalBorrow(loans[loan].principal);
                 funds.calcGlobalInterest();
             }
         } else {
+            // Since there is only 1 + MAX_NUM_LIQUIDATIONS secret hashes per participant, only MAX_NUM_LIQUIDATIONS Liquidation can occur
             require(sales.next(loan) < MAX_NUM_LIQUIDATIONS, "Loans.liquidate: Max number of liquidations reached");
             require(!sales.accepted(sales.saleIndexByLoan(loan, sales.next(loan) - 1)), "Loans.liquidate: Previous liquidation already accepted");
             require(
@@ -594,6 +811,7 @@ contract Loans is DSMath {
         require(token.transferFrom(msg.sender, address(sales), ddiv(discountCollateralValue(loan))), "Loans.liquidate: Token transfer failed");
         SecretHashes storage h = secretHashes[loan];
         uint256 i = sales.next(loan);
+        // Create new Sale with secret hashes associated with sale index
         sale_ = sales.create(
             loan, loans[loan].borrower, loans[loan].lender, loans[loan].arbiter, msg.sender,
             h.secretHashAs[i], h.secretHashBs[i], h.secretHashCs[i], secretHash, pubKeyHash
@@ -602,6 +820,7 @@ contract Loans is DSMath {
             bools[loan].sale = true;
             require(token.transfer(address(sales), repaid(loan)), "Loans.liquidate: Token transfer to Sales contract failed");
         }
+        // If onDemandSpv is set, cancel spv proofs for this Loan
         if (address(col.onDemandSpv()) != address(0)) {col.cancelSpv(loan);}
     }
 }
