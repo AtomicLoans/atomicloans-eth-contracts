@@ -1,5 +1,3 @@
-const { BigNumber } = require('bignumber.js');
-
 const Bytes = artifacts.require("./P2WSH.sol");
 
 beforeEach(async function () {
