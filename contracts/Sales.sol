@@ -292,7 +292,7 @@ contract Sales is DSMath {
 
         // Transfer amount owedToLender to Lender or Deposit into their Fund if they have one
         if (loans.fundIndex(sales[sale].loanIndex) == bytes32(0)) {
-            require(token.transfer(sales[sale].lender, amount), "Sales.accept: Token tranfer of amount left to Lender failed");
+            require(token.transfer(sales[sale].lender, amount), "Sales.accept: Token transfer of amount left to Lender failed");
         } else {
             funds.deposit(loans.fundIndex(sales[sale].loanIndex), amount);
         }
