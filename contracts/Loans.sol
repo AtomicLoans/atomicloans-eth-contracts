@@ -138,6 +138,24 @@ contract Loans is DSMath {
 
     event Create(bytes32 loan);
 
+    event SetSecretHashes(bytes32 loan);
+
+    event FundLoan(bytes32 loan);
+
+    event Approve(bytes32 loan);
+
+    event Withdraw(bytes32 loan, bytes32 secretA1);
+
+    event Repay(bytes32 loan, uint256 amount);
+
+    event Refund(bytes32 loan);
+
+    event Cancel(bytes32 loan, bytes32 secret);
+
+    event Accept(bytes32 loan, bytes32 secret);
+
+    event Liquidate(bytes32 loan, bytes32 secretHash, bytes20 pubKeyHash);
+
     /**
      * @notice Get the Borrower of a Loan
      * @param loan The Id of a Loan
@@ -624,6 +642,8 @@ contract Loans is DSMath {
         require(bools[loan].funded == false, "Loans.fund: Loan is already funded");
         bools[loan].funded = true;
         require(token.transferFrom(msg.sender, address(this), principal(loan)), "Loans.fund: Failed to transfer tokens");
+
+        emit FundLoan(loan);
     }
 
     /**
@@ -635,6 +655,8 @@ contract Loans is DSMath {
     	require(loans[loan].lender == msg.sender, "Loans.approve: Only the lender can approve the loan");
         require(now <= approveExpiration(loan), "Loans.approve: Loan is past the approve deadline");
     	bools[loan].approved = true;
+
+        emit Approve(loan);
     }
 
     /**
@@ -653,6 +675,8 @@ contract Loans is DSMath {
 
         secretHashes[loan].withdrawSecret = secretA1;
         if (address(col.onDemandSpv()) != address(0)) {col.requestSpv(loan);}
+
+        emit Withdraw(loan, secretA1);
     }
 
     /**
@@ -674,6 +698,8 @@ contract Loans is DSMath {
             bools[loan].paid = true;
             if (address(col.onDemandSpv()) != address(0)) {col.cancelSpv(loan);}
         }
+
+        emit Repay(loan, amount);
     }
 
     /**
@@ -696,6 +722,8 @@ contract Loans is DSMath {
             funds.calcGlobalInterest();
         }
         require(token.transfer(loans[loan].borrower, owedForLoan(loan)), "Loans.refund: Failed to transfer tokens");
+
+        emit Refund(loan);
     }
 
     /**
@@ -706,6 +734,8 @@ contract Loans is DSMath {
      */
     function cancel(bytes32 loan, bytes32 secret) external {
         accept(loan, secret);
+
+        emit Cancel(loan, secret);
     }
 
     /**
@@ -719,6 +749,8 @@ contract Loans is DSMath {
         require(now >= seizureExpiration(loan), "Loans.cancel: Seizure deadline has not been reached");
         require(bools[loan].sale == false, "Loans.cancel: Loan must not be undergoing liquidation");
         close(loan);
+
+        emit Cancel(loan, bytes32(0));
     }
 
     /**
@@ -739,6 +771,8 @@ contract Loans is DSMath {
         );
         secretHashes[loan].acceptSecret = secret;
         close(loan);
+
+        emit Accept(loan, secret);
     }
 
     /**
@@ -822,5 +856,7 @@ contract Loans is DSMath {
         }
         // If onDemandSpv is set, cancel spv proofs for this Loan
         if (address(col.onDemandSpv()) != address(0)) {col.cancelSpv(loan);}
+
+        emit Liquidate(loan, secretHash, pubKeyHash);
     }
 }

@@ -90,6 +90,16 @@ contract Sales is DSMath {
         bytes32 secretD;     // Secret D
     }
 
+    event Create(bytes32 sale);
+
+    event ProvideSig(bytes32 sale);
+
+    event ProvideSecret(bytes32 sale, bytes32 secret_);
+
+    event Accept(bytes32 sale);
+
+    event Refund(bytes32 sale);
+
     /**
      * @notice Get Discount Buy price for a Sale
      * @param sale The Id of a Sale
@@ -207,6 +217,8 @@ contract Sales is DSMath {
         secretHashes[sale].secretHashC = secretHashC;
         secretHashes[sale].secretHashD = secretHashD;
         saleIndexByLoan[loanIndex].push(sale);
+
+        emit Create(sale);
    }
 
     /**
@@ -239,6 +251,8 @@ contract Sales is DSMath {
         } else {
             revert("Loans.provideSig: Must be called by Borrower, Lender or Arbiter");
         }
+
+        emit ProvideSig(sale);
     }
 
     /**
@@ -253,6 +267,8 @@ contract Sales is DSMath {
         if (secretHash == secretHashes[sale].secretHashB) {secretHashes[sale].secretB = secret_;}
         if (secretHash == secretHashes[sale].secretHashC) {secretHashes[sale].secretC = secret_;}
         if (secretHash == secretHashes[sale].secretHashD) {secretHashes[sale].secretD = secret_;}
+
+        emit ProvideSecret(sale, secret_);
     }
 
     /**
@@ -315,6 +331,8 @@ contract Sales is DSMath {
         if (available > 0) {
             require(token.transfer(sales[sale].borrower, available), "Sales.accept: Token transfer of tokens available to Borrower failed");
         }
+
+        emit Accept(sale);
     }
 
      /**
@@ -343,5 +361,7 @@ contract Sales is DSMath {
         if (next(sales[sale].loanIndex) == MAX_NUM_LIQUIDATIONS) {
             require(token.transfer(sales[sale].borrower, loans.repaid(sales[sale].loanIndex)), "Sales.refund: Token transfer to Borrower failed");
         }
+
+        emit Refund(sale);
     }
 }

@@ -139,7 +139,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 20; // 20 DAI
+    const loanReq = 25; // 25 DAI
     const loanRat = 2; // Collateralization ratio of 200%
     let col;
 

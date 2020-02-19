@@ -15,7 +15,7 @@ contract Funds is DSMath, ALCompound {
 
     uint256 public constant DEFAULT_LIQUIDATION_RATIO = 1400000000000000000000000000;   // 140% (1.4x in RAY) minimum collateralization ratio
     uint256 public constant DEFAULT_LIQUIDATION_PENALTY = 1000000000937303470807876289; // 3% (3 in RAY) liquidation penalty ((1.000000000937303470807876289) ^ (60 *  60 * 24 * 365)) - 1 = ~0.03
-    uint256 public constant DEFAULT_MIN_LOAN_AMT = 20 ether; // Min 20 WAD
+    uint256 public constant DEFAULT_MIN_LOAN_AMT = 25 ether; // Min 25 WAD
     uint256 public constant DEFAULT_MAX_LOAN_AMT = 2**256-1; // Max 2**256
     uint256 public constant DEFAULT_MIN_LOAN_DUR = 6 hours;  // 6 hours
     uint256 public constant NUM_SECONDS_IN_YEAR = 365 days;
@@ -96,6 +96,18 @@ contract Funds is DSMath, ALCompound {
     }
 
     event Create(bytes32 fund);
+
+    event Deposit(bytes32 fund, uint256 amount_);
+
+    event Update(bytes32  fund, uint256  maxLoanDur_, uint256  fundExpiry_, address  arbiter_);
+
+    event Request(bytes32 fund, address borrower_, uint256 amount_, uint256 collateral_, uint256 loanDur_, uint256 requestTimestamp_);
+
+    event Withdraw(bytes32 fund, uint256 amount_, address recipient_);
+
+    event EnableCompound(bytes32 fund);
+
+    event DisableCompound(bytes32 fund);
 
     /**
      * @notice Construct a new Medianizer
@@ -509,6 +521,8 @@ contract Funds is DSMath, ALCompound {
             if (!custom(fund)) {tokenMarketLiquidity = add(tokenMarketLiquidity, amount_);}
         }
         if (!custom(fund)) {calcGlobalInterest();}
+
+        emit Deposit(fund, amount_);
     }
 
     /**
@@ -534,6 +548,8 @@ contract Funds is DSMath, ALCompound {
         funds[fund].maxLoanDur = maxLoanDur_;
         funds[fund].fundExpiry = fundExpiry_;
         funds[fund].arbiter = arbiter_;
+
+        emit Update(fund, maxLoanDur_, fundExpiry_, arbiter_);
     }
 
     /**
@@ -619,6 +635,8 @@ contract Funds is DSMath, ALCompound {
         loanSetSecretHashes(fund, loanIndex, secretHashes_, pubKeyA_, pubKeyB_);
         loanUpdateMarketLiquidity(fund, amount_);
         loans.fund(loanIndex);
+
+        emit Request(fund, borrower_, amount_, collateral_, loanDur_, requestTimestamp_);
     }
 
     /**
@@ -653,6 +671,8 @@ contract Funds is DSMath, ALCompound {
             if (!custom(fund)) {tokenMarketLiquidity = sub(tokenMarketLiquidity, amount_);}
         }
         if (!custom(fund)) {calcGlobalInterest();}
+
+        emit Withdraw(fund, amount_, recipient_);
     }
 
     /**
@@ -690,6 +710,8 @@ contract Funds is DSMath, ALCompound {
         bools[fund].compoundEnabled = true;
         funds[fund].balance = 0;
         funds[fund].cBalance = cTokenToReturn;
+
+        emit EnableCompound(fund);
     }
 
     /**
@@ -708,6 +730,8 @@ contract Funds is DSMath, ALCompound {
         bools[fund].compoundEnabled = false;
         funds[fund].cBalance = 0;
         funds[fund].balance = tokenToReturn;
+
+        emit DisableCompound(fund);
     }
 
     /**

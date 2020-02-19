@@ -117,7 +117,7 @@ stablecoins.forEach((stablecoin) => {
     let currentTime
     let btcPrice
 
-    const loanReq = 20; // 20 DAI
+    const loanReq = 25; // 25 DAI
     const loanRat = 2; // Collateralization ratio of 200%
 
     let lendSecs = []
@@ -1016,7 +1016,7 @@ stablecoins.forEach((stablecoin) => {
         const loanParams = [
           fund,
           borrower,
-          toWei('20', unit),
+          toWei('25', unit),
           col,
           toSecs({days: 2}),
           Math.floor(Date.now() / 1000),

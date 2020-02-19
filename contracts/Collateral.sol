@@ -90,6 +90,10 @@ contract Collateral is DSMath {
 
     event Spv(bytes32 _txid, bytes _vout, uint256 _requestID, uint8 _outputIndex);
 
+    event RequestSpv(bytes32 loan);
+
+    event CancelSpv(bytes32 loan);
+
     /**
      * @notice Get the Collateral of a Loan
      * @param loan The Id of a Loan
@@ -215,8 +219,6 @@ contract Collateral is DSMath {
      *                     that spend the newly-created UTXO.
      */
     function spv(bytes32 _txid, bytes calldata, bytes calldata _vout, uint256 _requestID, uint8, uint8 _outputIndex) external {
-        emit Spv(_txid, _vout, _requestID, _outputIndex);
-
         require(msg.sender == address(onDemandSpv), "Collateral.spv: Only the onDemandSpv can perform this");
 
         require(_txid != bytes32(0), "Collateral.spv: txid should be non-zero");
@@ -309,6 +311,8 @@ contract Collateral is DSMath {
                 _updateExistingRefundableCollateral(loan);
             }
         }
+
+        emit Spv(_txid, _vout, _requestID, _outputIndex);
     }
 
     function _setCollateralDeposit (bytes32 loan, uint256 collateralDepositIndex_, uint256 amount_, bool seizable_) private {
@@ -382,6 +386,8 @@ contract Collateral is DSMath {
         requestsDetails[seizeRequestIDSixConf].p2wshAddress = seizableP2WSH;
 
         finalRequestToInitialRequest[seizeRequestIDSixConf] = seizeRequestIDOneConf;
+
+        emit RequestSpv(loan);
     }
 
     /**
@@ -395,5 +401,7 @@ contract Collateral is DSMath {
         require(onDemandSpv.cancelRequest(loanRequests[loan].refundRequestIDSixConf), "Collateral.cancelSpv: refundRequestIDSixConf failed");
         require(onDemandSpv.cancelRequest(loanRequests[loan].seizeRequestIDOneConf), "Collateral.cancelSpv: seizeRequestIDOneConf failed");
         require(onDemandSpv.cancelRequest(loanRequests[loan].seizeRequestIDSixConf), "Collateral.cancelSpv: seizeRequestIDSixConf failed");
+
+        emit CancelSpv(loan);
     }
 }
