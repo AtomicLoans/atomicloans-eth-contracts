@@ -2,7 +2,7 @@
   "name": "@atomicloans/eth-contracts",
   "version": "0.1.1",
   "dependencies": {
-    "@liquality/crypto": "0.4.20",
+    "@liquality/crypto": "0.4.21",
     "@liquality/ethereum-utils": "0.4.21",
     "@mblackmblack/bitcoinjs-lib": "5.1.6",
     "@mblackmblack/to-seconds": "^0.1.0",
