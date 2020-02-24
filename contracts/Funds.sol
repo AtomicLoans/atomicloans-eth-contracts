@@ -417,9 +417,9 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) {
         // #IF TESTING
-        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer, "Funds.create: Only one loan fund allowed per address");
+        // require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer, "Funds.create: Only one loan fund allowed per address");
         // #ELSE:
-        // require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
+        require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
         // #ENDIF
         require(
             ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH,
@@ -469,9 +469,9 @@ contract Funds is DSMath, ALCompound {
         uint256  amount_
     ) external returns (bytes32 fund) {
         // #IF TESTING
-        require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer, "Funds.create: Only one loan fund allowed per address"); // Exception for deployer during testing
+        // require(funds[fundOwner[msg.sender]].lender != msg.sender || msg.sender == deployer, "Funds.create: Only one loan fund allowed per address"); // Exception for deployer during testing
         // #ELSE:
-        // require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
+        require(funds[fundOwner[msg.sender]].lender != msg.sender, "Funds.create: Only one loan fund allowed per address"); // Only allow one loan fund per address
         // #ENDIF
         require(
             ensureNotZero(maxLoanDur_, false) < MAX_LOAN_LENGTH && ensureNotZero(fundExpiry_, true) < now + MAX_LOAN_LENGTH,

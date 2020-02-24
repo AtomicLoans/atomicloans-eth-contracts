@@ -26,7 +26,7 @@ module.exports = {
         return new HDWalletProvider(`${process.env.MNEMONIC}`, "https://mainnet.infura.io/v3/53bcde36e0404a6da87b71e780783f79")
       },
       network_id: 1,
-      gasPrice: toWei('10', 'gwei'),
+      gasPrice: toWei('15', 'gwei'),
       skipDryRun: true
     },
     coverage: {
