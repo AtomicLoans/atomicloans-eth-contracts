@@ -127,7 +127,7 @@ module.exports = function(deployer, network, accounts) {
 
     // const medianizer = { address: '0x87c26fd61500fCf86dBe5DCD6E2DEcEDE70d4f82' } // KOVAN
     // const medianizer = { address: '0x8b262e17C7D1C210FC9B6D8B26498F0f4f530776' } // KOVAN MEDIANIZER EXAMPLE
-    // const medianizer = { address: '0x10d2f250A30Dc78f3B418730E6AAE4c1Cf695889' } // MAINNET
+    // const medianizer = { address: '0xBC32048D9Be3A3c3b626c44D296CEfaaA400c797' } // MAINNET
 
     // const onDemandSpv = { address: '0x7c7ca88944a6cb439c0dc43c6406f00feb1e17b0' } // KOVAN
 
