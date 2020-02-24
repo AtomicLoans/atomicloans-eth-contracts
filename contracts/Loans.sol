@@ -22,7 +22,7 @@ contract Loans is DSMath {
     SalesInterface sales;
     CollateralInterface col;
 
-    uint256 public constant APPROVE_EXP_THRESHOLD = 2 hours;    // approval expiration threshold
+    uint256 public constant APPROVE_EXP_THRESHOLD = 4 hours;    // approval expiration threshold
     uint256 public constant ACCEPT_EXP_THRESHOLD = 2 days;      // acceptance expiration threshold
     uint256 public constant LIQUIDATION_EXP_THRESHOLD = 7 days; // liquidation expiration threshold
     uint256 public constant SEIZURE_EXP_THRESHOLD = 2 days;     // seizable expiration threshold
