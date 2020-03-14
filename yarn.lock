@@ -854,9 +854,10 @@
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
 
-"@summa-tx/bitcoin-spv-sol@^2.1.0":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@summa-tx/bitcoin-spv-sol/-/bitcoin-spv-sol-2.1.1.tgz#c550f2274bde98c2d7ad4702d7bf26776027ddf8"
+"@summa-tx/bitcoin-spv-sol@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@summa-tx/bitcoin-spv-sol/-/bitcoin-spv-sol-3.0.0.tgz#bab13e0bbc222c0123b2efb489c6c26f131a594e"
+  integrity sha512-zyY0o1i5wGdaM8yK6JYlaUzNmZSdsGipXeEQpM7bNDW5d9/CzVOvbP1pOT97wOok2QYJG6f4oU8vf18OWzxkgQ==
 
 "@szmarczak/http-timer@^1.1.2":
   version "1.1.2"
