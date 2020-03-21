@@ -6,4 +6,6 @@ interface FundsInterface {
     function deposit(bytes32, uint256) external;
     function decreaseTotalBorrow(uint256) external;
     function calcGlobalInterest() external;
+    function withdraw(bytes32 fund, uint256 amount_) external;
+    function withdrawTo(bytes32 fund, uint256 amount_, address recipient_) external;
 }

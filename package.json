@@ -37,6 +37,7 @@
     "test:interest_decrease": "truffle test ./test/interestDecrease.js",
     "test:spv": "truffle test ./test/spv.js",
     "test:p2wsh": "truffle test ./test/p2wsh.js",
+    "test:hot_cold_wallet": "truffle test ./test/hotColdWallet.js",
     "coverage": "truffle run coverage",
     "build-contracts": "sol-merger \"./contracts/*.sol\" ./build"
   },

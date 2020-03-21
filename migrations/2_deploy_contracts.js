@@ -24,6 +24,8 @@ var MakerMedianizer = artifacts.require('./_MakerMedianizer.sol')
 
 var ALCompound = artifacts.require('./ALCompound.sol')
 
+var HotColdWallet = artifacts.require('./HotColdWallet.sol')
+
 var fs = require('fs')
 
 var isCI = require('is-ci')
@@ -162,6 +164,8 @@ module.exports = function(deployer, network, accounts) {
     await usdcLoans.setCollateral(usdcCollateral.address)
 
     await deployer.deploy(ALCompound, comptroller.address) // LOCAL
+
+    await deployer.deploy(HotColdWallet, funds.address, loans.address, sales.address, accounts[1], '0x') // LOCAL
 
     console.info(`DAI_ADDRESS=${dai.address}`)
     console.info(`USDC_ADDRESS=${usdc.address}`)
