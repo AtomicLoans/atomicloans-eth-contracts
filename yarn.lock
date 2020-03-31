@@ -525,10 +525,10 @@
     debug "^4.1.1"
     lodash "^4.17.13"
 
-"@liquality/crypto@0.4.21", "@liquality/crypto@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.21.tgz#f9df84f33671f1d1008c1cd80e8a6436519df57e"
-  integrity sha512-LiHy3hkhVt/AOEO3sJobSD+Qxc+DwdPydt7auFXum0l88rF7oR6gdgwXgHiUjO0Ne0hnd0pfMkz7FUCgRo356A==
+"@liquality/crypto@0.4.24":
+  version "0.4.24"
+  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.24.tgz#3116dc65425f06b344652e0cae98c374e1d1bde3"
+  integrity sha512-fGSNf1+v2winYMDpGE6PkIMpowNuoPqvUPSpt8YmDJGbFoy8U59GBfcK3CIA1XI9eV8xT9+9fyand24r2LM+jQ==
   dependencies:
     "@babel/runtime" "^7.4.3"
     bech32 "^1.1.3"
@@ -538,6 +538,16 @@
 "@liquality/crypto@^0.4.11", "@liquality/crypto@^0.4.3":
   version "0.4.11"
   resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.11.tgz#e837e23cf9dff30fa4b1cede1f1b384d6b005a1e"
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    bech32 "^1.1.3"
+    bs58 "^4.0.1"
+    crypto-hashing "^1.0.0"
+
+"@liquality/crypto@^0.4.21":
+  version "0.4.21"
+  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.21.tgz#f9df84f33671f1d1008c1cd80e8a6436519df57e"
+  integrity sha512-LiHy3hkhVt/AOEO3sJobSD+Qxc+DwdPydt7auFXum0l88rF7oR6gdgwXgHiUjO0Ne0hnd0pfMkz7FUCgRo356A==
   dependencies:
     "@babel/runtime" "^7.4.3"
     bech32 "^1.1.3"
