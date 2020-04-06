@@ -4257,10 +4257,10 @@ sol-merger@^1.1.0:
     glob "^7.1.2"
     strip-json-comments "^3.0.1"
 
-solc@^0.5.10:
-  version "0.5.16"
-  resolved "https://registry.yarnpkg.com/solc/-/solc-0.5.16.tgz#6c8d710a3792ccc79db924606b558a1149b1c603"
-  integrity sha512-weEtRtisJyf+8UjELs7S4ST1KK7UIq6SRB7tpprfJBL9b5mTrZAT7m4gJKi2h6MiBpuSWfnraK8BnkyWzuTMRA==
+solc@^0.6.5:
+  version "0.6.5"
+  resolved "https://registry.yarnpkg.com/solc/-/solc-0.6.5.tgz#9e1e5c5c202c0160e054649f621210117d0083a3"
+  integrity sha512-syvJgAYia/hOXIYTGSPSQYQmDLlMXhOZW5J7dGBUFU0oYoDyZ8jRsHYq9D12w8iNlum0tzWJ+vGV4EEvAJe+0Q==
   dependencies:
     command-exists "^1.2.8"
     commander "3.0.2"
