@@ -15,7 +15,7 @@
     "is-ci": "^2.0.0",
     "lodash": "^4.17.13",
     "openzeppelin-solidity": "^2.2.0",
-    "solc": "^0.5.10",
+    "solc": "^0.6.5",
     "truffle": "5.1.13",
     "truffle-contract": "^4.0.29",
     "truffle-hdwallet-provider": "^1.0.9",
