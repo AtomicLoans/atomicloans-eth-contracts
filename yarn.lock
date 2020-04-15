@@ -323,40 +323,40 @@
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/@ledgerhq/logs/-/logs-5.0.0.tgz#c019eb71269e7a79b7772c00e1c28a65b145a2fb"
 
-"@liquality/bitcoin-esplora-api-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-esplora-api-provider/-/bitcoin-esplora-api-provider-0.4.21.tgz#821688cf6559d2b8e21febb0ebbd3e284c56f22c"
-  integrity sha512-+MtCpyFozNFM/rueEYXWtfhCTkm+pyBcj8iq3O/RgCjD/wZEvAkDtDxqYmxMp4aBdn5MFy8YmVk3SsaOPoAuFQ==
+"@liquality/bitcoin-esplora-api-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-esplora-api-provider/-/bitcoin-esplora-api-provider-0.4.27.tgz#b0fa7f2269daaf427b378ba6ec24f59b1760cd90"
+  integrity sha512-yr5Jbeu78o5sZYeUW0OhaUZoTOzpRS8K7k8rRJh8Wn0+Usii4qSa5YAEUZys8wJA/7hngI0ishiPbd1FKBsxug==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     axios "^0.19.0"
     bignumber.js "^8.1.1"
     lodash "^4.17.11"
 
-"@liquality/bitcoin-esplora-swap-find-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-esplora-swap-find-provider/-/bitcoin-esplora-swap-find-provider-0.4.21.tgz#0ecfb638019fd0d0e2a49784dfa0b1f478f349ef"
-  integrity sha512-ZSwaC3/5f1f01ncPcGFBrdiz7FSqLef1KrUa0nhqWh7HXWRIOA6y1Tp1KebcKPunqIdg2Y/S0cQGwnYnLCn0rQ==
+"@liquality/bitcoin-esplora-swap-find-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-esplora-swap-find-provider/-/bitcoin-esplora-swap-find-provider-0.4.27.tgz#63779fcb60f385a547c45ae54d2d4c7e5c605144"
+  integrity sha512-ppGzyapcrr2sn53158jOcnnyG05bgZj6ba+Ns7DvkKqEyC66i7t9waCxagq3ex+I88UfYeZuJ0gK/6ATSQLuXQ==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     axios "^0.19.0"
     bignumber.js "^8.1.1"
     lodash "^4.17.11"
 
-"@liquality/bitcoin-js-wallet-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-js-wallet-provider/-/bitcoin-js-wallet-provider-0.4.21.tgz#24e11bb5c07f67325ea4b6ff809d8f98cbcdcdab"
-  integrity sha512-xSy2bmsOrosp4IwT5a/24DDxBlZETU+HQl3YdUMazQrfksPJsRURzCGT+iWgmgcUhUXD22EcM04BGu5DoDtXaA==
+"@liquality/bitcoin-js-wallet-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-js-wallet-provider/-/bitcoin-js-wallet-provider-0.4.27.tgz#feca1053af1b31e969f4f2b06257d22f0ec02326"
+  integrity sha512-pUxCTEoGWXEdzU2GdTnyhUZ9tF4JIBU6in8nHdhawvDwzgYspV29WC50SNLqH4MP8Pg7nCfVbjmB6Vrp35ajrQ==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/bitcoin-utils" "^0.4.21"
-    "@liquality/jsonrpc-provider" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/bitcoin-utils" "^0.4.27"
+    "@liquality/jsonrpc-provider" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^9.0.0"
     bip32 "^1.0.2"
     bip39 "^3.0.2"
@@ -364,18 +364,18 @@
     bitcoinjs-message "^2.1.0"
     lodash "^4.17.13"
 
-"@liquality/bitcoin-ledger-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-ledger-provider/-/bitcoin-ledger-provider-0.4.21.tgz#e3fe6892a934b03788446ffcb9509ec17b1c72c0"
-  integrity sha512-7xIOiTxr6yU2cf83T4r2rw45aoAv9tAuDDtFuduhw5VO8duss5DkXSsL2gRV5aHSMQf3ZclEVINeaWasiDjlRA==
+"@liquality/bitcoin-ledger-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-ledger-provider/-/bitcoin-ledger-provider-0.4.27.tgz#74a9b1a5f467695725fb73f1726e3645133b3c4f"
+  integrity sha512-rwBrZh/DbNxNLtQclfvG8ZtperfDO7PnlP9cKOrEOyZKYIKs4RJuzWWDclUjp5kwQUZILt0G2Re8RGXhV6+ZtQ==
   dependencies:
     "@babel/runtime" "^7.4.3"
     "@ledgerhq/hw-app-btc" "^4.68.2"
-    "@liquality/bitcoin-networks" "^0.4.21"
-    "@liquality/bitcoin-utils" "^0.4.21"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ledger-provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/bitcoin-networks" "^0.4.27"
+    "@liquality/bitcoin-utils" "^0.4.27"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ledger-provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^8.1.1"
     bip32 "^1.0.2"
     bitcoinjs-lib "^5.1.2"
@@ -388,64 +388,64 @@
     "@babel/runtime" "^7.4.3"
     bitcoinjs-lib "^5.1.3"
 
-"@liquality/bitcoin-networks@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-networks/-/bitcoin-networks-0.4.21.tgz#ec29328ba87ecbdc13efeeda1c931ca90404025a"
-  integrity sha512-rr1cacTPSMgGWv5wzt+Zikpew1JRPrZmokHyvxoH+TRYn5tMaNOKYaIwuuCvQItQK+uzbcRJ5BfQlva6PUdslQ==
+"@liquality/bitcoin-networks@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-networks/-/bitcoin-networks-0.4.27.tgz#a98a284348e3070730f481543e6fd34367b7d4b5"
+  integrity sha512-FlybsC1C/pZmZDyxuT8kvMitlqp63Nb3utNsWvbLpZcTo1GMYVawHtgoTnRE+a/8HRCUTa5M/czofti+qzccCg==
   dependencies:
     "@babel/runtime" "^7.4.3"
     bitcoinjs-lib "^5.1.3"
 
-"@liquality/bitcoin-node-wallet-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-node-wallet-provider/-/bitcoin-node-wallet-provider-0.4.21.tgz#166aa561b17eef3d75aaf5c49317a2d8d78145d5"
-  integrity sha512-5Ts5CfkUDplLFUwhHsH2LsWrChSjQl+XpQmYXaLIdkTVZt3B/VAmGOe5QEoH9bcqVjhu+cVvC0hQc2NXV5/7SA==
+"@liquality/bitcoin-node-wallet-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-node-wallet-provider/-/bitcoin-node-wallet-provider-0.4.27.tgz#b9d07dd5ab8254793fc70dad113185ddb546c767"
+  integrity sha512-Fgc+Z6+qiT1DH0HSkESlfd6P2DAiFIH/aE29+TuH0wS56nVgX+uyY78lPYiIbyGfcU02hbhpg5QggYnuq6QowA==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/bitcoin-networks" "^0.4.21"
-    "@liquality/bitcoin-utils" "^0.4.21"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/jsonrpc-provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
-    "@liquality/wallet-provider" "^0.4.21"
+    "@liquality/bitcoin-networks" "^0.4.27"
+    "@liquality/bitcoin-utils" "^0.4.27"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/jsonrpc-provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
+    "@liquality/wallet-provider" "^0.4.27"
     bignumber.js "^8.1.1"
     bitcoinjs-lib "^5.1.2"
     lodash "^4.17.11"
 
-"@liquality/bitcoin-rpc-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-rpc-provider/-/bitcoin-rpc-provider-0.4.21.tgz#590211013fbc76e74ec961475c8ddd05c1c1754c"
-  integrity sha512-yTJPv1JV6wPYGRY5HNTe3Z6vkKQJcCiuB8vro74vE82IFq0WESN2tytY4h1EMZY0fVd4SeGBn+xv2DGjYIdwaw==
+"@liquality/bitcoin-rpc-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-rpc-provider/-/bitcoin-rpc-provider-0.4.27.tgz#9ab3f986ddee509eb35d121a3ed5eb7c16378f54"
+  integrity sha512-GQAWOBDUmqFSymov6B1JRow+dAMk7uV8Ol15I0tjdwnKcu+juN5BxMDjYM6jo7nSxHYQO85kU81JMjeRPr2wSA==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/jsonrpc-provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/jsonrpc-provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^8.1.1"
     lodash "^4.17.13"
 
-"@liquality/bitcoin-swap-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-swap-provider/-/bitcoin-swap-provider-0.4.21.tgz#016eb5e212cf20c0858cacd85c72bc50f34bb3c4"
-  integrity sha512-05HiSxjHut3kgQ6qScrjphy/T3INo1HeEPfN5/5vt9eDg1bh5fnI2V6zyTOlTJwiCI5phoBTq5OQNQ7Ks24LIw==
+"@liquality/bitcoin-swap-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-swap-provider/-/bitcoin-swap-provider-0.4.27.tgz#3e019432654f9a4c5b8bf43e32071d939cf8ef45"
+  integrity sha512-lx+ayGL3AHX1e83S8EKWQL16QMz3eyGM3YCrCyM0opF3y3sQE7kg/jSiBpkzE6YJVjLQEbE4ZLnFnis17BkQqA==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/bitcoin-networks" "^0.4.21"
-    "@liquality/bitcoin-utils" "^0.4.21"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/bitcoin-networks" "^0.4.27"
+    "@liquality/bitcoin-utils" "^0.4.27"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^8.1.1"
     bitcoinjs-lib "^5.1.1"
 
-"@liquality/bitcoin-utils@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-utils/-/bitcoin-utils-0.4.21.tgz#4597326bb8c90f5fe3dd78ef64fa3645ca3d99f2"
-  integrity sha512-mzUKhEkNkI0MGDzlPsYcSpuXJ5lRZjEHtPgU5QQaF2R1fhgPld/Lu0+TMV3PLXsk+IgTbYgfkEn4Z3IMAzd8Lw==
+"@liquality/bitcoin-utils@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bitcoin-utils/-/bitcoin-utils-0.4.27.tgz#1fc9265450e562c430b4f19e13bbc54ecdbbc2e5"
+  integrity sha512-RyesPNyYq1HWOy9ZHEpG7Z0mIoc71XwOddMXLS+HLOwX7aXTdTrC3ohKuxwkbVNAs12fXJTu+wrnAeyEVNGLKg==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/bitcoin-networks" "^0.4.21"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/bitcoin-networks" "^0.4.27"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     coinselect "^3.1.11"
     lodash "^4.17.13"
 
@@ -459,54 +459,54 @@
     "@liquality/utils" "^0.4.11"
     lodash "^4.17.13"
 
-"@liquality/bundle@0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/bundle/-/bundle-0.4.21.tgz#21bf0ef40febdad1f76fa7f135e42acb41981e16"
-  integrity sha512-it0k/CtUUdthFkTY7rP9G68VGcVDWkVjmO/yR+XeK9h/HSmo8I6Jz/4Qht+uCkZ2/mzwYqXaA2rX+IBOw2OwIQ==
+"@liquality/bundle@0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/bundle/-/bundle-0.4.27.tgz#76df496b7187c8391014dfba09e1673228cf382a"
+  integrity sha512-NYhRhXv0juPMHqayG2DSzQummiUoiRJKxVKJUphkw+a7q2r/QhRMCiUgkgtf4udeY7rySs148AgI7eRLcyceIA==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/bitcoin-esplora-api-provider" "^0.4.21"
-    "@liquality/bitcoin-esplora-swap-find-provider" "^0.4.21"
-    "@liquality/bitcoin-js-wallet-provider" "^0.4.21"
-    "@liquality/bitcoin-ledger-provider" "^0.4.21"
-    "@liquality/bitcoin-networks" "^0.4.21"
-    "@liquality/bitcoin-node-wallet-provider" "^0.4.21"
-    "@liquality/bitcoin-rpc-provider" "^0.4.21"
-    "@liquality/bitcoin-swap-provider" "^0.4.21"
-    "@liquality/bitcoin-utils" "^0.4.21"
-    "@liquality/client" "^0.4.21"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/debug" "^0.4.21"
-    "@liquality/errors" "^0.4.21"
-    "@liquality/ethereum-blockscout-swap-find-provider" "^0.4.21"
-    "@liquality/ethereum-erc20-provider" "^0.4.21"
-    "@liquality/ethereum-erc20-scraper-swap-find-provider" "^0.4.21"
-    "@liquality/ethereum-erc20-swap-provider" "^0.4.21"
-    "@liquality/ethereum-js-wallet-provider" "^0.4.21"
-    "@liquality/ethereum-ledger-provider" "^0.4.21"
-    "@liquality/ethereum-metamask-provider" "^0.4.21"
-    "@liquality/ethereum-networks" "^0.4.21"
-    "@liquality/ethereum-rpc-provider" "^0.4.21"
-    "@liquality/ethereum-scraper-swap-find-provider" "^0.4.21"
-    "@liquality/ethereum-swap-provider" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/jsonrpc-provider" "^0.4.21"
-    "@liquality/ledger-provider" "^0.4.21"
-    "@liquality/metamask-provider" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/schema" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
-    "@liquality/wallet-provider" "^0.4.21"
+    "@liquality/bitcoin-esplora-api-provider" "^0.4.27"
+    "@liquality/bitcoin-esplora-swap-find-provider" "^0.4.27"
+    "@liquality/bitcoin-js-wallet-provider" "^0.4.27"
+    "@liquality/bitcoin-ledger-provider" "^0.4.27"
+    "@liquality/bitcoin-networks" "^0.4.27"
+    "@liquality/bitcoin-node-wallet-provider" "^0.4.27"
+    "@liquality/bitcoin-rpc-provider" "^0.4.27"
+    "@liquality/bitcoin-swap-provider" "^0.4.27"
+    "@liquality/bitcoin-utils" "^0.4.27"
+    "@liquality/client" "^0.4.27"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/debug" "^0.4.27"
+    "@liquality/errors" "^0.4.27"
+    "@liquality/ethereum-blockscout-swap-find-provider" "^0.4.27"
+    "@liquality/ethereum-erc20-provider" "^0.4.27"
+    "@liquality/ethereum-erc20-scraper-swap-find-provider" "^0.4.27"
+    "@liquality/ethereum-erc20-swap-provider" "^0.4.27"
+    "@liquality/ethereum-js-wallet-provider" "^0.4.27"
+    "@liquality/ethereum-ledger-provider" "^0.4.27"
+    "@liquality/ethereum-metamask-provider" "^0.4.27"
+    "@liquality/ethereum-networks" "^0.4.27"
+    "@liquality/ethereum-rpc-provider" "^0.4.27"
+    "@liquality/ethereum-scraper-swap-find-provider" "^0.4.27"
+    "@liquality/ethereum-swap-provider" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/jsonrpc-provider" "^0.4.27"
+    "@liquality/ledger-provider" "^0.4.27"
+    "@liquality/metamask-provider" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/schema" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
+    "@liquality/wallet-provider" "^0.4.27"
 
-"@liquality/client@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/client/-/client-0.4.21.tgz#9cedac2bc36c5103cdabb0df070d59b3e1984702"
-  integrity sha512-TAVMTjm10nif41gLcWcEXqeMJFIA0v41bfX3CKdVJ0U8CMHf18g4GBb5K3VYYzu2wu4olsfSb1SLWWGSahsmNA==
+"@liquality/client@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/client/-/client-0.4.27.tgz#e64fe1f172c32c0f7163c1d0ef974e55bf136c8a"
+  integrity sha512-IPa0zU8m8uWPK1ra9uMHW1VsMFFKY2+95bQIhDsSy2C7oPw+cDPzaH96eS93eutw9bqJtTcVH88Po0FJ60v0Og==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/errors" "^0.4.21"
-    "@liquality/schema" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/errors" "^0.4.27"
+    "@liquality/schema" "^0.4.27"
     ajv "^6.10.0"
     bignumber.js "^8.1.1"
     debug "^4.1.1"
@@ -544,10 +544,20 @@
     bs58 "^4.0.1"
     crypto-hashing "^1.0.0"
 
-"@liquality/debug@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/debug/-/debug-0.4.21.tgz#169d1a5e13c358074afa0b95ec1137ccd599d113"
-  integrity sha512-S9QfGDMiZXdVFUYz0tv6jNGFruu1tLfm65Mj3sfPpULcQtvRW50cNrX5QV98D9NTBU7kiv65/SJFfxxLMfAQUA==
+"@liquality/crypto@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.27.tgz#f12dee481549a65eda3e59aa3588043c708f1067"
+  integrity sha512-WKJp4H0I2SttHzARzHtqiXwXU8Zwxfv35Y8ex3jUEc80nSQviYBXbSxiexjNjhPTaCgDQ+M4zb4meZKiKziJvw==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    bech32 "^1.1.3"
+    bs58 "^4.0.1"
+    crypto-hashing "^1.0.0"
+
+"@liquality/debug@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/debug/-/debug-0.4.27.tgz#9cbb3476b5a0e11e1124a578ac53094a33785b71"
+  integrity sha512-YIYPVovfM98sZhyJNgFI1vMdBQWiga6esgcKembwKK6UX8hOn9MgYC9MawlcKh+3g+W0INB+2NyGR3i9HsqbpA==
   dependencies:
     "@babel/runtime" "^7.4.3"
     debug "^4.1.1"
@@ -559,74 +569,74 @@
     "@babel/runtime" "^7.4.3"
     standard-error "^1.1.0"
 
-"@liquality/errors@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/errors/-/errors-0.4.21.tgz#b55c7c1e3110c53ef131bc3700757803826c0b92"
-  integrity sha512-gWF89XJWqCX9MSTxonzO4u5WP5yQf9tdUFCQxRrAgL7XeDF1XP35XOB1aqieHwbsj1VJjHuDW7I0ZD1pshO3pQ==
+"@liquality/errors@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/errors/-/errors-0.4.27.tgz#d361da61dd5512be0eb1c47a1a6d06ad6ee8dee2"
+  integrity sha512-xBclbHdzZSIvIGbsNDro1FCT0tkIuIRQ+tCZoBIQnux3SR96sXSrjSi5BbT0WY6QYq7s8NatK3xScfYnp7raCg==
   dependencies:
     "@babel/runtime" "^7.4.3"
     standard-error "^1.1.0"
 
-"@liquality/ethereum-blockscout-swap-find-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-blockscout-swap-find-provider/-/ethereum-blockscout-swap-find-provider-0.4.21.tgz#99b77e1941cda47700ba33e2f7cdaa816ae475b9"
-  integrity sha512-IEgMn+4IwY4u+NK1lF2HNg0uaeQap6jQCUXg1jiRsQacmlwfH8OkPJcHxzFkW98Lo1Aiha/c5uDYtbZuzZtH+Q==
+"@liquality/ethereum-blockscout-swap-find-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-blockscout-swap-find-provider/-/ethereum-blockscout-swap-find-provider-0.4.27.tgz#c3b98f3ea3a75c8981e4770975067e28e9c5c8d4"
+  integrity sha512-tQGjYrnn4ImEmGWhC5kqBDDXpm3Klgty2yGuUjX4rvCJ9XOwXH6VWsK9s0I2cchTXKRSg+Y/dpMY3pOUsyMWeQ==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     axios "^0.19.0"
 
-"@liquality/ethereum-erc20-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-erc20-provider/-/ethereum-erc20-provider-0.4.21.tgz#c7190d889e9a1bba0c063cd97828b985376abd54"
-  integrity sha512-P1e6I4vxfNDxUil5uipyN3OLRjy7AIojvCMzOMXlnb6afnaZlMGx9blW56PDrP+tJ6rnBquW745ZIglF7ixdzw==
+"@liquality/ethereum-erc20-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-erc20-provider/-/ethereum-erc20-provider-0.4.27.tgz#ce00fd1f5b294e220b52bccef9e334d0917d93d5"
+  integrity sha512-YPjAAXdrdhJPbSomxd2SJm1/7ecv6NzL14ez40O1BDn1Rm6o/iharHdxfY7ExSvBAx/YMef8+BVMRnkaRR8BSQ==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^8.1.1"
     lodash "^4.17.13"
 
-"@liquality/ethereum-erc20-scraper-swap-find-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-erc20-scraper-swap-find-provider/-/ethereum-erc20-scraper-swap-find-provider-0.4.21.tgz#9df7acb674b6dac3d5e330fb4ff31d3a4608bbf3"
-  integrity sha512-msIscrJRUpU1ObDYiyvINpTQUOBMB2bmoZKYoQWYPEGNyRcxLUIz+XRbY+nEe5okwKvoqIaOmmMlim/asUcL6g==
+"@liquality/ethereum-erc20-scraper-swap-find-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-erc20-scraper-swap-find-provider/-/ethereum-erc20-scraper-swap-find-provider-0.4.27.tgz#18b20932bdb43bb6f6a8a378a1f3f7845dfd3c48"
+  integrity sha512-l4p52SjUC9dRcDpFK3O8vK1PeraWSgZiTQ0HzA92PyX3GSY0yDfc4KlreC/u46YHYXwjDbJnPXpLG23X8NX52Q==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ethereum-erc20-swap-provider" "^0.4.21"
-    "@liquality/ethereum-scraper-swap-find-provider" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ethereum-erc20-swap-provider" "^0.4.27"
+    "@liquality/ethereum-scraper-swap-find-provider" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     axios "^0.19.0"
 
-"@liquality/ethereum-erc20-swap-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-erc20-swap-provider/-/ethereum-erc20-swap-provider-0.4.21.tgz#e5a98403a46c211200b8ebd5bb16a63c97f8fe7c"
-  integrity sha512-hqLJsdwspjF3vM4bYx9qUUE+XkAd8H/ORWi6E4qMoeq16l+6ig4udY3eUztNopNijwRO0Yx/sfG9FLNEgZFYHg==
+"@liquality/ethereum-erc20-swap-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-erc20-swap-provider/-/ethereum-erc20-swap-provider-0.4.27.tgz#a9d11bd92b10646d7a08fa3a95cc8e0eaf106620"
+  integrity sha512-KmYApYMlPZOQRNJ8xB3TeKTCOsbW/x83vCskiE2gGHrS6s+a3zUrckzplDhCWxhiBfYSkzWiRijovbyf5efuEA==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
 
-"@liquality/ethereum-js-wallet-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-js-wallet-provider/-/ethereum-js-wallet-provider-0.4.21.tgz#628d180eee0eaf7a8561b125b0b014a96344402b"
-  integrity sha512-goIELoT3lB19nwXgb2NkPPpj2W14iAbC7Pr9a05JALZHrb2ryRiiorhxFku1fm0a9ctYwMaaarQt/tBbS8zk3Q==
+"@liquality/ethereum-js-wallet-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-js-wallet-provider/-/ethereum-js-wallet-provider-0.4.27.tgz#17a090aba5b922f2cc7c8f8015bc50803de980b5"
+  integrity sha512-EtNzd3c9FemX3h9iHKwYiVqIeYVhVL4x4+8JbP9XzYRTx964mh5F1rx5dXHc8Ih/pOPmoUqUpHztpy1KrOTKVw==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^9.0.0"
     bip39 "^3.0.2"
     bitcoinjs-lib "^5.1.5"
@@ -637,78 +647,78 @@
     ethereumjs-util "^6.1.0"
     hdkey "^1.1.1"
 
-"@liquality/ethereum-ledger-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-ledger-provider/-/ethereum-ledger-provider-0.4.21.tgz#24d61bee4f406b5de629cc394578efc01eec1e51"
-  integrity sha512-89WStXHS9LPRAAeWfVlY3NZNsZL6XYZukhLDWtVOrUKYglgNhrO8CFhoG1UDUxOvsQS0sCDrmN9wQD47cMhdoQ==
+"@liquality/ethereum-ledger-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-ledger-provider/-/ethereum-ledger-provider-0.4.27.tgz#7619b57af0f207ad7b86b8e8d1449764a3b96840"
+  integrity sha512-iRGEvEPOuIU3ck3rqIdu3L6d8BQyrbl/4KuPxb08iKcWG4Lr19XXH3EOO2R/kQ3HJ3OBRip1VCCltA7Exwka8w==
   dependencies:
     "@babel/runtime" "^7.4.3"
     "@ledgerhq/hw-app-eth" "^4.56.0"
-    "@liquality/ethereum-networks" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/ledger-provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/ethereum-networks" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/ledger-provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^8.1.1"
     ethereumjs-tx "^1.3.7"
 
-"@liquality/ethereum-metamask-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-metamask-provider/-/ethereum-metamask-provider-0.4.21.tgz#ac09ebc33381764ffe1962753b4043d2b2d0a475"
-  integrity sha512-3ukGEOWk8kqQGN0z71swlcDD8jL9ZVaaTRphvo5T5WPIqJJlKqTNWzbmReXi7ZnAzsEH1rMR/WRIiPDOpM73PA==
+"@liquality/ethereum-metamask-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-metamask-provider/-/ethereum-metamask-provider-0.4.27.tgz#0d6e130d87c51ab587fd7cae6d7c9ec0d00106c1"
+  integrity sha512-9Qk6uY4VwuC4jYZfkZEU7LPHeAVxhHNTMOgJ29UGe+jHOq/LbP0x826+KcHOJsztBKo07UA0r4DV6DGJLbT0Xw==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/errors" "^0.4.21"
-    "@liquality/ethereum-networks" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/metamask-provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/errors" "^0.4.27"
+    "@liquality/ethereum-networks" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/metamask-provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^8.1.1"
     lodash "^4.17.13"
 
-"@liquality/ethereum-networks@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-networks/-/ethereum-networks-0.4.21.tgz#120c0007c0701feb531e5f7a7d49352497b78a63"
-  integrity sha512-twsnxXqBSvfvwF8RTWHmDkM8ccrocBSM3dGnD2Wuxb6ulrdgmTzSDsWHIWTBO5mNh1/YEFnEI4DpdDlXimtscg==
+"@liquality/ethereum-networks@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-networks/-/ethereum-networks-0.4.27.tgz#b5ef0b402cb3af0772f415f7ee8b0bcf077a135f"
+  integrity sha512-59VfqgIIwt7r1qdpVTaI52tGKapwwt0uw7jHnA74VnvfaTH6iWupkyhJz/oYav9E72NQVWgtj3vUo4OhxaWwTg==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
-"@liquality/ethereum-rpc-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-rpc-provider/-/ethereum-rpc-provider-0.4.21.tgz#9d8906459f86860d2bd0a9e7d7471dfc91cd0b48"
-  integrity sha512-tEvcpzvJ/0kjzy1cqnQlDtHfCsuZDdhaEs2T4QnYr381Q9vAsxXIbc+PsoXDEa/xsC07NKomyoZTfyl5PK4mQA==
+"@liquality/ethereum-rpc-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-rpc-provider/-/ethereum-rpc-provider-0.4.27.tgz#6d599a82e3ccd4ec6da08a9ec9fdeaaa5c168d51"
+  integrity sha512-v3rIoB3scamrMMiOw9dvaezgiNiEMv8gvww4lQx24ldouX6PsskGxveeOr9Pz7gjWcVfZ9a3aqOugP8EPYp/lg==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/jsonrpc-provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/jsonrpc-provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     bignumber.js "^8.1.1"
     lodash "^4.17.13"
 
-"@liquality/ethereum-scraper-swap-find-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-scraper-swap-find-provider/-/ethereum-scraper-swap-find-provider-0.4.21.tgz#ab44a62671bac3d19a2ef044702921bbd28d6c17"
-  integrity sha512-g5/DQNjCC4gDW9UNvpL3Ex5e08oVzG0mj7EWAwf+yYOC4KKGAHMolADomhJbwjJgOnCzGYl1Yqm2vctDryKc9Q==
+"@liquality/ethereum-scraper-swap-find-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-scraper-swap-find-provider/-/ethereum-scraper-swap-find-provider-0.4.27.tgz#b5b46a6e4b0a9a6808cd28cf4d5398553fb9b54f"
+  integrity sha512-qoExESijMXAHrOkgALmpfQyCA+8so7r8aa1tDEbUtTMKYl91mmoFziIUbNmHb5Fd2poCajlaxDj4IUOcnAnBeg==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
     axios "^0.19.0"
 
-"@liquality/ethereum-swap-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ethereum-swap-provider/-/ethereum-swap-provider-0.4.21.tgz#a74f49b9be068f0da938e2a7a728eaa77d2729ea"
-  integrity sha512-O0sc3IVSXe6Trq4kDqzS+mbnUhTVUBT1Q6/07YePDtSc6WBFadhcbxFU07fzNdIT6IoWcfT8GrLnAqkoOEJYsg==
+"@liquality/ethereum-swap-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-swap-provider/-/ethereum-swap-provider-0.4.27.tgz#6cc17ce61035771a3cd543671c12e8107d379e8c"
+  integrity sha512-HztbdpdKJJJYR3kKhjg2Gw+FHL3H3FWYUTz5Q5RRalLSm0C7OtuhxQV/rteqhz9pXRldoUqid3HhVR2fzWEj4Q==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/crypto" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/utils" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/utils" "^0.4.27"
 
-"@liquality/ethereum-utils@0.4.21", "@liquality/ethereum-utils@^0.4.21":
+"@liquality/ethereum-utils@0.4.21":
   version "0.4.21"
   resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.21.tgz#6967b765412dd3b0320316fba12a2ddebaafb54a"
   integrity sha512-5NWQKm55mFmI6gA6kQt+zwvoMMsvtIe9hYdOGIXgR7HYkSRnoXIRYyfz8G6xkh0MzoPXYPlYruTAakreD3I0Ug==
@@ -718,24 +728,34 @@
     "@liquality/schema" "^0.4.21"
     eip55 "^1.0.3"
 
-"@liquality/jsonrpc-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/jsonrpc-provider/-/jsonrpc-provider-0.4.21.tgz#e388e19f1901e697462ed4737f25db978fd6389e"
-  integrity sha512-ysWQ059Zl11H70S1b71HKx5KoR/f3i/HMn6hOhR0BVv2kh9HwjY3oZSUcqrLUzF1u1iyf4obRGgnxDVlNBBZSA==
+"@liquality/ethereum-utils@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.27.tgz#7859202c7a20744aed483675bcd92e141c2c1013"
+  integrity sha512-Zjvl9P3gb9e1ghcTkDrfI2b3xJy3CQNwSShkTzssdQkABQPJ2puiAVAOTzayRaKcJlzd7wYWikY/4lbxFL1ZMw==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/debug" "^0.4.21"
-    "@liquality/errors" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
-    "@liquality/schema" "^0.4.21"
+    "@liquality/crypto" "^0.4.27"
+    "@liquality/schema" "^0.4.27"
+    eip55 "^1.0.3"
+
+"@liquality/jsonrpc-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/jsonrpc-provider/-/jsonrpc-provider-0.4.27.tgz#51199ba1721b458100bb14bf5e1e4d5b5193e54f"
+  integrity sha512-dNDexC1sr9lmK5jpID2GTS4NNG6BKRVlP37vD7uWZEK1CoxLJvdZghj/cIHg7i2TSlYSETY/zQqVMX9bouh/Kg==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    "@liquality/debug" "^0.4.27"
+    "@liquality/errors" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
+    "@liquality/schema" "^0.4.27"
     axios "^0.18.0"
     json-bigint "^0.3.0"
     lodash "^4.17.13"
 
-"@liquality/ledger-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/ledger-provider/-/ledger-provider-0.4.21.tgz#3c33b37fc9acb3191612ce80656a479a8dc7d834"
-  integrity sha512-B2mOm/XSwa/Hxs/pw+S22g0eZkjac99oFOywIUBjsE12y//TSFNv8/Q2iKkzAMbBV1fmn4D62657OdMCxSrwtQ==
+"@liquality/ledger-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/ledger-provider/-/ledger-provider-0.4.27.tgz#cd0f8e972d7d3ec7e3c158b8e2ba97a8d1cd07fb"
+  integrity sha512-FNjj+S07Bm7YLSz/9NO8upuVNtR4PsCYF6/mqq+4h/4deU1XCmsr69tjuMiz3qNtZN6y/I+nFz76QMktGac7LA==
   dependencies:
     "@babel/polyfill" "^7.4.4"
     "@babel/runtime" "^7.4.3"
@@ -743,26 +763,26 @@
     "@ledgerhq/hw-transport-u2f" "^4.56.0"
     "@ledgerhq/hw-transport-web-ble" "^4.56.0"
     "@ledgerhq/hw-transport-webusb" "^4.56.0"
-    "@liquality/debug" "^0.4.21"
-    "@liquality/errors" "^0.4.21"
-    "@liquality/wallet-provider" "^0.4.21"
+    "@liquality/debug" "^0.4.27"
+    "@liquality/errors" "^0.4.27"
+    "@liquality/wallet-provider" "^0.4.27"
 
-"@liquality/metamask-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/metamask-provider/-/metamask-provider-0.4.21.tgz#0d1d774db927aab65f9011512b22bfbcb89e6be4"
-  integrity sha512-AcBprrxMoUi+DG28rhPgxymX1kt6M3Z/XuEBFGf773xaHb8FwatYz2eTPa78cbEk36frEFtzIQAipw+2BLpZHg==
+"@liquality/metamask-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/metamask-provider/-/metamask-provider-0.4.27.tgz#295df15294d9799df6f026b4c0e055c03c74fae1"
+  integrity sha512-os6YAIvy4M4dHzaj2XxID7GzdNGTsFZQ2LoCEJGT3iQYpqmaoF6V5GR8IdxZQMed/czTC/DC/Cm93lbTwd0HeQ==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/debug" "^0.4.21"
-    "@liquality/errors" "^0.4.21"
-    "@liquality/ethereum-utils" "^0.4.21"
-    "@liquality/wallet-provider" "^0.4.21"
+    "@liquality/debug" "^0.4.27"
+    "@liquality/errors" "^0.4.27"
+    "@liquality/ethereum-utils" "^0.4.27"
+    "@liquality/wallet-provider" "^0.4.27"
     lodash "^4.17.13"
 
-"@liquality/provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/provider/-/provider-0.4.21.tgz#d5114f19f7b6a7c0a7cf05462c27082b4c62fd21"
-  integrity sha512-HYRQ0SPm01aYs6hKCP0NMfg91KcHm0H6VYV7N9mFhTHA8aWwR3fHIEwIV+WY4+0LZzSoW9KzvSnOVR0X2lRT7w==
+"@liquality/provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/provider/-/provider-0.4.27.tgz#b5002ac456a52c75d3aec86c354f9fa12d3eb9c5"
+  integrity sha512-7B3C/RstKRGEfbVmfW6P4nGnIXRNXm6WfIfQMkz7xCzx349bvBCoosZUkylTMxYfPnubUVkvdWLSwuSB8REuCg==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
@@ -785,27 +805,34 @@
   dependencies:
     "@babel/runtime" "^7.4.3"
 
+"@liquality/schema@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.27.tgz#2d614828d09b1164c87b0dc19e043876ecbf3b07"
+  integrity sha512-U4yhrEc+a3kDr9pWkbl3HvDG06xpeg/dCocKqxmu4DU/GQXBwl++hCMVs7SgXxsEOZ07Q57WZ2YNR9Cg2rrhqw==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+
 "@liquality/utils@^0.4.11", "@liquality/utils@^0.4.3":
   version "0.4.11"
   resolved "https://registry.yarnpkg.com/@liquality/utils/-/utils-0.4.11.tgz#986f2c1485a9e9f253e974a14a7aeda5e3cfb020"
   dependencies:
     "@babel/runtime" "^7.4.3"
 
-"@liquality/utils@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/utils/-/utils-0.4.21.tgz#4faee270072ba4390ce925af20aff55c39929526"
-  integrity sha512-alQPRSRpC3bHJeK9kZiTwoo+fzFMrnAjKgdyYOEd7WXityQLDpyVNJm4JTQsC4uomm8HvlNL+yiXLspGgy7StA==
+"@liquality/utils@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/utils/-/utils-0.4.27.tgz#5efbeb27b2bf592f082d434c67f651d9134b7433"
+  integrity sha512-OfOUhgJxS87EVSlXxWvh/J44pNduKDMn/x26KQoxW7dAkicHScWmKIv1u8YYFDCn2tag2VkIhEt97Lhjno9FDw==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
-"@liquality/wallet-provider@^0.4.21":
-  version "0.4.21"
-  resolved "https://registry.yarnpkg.com/@liquality/wallet-provider/-/wallet-provider-0.4.21.tgz#49a781b0aca148ff54cf518eac77032c3e690ccf"
-  integrity sha512-qcdaQJNfNadcwM0fGMiqxgQycS0ozTKpsLeIk3hsOTeOz9laPR+jLwg4/AUTyEjTs1Y9k0d55KRqtnz6RviT6Q==
+"@liquality/wallet-provider@^0.4.27":
+  version "0.4.27"
+  resolved "https://registry.yarnpkg.com/@liquality/wallet-provider/-/wallet-provider-0.4.27.tgz#0113e6f0108cacbf637de599f0adaffc4b989112"
+  integrity sha512-jDeNWnvCXP4zfcXOggQ4yKFB8y9CzNg5WajLstUx3xGBzEbwOUrpoZW61m03K2e6oeoc/f5oyCEmVb/LjA7/xw==
   dependencies:
     "@babel/runtime" "^7.4.3"
-    "@liquality/errors" "^0.4.21"
-    "@liquality/provider" "^0.4.21"
+    "@liquality/errors" "^0.4.27"
+    "@liquality/provider" "^0.4.27"
     lodash "^4.17.13"
 
 "@mblackmblack/bitcoinjs-lib@5.1.6":
