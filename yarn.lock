@@ -544,6 +544,16 @@
     bs58 "^4.0.1"
     crypto-hashing "^1.0.0"
 
+"@liquality/crypto@^0.4.28":
+  version "0.4.28"
+  resolved "https://registry.yarnpkg.com/@liquality/crypto/-/crypto-0.4.28.tgz#4f1e01dc644131d85c6eb612b450084058bc94cf"
+  integrity sha512-ytkYk47rBFMv/KbdJGDcnneSXV0c118YJ8XMgY95TfNFfy16SlK/X1b/PBGFm33rLNzw5IFsSL9ZLZcTIwLKVQ==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    bech32 "^1.1.3"
+    bs58 "^4.0.1"
+    crypto-hashing "^1.0.0"
+
 "@liquality/debug@^0.4.21":
   version "0.4.21"
   resolved "https://registry.yarnpkg.com/@liquality/debug/-/debug-0.4.21.tgz#169d1a5e13c358074afa0b95ec1137ccd599d113"
@@ -708,7 +718,17 @@
     "@liquality/provider" "^0.4.21"
     "@liquality/utils" "^0.4.21"
 
-"@liquality/ethereum-utils@0.4.21", "@liquality/ethereum-utils@^0.4.21":
+"@liquality/ethereum-utils@0.4.28":
+  version "0.4.28"
+  resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.28.tgz#5bd7ee7fe26236db0ce045f93d2cb28033429241"
+  integrity sha512-1KxRzn3s2L9+qYXJHVr9UwWUYX11Ayrb5LJ01oaUqd9C7UR0MYiAMHVbr1fAtuC2drgYrVa8TSGDj4dQcDxPtA==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+    "@liquality/crypto" "^0.4.28"
+    "@liquality/schema" "^0.4.28"
+    eip55 "^1.0.3"
+
+"@liquality/ethereum-utils@^0.4.21":
   version "0.4.21"
   resolved "https://registry.yarnpkg.com/@liquality/ethereum-utils/-/ethereum-utils-0.4.21.tgz#6967b765412dd3b0320316fba12a2ddebaafb54a"
   integrity sha512-5NWQKm55mFmI6gA6kQt+zwvoMMsvtIe9hYdOGIXgR7HYkSRnoXIRYyfz8G6xkh0MzoPXYPlYruTAakreD3I0Ug==
@@ -782,6 +802,13 @@
   version "0.4.21"
   resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.21.tgz#92a5c168297424a9d53ff9a034650267b0486ec2"
   integrity sha512-k0DlVfoFUIbcE8nbZEE6CFDHDWE1P38RXl0e/IstfTuuEMX8Iai6E+hlMHcj7/GjhkIFRNmUlG+jWQnjfSNrcw==
+  dependencies:
+    "@babel/runtime" "^7.4.3"
+
+"@liquality/schema@^0.4.28":
+  version "0.4.28"
+  resolved "https://registry.yarnpkg.com/@liquality/schema/-/schema-0.4.28.tgz#2cf5252c10da4717a3921859f84c122acfffa72f"
+  integrity sha512-CY5uTLRd8lmqVzt+YPGBfm6D+lTIUL0T4iaDA80jCj1CE3n6uK1ISFsFa9i1oruSkOLouqpC0A99aUpVMeug4g==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
