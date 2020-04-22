@@ -20,22 +20,23 @@ contract HotColdWallet {
      * @param data Transaction data for creating fund
      */
     constructor (address funds_, address loans_, address sales_, address hot_, bytes memory data) public {
+        require(funds_ != address(0), "constructor: Funds address cannot be null");
+        require(loans_ != address(0), "constructor: Loans address cannot be null");
+        require(sales_ != address(0), "constructor: Sales address cannot be null");
         funds = funds_;
         loans = loans_;
         sales = sales_;
         cold = msg.sender;
         hot = hot_;
-        if (data.length > 0) {
-            callFunds(data);
-        }
     }
 
     /**
-     * @notice Determine whether transaction data is for Funds request function
+     * @notice Determine whether transaction data is for Funds.request function
      * @param data Transaction data
      * @return Whether the transaction data is for Funds request function
      */
     function isRequest(bytes memory data) private pure returns (bool) {
+        require(data.length > 4);
         return data[0] == hex"f5" && data[1] == hex"9b" && data[2] == hex"f2" && data[3] == hex"73";
     }
 
@@ -76,6 +77,7 @@ contract HotColdWallet {
     function changeHot(address newHot_) external {
         require(msg.sender == cold, "changeHot: Must be cold wallet");
         require(newHot_ != address(0), "changeHot: New hot address cannot be null");
+        require(newHot_ == hot, "changeHot: Hot is already is already new hot");
         hot = newHot_;
     }
 }
