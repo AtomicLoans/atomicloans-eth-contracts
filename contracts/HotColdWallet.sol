@@ -23,6 +23,7 @@ contract HotColdWallet {
         require(funds_ != address(0), "constructor: Funds address cannot be null");
         require(loans_ != address(0), "constructor: Loans address cannot be null");
         require(sales_ != address(0), "constructor: Sales address cannot be null");
+        require(hot_ != address(0), "constructor: Hot address cannot be null");
         funds = funds_;
         loans = loans_;
         sales = sales_;
@@ -77,7 +78,7 @@ contract HotColdWallet {
     function changeHot(address newHot_) external {
         require(msg.sender == cold, "changeHot: Must be cold wallet");
         require(newHot_ != address(0), "changeHot: New hot address cannot be null");
-        require(newHot_ == hot, "changeHot: Hot is already is already new hot");
+        require(newHot_ != hot, "changeHot: Hot is already new hot");
         hot = newHot_;
     }
 }
