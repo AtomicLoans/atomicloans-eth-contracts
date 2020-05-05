@@ -55,9 +55,10 @@
     debug "^4.1.1"
     lodash "^4.17.11"
 
-"@atomicloans/provider@0.4.1":
-  version "0.4.1"
-  resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.4.1.tgz#e50cc76f7a7226cc60959cbe223124ba0dded00f"
+"@atomicloans/provider@0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@atomicloans/provider/-/provider-0.4.2.tgz#f6a8b74d9619a1e145012d39128bc42d64450e77"
+  integrity sha512-FDq7WSs3Pmhj5dDyhMsZDdCsdllystx3P4Z2wPJ+pT0oJBjSo1d3XJPhstNUi63gb0w8MzJHntDZJuSJtDzvzA==
   dependencies:
     "@babel/runtime" "^7.4.3"
 
