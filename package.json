@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "dependencies": {
     "@liquality/crypto": "0.4.21",
-    "@liquality/ethereum-utils": "0.4.21",
+    "@liquality/ethereum-utils": "0.4.30",
     "@mblackmblack/bitcoinjs-lib": "5.1.6",
     "@mblackmblack/to-seconds": "^0.1.0",
     "@summa-tx/bitcoin-spv-sol": "^2.1.0",
