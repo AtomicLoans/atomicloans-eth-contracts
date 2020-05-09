@@ -4656,10 +4656,10 @@ truffle-plugin-verify@^0.3.3:
     querystring "^0.2.0"
     sol-merger "^1.1.0"
 
-truffle@5.1.13:
-  version "5.1.13"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.13.tgz#f0a071342616f23a52bceaedae4feaec0bc4d549"
-  integrity sha512-d+DKgNE389/WmSb68sDu/DnMpex18bx7edw4waSEESdynwTgocsPFumgWqzmmUTxjnaRAScPC7oA5X6ZVSKwLQ==
+truffle@5.1.25:
+  version "5.1.25"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.1.25.tgz#553e6fdb9f6d95d9d4725355356c4739c233ff27"
+  integrity sha512-7iGKMkITjInGD1AFD7mKwxowQiNmPYx08jym/u8oNXVsYPYCZ6NbkMNSdf6TFXTTrEQe+tPEIy+CNF1Oc6DDzA==
   dependencies:
     app-module-path "^2.2.0"
     mocha "5.2.0"
