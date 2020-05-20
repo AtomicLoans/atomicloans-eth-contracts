@@ -20,7 +20,7 @@
     "truffle-contract": "^4.0.29",
     "truffle-hdwallet-provider": "^1.0.9",
     "truffle-plugin-verify": "^0.3.3",
-    "web3": "^1.2.6"
+    "web3": "^1.2.8"
   },
   "scripts": {
     "test": "truffle test --timeout 600000",
