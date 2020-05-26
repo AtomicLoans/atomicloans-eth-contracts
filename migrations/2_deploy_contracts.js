@@ -24,6 +24,8 @@ var MakerMedianizer = artifacts.require('./_MakerMedianizer.sol')
 
 var ALCompound = artifacts.require('./ALCompound.sol')
 
+var HotColdWallet = artifacts.require('./HotColdWallet.sol')
+
 var fs = require('fs')
 
 var isCI = require('is-ci')
@@ -163,6 +165,8 @@ module.exports = function(deployer, network, accounts) {
 
     await deployer.deploy(ALCompound, comptroller.address) // LOCAL
 
+    await deployer.deploy(HotColdWallet, funds.address, loans.address, sales.address, accounts[1], '0x') // LOCAL
+
     console.info(`DAI_ADDRESS=${dai.address}`)
     console.info(`USDC_ADDRESS=${usdc.address}`)
 
@@ -192,6 +196,16 @@ module.exports = function(deployer, network, accounts) {
     console.info(`  "USDC_SALES": "${usdcSales.address}",`)
     console.info(`  "MEDIANIZER": "${medianizer.address}",`)
     console.info(`  "ONDEMANDSPV": "${onDemandSpv.address}"`)
+    console.info('}')
+
+    console.info('==================================')
+
+    console.info('{')
+    console.info(`  funds: '${funds.address}',`)
+    console.info(`  loans: '${loans.address}',`)
+    console.info(`  sales: '${sales.address}',`)
+    console.info(`  collateral: '${collateral.address}',`)
+    console.info(`  p2wsh: '${p2wsh.address}',`)
     console.info('}')
 
     const contractAddresses = {
