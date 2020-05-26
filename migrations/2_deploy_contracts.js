@@ -198,6 +198,16 @@ module.exports = function(deployer, network, accounts) {
     console.info(`  "ONDEMANDSPV": "${onDemandSpv.address}"`)
     console.info('}')
 
+    console.info('==================================')
+
+    console.info('{')
+    console.info(`  funds: '${funds.address}',`)
+    console.info(`  loans: '${loans.address}',`)
+    console.info(`  sales: '${sales.address}',`)
+    console.info(`  collateral: '${collateral.address}',`)
+    console.info(`  p2wsh: '${p2wsh.address}',`)
+    console.info('}')
+
     const contractAddresses = {
         "DAI": dai.address,
         "USDC": usdc.address,

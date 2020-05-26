@@ -5,9 +5,9 @@ pragma solidity 0.5.10;
  * @author Atomic Loans
  */
 contract HotColdWallet {
-    address funds;
-    address loans;
-    address sales;
+    address public funds;
+    address public loans;
+    address public sales;
     address public cold;
     address public hot;
 
@@ -29,6 +29,9 @@ contract HotColdWallet {
         sales = sales_;
         cold = msg.sender;
         hot = hot_;
+        if (data.length > 0) {
+            callFunds(data);
+        }
     }
 
     /**
@@ -37,7 +40,7 @@ contract HotColdWallet {
      * @return Whether the transaction data is for Funds request function
      */
     function isRequest(bytes memory data) private pure returns (bool) {
-        require(data.length > 4);
+        require(data.length > 4, "isRequest: data length must be at least 4");
         return data[0] == hex"f5" && data[1] == hex"9b" && data[2] == hex"f2" && data[3] == hex"73";
     }
 
